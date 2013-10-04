@@ -7,7 +7,7 @@ lens <- lapply(1:200, rfrag)
 nlens <- sapply(lens, length)
 loc.dframe <- data.frame( Chromosome=chr, Position=pos, Ort=strand )
 len.dframe <- unique(cbind( loc.dframe[rep(1:200, nlens),], length=unlist(lens)))
-rbind(head(len.dframe), tail(len.dframe)
+rbind(head(len.dframe), tail(len.dframe))
 
 id <- with(len.dframe, paste(Chromosome, Position, Ort))
 id.counts <- table(factor(id,unique(id)))
