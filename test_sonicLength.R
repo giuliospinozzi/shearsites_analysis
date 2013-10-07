@@ -13,3 +13,6 @@ id <- with(len.dframe, paste(Chromosome, Position, Ort))
 id.counts <- table(factor(id,unique(id)))
 plot(as.vector(nlens), as.vector(id.counts), xlab='number of sonicants',ylab='distinct lengths', xlim=c(1,100), ylim=c(1,100))
 abline(a=0,b=1,col='gray')
+
+fit <- estAbund(id, len.dframe$length)
+# str( fit )
