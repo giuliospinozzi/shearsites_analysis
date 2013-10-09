@@ -6,6 +6,7 @@ import argparse, os
 import rpy2.robjects as robjects
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 # Import sonicLength package (Rpy2 2.1+)
 from rpy2.robjects.packages import importr
@@ -85,38 +86,44 @@ def generateDataset(data):
 	return locations_list, length_list
 
 
-def plotPhi(length_phi,freq_phi,nameFig):
+def plotPhi(length_phi,freq_phi):
 	length_phi_numbers = []
 	for num in length_phi:
 		length_phi_numbers.append(float(num))
 
 	# generate plot
-	plt.bar(length_phi_numbers, freq_phi, width=1.0, bottom=None, hold=False)
-	fileName = nameFig + "phi.pdf"
-   	plt.savefig(fileName, format="pdf")
-   	#plt.show()
+	plt.plot(length_phi_numbers, freq_phi, 'r', hold=True, label="extimated distr")
 
 
-def plotHistFreq(length_list,nameFig):
+def plotHistFreq(length_list):
 	# Plot (length-frequency) of input data
 	length_list_numbers = []
 	for num in length_list:
 		length_list_numbers.append(float(num))
-	plt.hist(length_list_numbers, bins=max(length_list_numbers), normed=True, hold=False)
-	fileName = nameFig + "histFreq.pdf"
-   	plt.savefig(fileName, format="pdf")
-   	#plt.show()
+	binning = math.ceil(len(set(length_list_numbers))/2)
+	plt.hist(length_list_numbers, bins=binning, normed=True, facecolor='green', alpha=0.3, hold=True, label="real distribution - histogram")
+
 	return length_list_numbers
 
 
-def plotGaussianDensity(length_list_numbers,nameFig):
+def plotGaussianDensity(length_list_numbers):
 	# Gaussian Density Plot (length-frequency) of input data
 	density = gaussian_kde(length_list_numbers)
-	xs = np.linspace(0,400,400)
-	plt.plot(xs,density(xs), hold=False)
-	fileName = nameFig + "gaussDensity.pdf"
-   	plt.savefig(fileName, format="pdf")
+	xs = np.linspace(0,max(length_list_numbers)+25,len(set(length_list_numbers))*10+250)
+	plt.plot(xs,density(xs), hold=True, label="real distribution - gaussian kde")
+	
+	return plt
+
+def plotCollapse(plt,nameFig):
+	fileName = nameFig + "collapsedPlot.pdf"
+   	plt.legend()
+	# Labels
+	plt.xlabel('fragments length')
+	plt.ylabel('probability')
+	plt.title(nameFig[0:-1] + ' Amplicons lenght data')
    	#plt.show()
+   	plt.savefig(fileName, format="pdf")
+
 
 
 
@@ -156,9 +163,10 @@ def main():
 	length_phi = tuple(phi.names)
 
 	nameFig = data[0:-19]
-	plotPhi(length_phi,freq_phi,nameFig)
-	length_list_numbers = plotHistFreq(length_list,nameFig)
-	plotGaussianDensity(length_list_numbers,nameFig)
+	plotPhi(length_phi,freq_phi)
+	length_list_numbers = plotHistFreq(length_list)
+	plt = plotGaussianDensity(length_list_numbers)
+	plotCollapse(plt,nameFig)
 
 	print "\n[AP]\tTask Finished, closing.\n"
 
