@@ -88,7 +88,7 @@ def generateDataset(data):
 def plotPhi(length_phi,freq_phi,nameFig):
 	length_phi_numbers = []
 	for num in length_phi:
-		length_phi_numbers.append(int(num))
+		length_phi_numbers.append(float(num))
 
 	# generate plot
 	plt.bar(length_phi_numbers, freq_phi, width=1.0, bottom=None, hold=False)
@@ -101,7 +101,7 @@ def plotHistFreq(length_list,nameFig):
 	# Plot (length-frequency) of input data
 	length_list_numbers = []
 	for num in length_list:
-		length_list_numbers.append(int(num))
+		length_list_numbers.append(float(num))
 	plt.hist(length_list_numbers, bins=max(length_list_numbers), normed=True, hold=False)
 	fileName = nameFig + "histFreq.pdf"
    	plt.savefig(fileName, format="pdf")
