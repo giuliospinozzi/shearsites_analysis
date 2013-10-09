@@ -91,7 +91,7 @@ def plotPhi(length_phi,freq_phi,nameFig):
 		length_phi_numbers.append(int(num))
 
 	# generate plot
-	plt.bar(length_phi_numbers, freq_phi, width=1.0, bottom=None, hold=True)
+	plt.bar(length_phi_numbers, freq_phi, width=1.0, bottom=None, hold=False)
 	fileName = nameFig + "phi.pdf"
    	plt.savefig(fileName, format="pdf")
    	#plt.show()
@@ -102,7 +102,7 @@ def plotHistFreq(length_list,nameFig):
 	length_list_numbers = []
 	for num in length_list:
 		length_list_numbers.append(int(num))
-	plt.hist(length_list_numbers, bins=400)
+	plt.hist(length_list_numbers, bins=max(length_list_numbers), normed=True, hold=False)
 	fileName = nameFig + "histFreq.pdf"
    	plt.savefig(fileName, format="pdf")
    	#plt.show()
@@ -113,7 +113,7 @@ def plotGaussianDensity(length_list_numbers,nameFig):
 	# Gaussian Density Plot (length-frequency) of input data
 	density = gaussian_kde(length_list_numbers)
 	xs = np.linspace(0,400,400)
-	plt.plot(xs,density(xs))
+	plt.plot(xs,density(xs), hold=False)
 	fileName = nameFig + "gaussDensity.pdf"
    	plt.savefig(fileName, format="pdf")
    	#plt.show()
