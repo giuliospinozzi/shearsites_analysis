@@ -120,7 +120,7 @@ def plotCollapse(plt,nameFig):
 	# Labels
 	plt.xlabel('fragments length')
 	plt.ylabel('probability')
-	plt.title(nameFig[0:-1] + ' Amplicons lenght data')
+	plt.title(nameFig[0:-1] + ' Fragments lenght data')
    	#plt.show()
    	plt.savefig(fileName, format="pdf")
 

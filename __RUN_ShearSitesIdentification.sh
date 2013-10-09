@@ -30,6 +30,7 @@ RUN_ID="`whoami`"" ${RUN_STARTED_AT}";
 
 
 ##### ============== PYTHON: ShearSites_identification.py ================ #####
+echo "PYTHON: ShearSites Identification"
 for k in $(ls *.sorted.bed); do 
   n=${k:0:10};
   python ShearSites_identification.py --bed1 $k --bed2 $n.sorted.allr2reads.bed;
@@ -37,6 +38,7 @@ done
 #==============================================================================#
 
 
+echo "BASH: output txt files for R model"
 ##### =============== BASH: output txt files for R model ================= #####
 for k in $(ls *.shearsites.tsv); do 
   awk '{print $2" "$3" "$6"\t"$12}' $k | sort | uniq > ${k:0:21}.uniq.txt;
@@ -48,6 +50,7 @@ done
 #==============================================================================#
 
 
+echo "RPY2: Abundance Estimation with Berry's Model in R"
 ##### ================ PYTHON: abundance_estimation.py =================== #####
 for k in $(ls *.shearsites.uniq.txt); do 
   n=${k:0:10};
