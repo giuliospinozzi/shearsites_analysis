@@ -168,15 +168,18 @@ def main():
 	"""
 	#first check args and file paths
 	checkArgs(args)
-	print "[AP]\tChecked inputs, now acquiring data"
-
+	
 	bed_r1 = args.bedfile_r1
 	bed_r2 = args.bedfile_r2
 
-	if os.path.getsize(bed_r1) > 0 and os.path.getsize(bed_r2) > 0:
-		f_name = bed_r1.split(".")
-		outfilename = f_name[0] + '.' + f_name[1] + '.shearsites.tsv'
+	f_name = bed_r1.split(".")
+	outfilename = f_name[0] + '.' + f_name[1] + '.shearsites.tsv'
 
+	print "\n[AP]\t"+"######## "+f_name[0] + '.' + f_name[1]+" ########"
+	print "\n[AP]\tChecked inputs, now acquiring data"
+
+	if os.path.getsize(bed_r1) > 0 and os.path.getsize(bed_r2) > 0:
+		
 		compare_R1R2_BEDs(bed_r1, bed_r2)
 
 		dict_r1, dict_r2 = generate_BEDs_dict(bed_r1, bed_r2)

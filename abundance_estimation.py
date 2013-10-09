@@ -92,7 +92,7 @@ def plotPhi(length_phi,freq_phi):
 		length_phi_numbers.append(float(num))
 
 	# generate plot
-	plt.plot(length_phi_numbers, freq_phi, 'r', hold=True, label="extimated distr")
+	plt.plot(length_phi_numbers, freq_phi, 'r', hold=True, label="extimated distribution")
 
 
 def plotHistFreq(length_list):
@@ -137,9 +137,11 @@ def main():
 	"""
 	#first check args and file paths
 	checkArgs(args)
-	print "[AP]\tChecked inputs, now acquiring data"
-
+	
 	data = args.dataset_file
+	f_name = data.split(".")
+	print "\n[AP]\t"+"######## "+f_name[0] + '.' + f_name[1]+" ########"
+	print "\n[AP]\tChecked inputs, now acquiring data"
 
 	locations_list, length_list = generateDataset(data)
 
