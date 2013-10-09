@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from rpy2.robjects.packages import importr
 sonicLength = importr("sonicLength")
 
+from scipy.stats import gaussian_kde
+
 # Uncomment for Rpy2 2.0
 # from rpy2.robjects import r
 # r.library("sonicLength")
@@ -42,7 +44,7 @@ description = "This is a wrapper with rpy2 for simulate the Berry's model in R."
 
 usage_example = """
 Examples of usage:
-APP --in LTR60.LC90.shearsites.uniq.txt
+APP --dataset LTR60.LC90.shearsites.uniq.txt
 """
 
 # print header
@@ -83,19 +85,38 @@ def generateDataset(data):
 	return locations_list, length_list
 
 
-def plotPhi(length_phi,freq_phi):
+def plotPhi(length_phi,freq_phi,nameFig):
 	length_phi_numbers = []
 	for num in length_phi:
 		length_phi_numbers.append(int(num))
 
 	# generate plot
 	plt.bar(length_phi_numbers, freq_phi, width=1.0, bottom=None, hold=True)
-	fileName = "phi.pdf"
+	fileName = nameFig + "phi.pdf"
    	plt.savefig(fileName, format="pdf")
-   	plt.show()
+   	#plt.show()
 
-	# Save the figure in a separate file
-	#plt.savefig('phi_distribution.png')
+
+def plotHistFreq(length_list,nameFig):
+	# Plot (length-frequency) of input data
+	length_list_numbers = []
+	for num in length_list:
+		length_list_numbers.append(int(num))
+	plt.hist(length_list_numbers, bins=400)
+	fileName = nameFig + "histFreq.pdf"
+   	plt.savefig(fileName, format="pdf")
+   	#plt.show()
+	return length_list_numbers
+
+
+def plotGaussianDensity(length_list_numbers,nameFig):
+	# Gaussian Density Plot (length-frequency) of input data
+	density = gaussian_kde(length_list_numbers)
+	xs = np.linspace(0,400,400)
+	plt.plot(xs,density(xs))
+	fileName = nameFig + "gaussDensity.pdf"
+   	plt.savefig(fileName, format="pdf")
+   	#plt.show()
 
 
 
@@ -132,9 +153,12 @@ def main():
 	# Put different fragment lengths in length_phi and associated frequencies in freq_phi
 	phi = results.rx2("phi")
 	freq_phi = tuple(phi)
-	length_phi =  tuple(phi.names)
+	length_phi = tuple(phi.names)
 
-	plotPhi(length_phi,freq_phi)
+	nameFig = data[0:-19]
+	plotPhi(length_phi,freq_phi,nameFig)
+	length_list_numbers = plotHistFreq(length_list,nameFig)
+	plotGaussianDensity(length_list_numbers,nameFig)
 
 	print "\n[AP]\tTask Finished, closing.\n"
 
