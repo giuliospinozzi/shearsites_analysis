@@ -86,7 +86,7 @@ def generateDataset(data):
 	return locations_list, length_list
 
 
-def fragmentsLenghtPlot(length_phi,freq_phi,length_list,nameFig):
+def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFig):
 	length_phi_numbers = []
 	for num in length_phi:
 		length_phi_numbers.append(float(num))
@@ -105,12 +105,12 @@ def fragmentsLenghtPlot(length_phi,freq_phi,length_list,nameFig):
 	# Gaussian kde plot
 	plt.plot(xs,density(xs), hold=True, label="real distribution - gaussian kde")
 
-	fileName = nameFig + "fragmentsLenghtPlot.pdf"
+	fileName = nameFig + "fragmentsLengthPlot.pdf"
    	plt.legend()
 	# Labels
 	plt.xlabel('fragments length')
 	plt.ylabel('probability')
-	plt.title(nameFig[0:-1] + ' Fragments lenght data')
+	plt.title(nameFig[0:-1] + ' Fragments length data')
    	#plt.show()
    	plt.savefig(fileName, format="pdf")
 
@@ -155,7 +155,7 @@ def main():
 	length_phi = tuple(phi.names)
 
 	nameFig = data[0:-19]
-	fragmentsLenghtPlot(length_phi,freq_phi,length_list,nameFig)
+	fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFig)
 
 	print "\n[AP]\tTask Finished, closing.\n"
 
