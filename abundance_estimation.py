@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
 import argparse, os
+import MySQLdb
 
 # Required
 import rpy2.robjects as robjects
 import numpy as np
+from scipy import stats
 import matplotlib.pyplot as plt
 import math
 
@@ -86,7 +88,7 @@ def generateDataset(data):
 	return locations_list, length_list
 
 
-def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFig):
+def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile):
 	length_phi_numbers = []
 	for num in length_phi:
 		length_phi_numbers.append(float(num))
@@ -105,14 +107,113 @@ def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFig):
 	# Gaussian kde plot
 	plt.plot(xs,density(xs), hold=True, label="real distribution - gaussian kde")
 
-	fileName = nameFig + "fragmentsLengthPlot.pdf"
+	fileName = nameFile + ".fragmentsLengthPlot.pdf"
    	plt.legend()
 	# Labels
 	plt.xlabel('fragments length')
 	plt.ylabel('probability')
-	plt.title(nameFig[0:-1] + ' Fragments length data')
+	plt.title(nameFile + ' Fragments length data')
    	#plt.show()
    	plt.savefig(fileName, format="pdf")
+
+
+def printThetaInfo(estimations_theta,locations_theta,nameFile):
+	f_out = open(nameFile+".theta.tsv","w")
+	dict_theta = {}
+	for l in range(0,len(locations_theta)):
+		dict_theta[locations_theta[l]] = estimations_theta[l]
+		f_out.write(str(locations_theta[l]) + '\t' + str(estimations_theta[l]) + '\n')
+
+
+def querySeqCount(host,user,passwd,db,db_table,destfile,nameFile):
+	# System Call
+	query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT chr, integration_locus, strand, count(*) AS sequence_count FROM %(db_table)s WHERE tag='%(nameFile)s' GROUP BY chr, integration_locus,  strand ORDER BY chr ASC , integration_locus ASC\" > %(destfile)s " %{
+     'host': host,
+     'user': user,
+     'passwd': passwd,
+     'db': db,
+     'db_table': db_table,
+     'nameFile': nameFile,
+     'destfile': destfile,
+    }
+	os.system(query)
+
+	sequence_count = {}
+	f_in = open(destfile, "r")
+	for line in f_in:
+		string_splitted = line.split('\t')
+		value = string_splitted[3].split('\n')
+		sequence_count["chr" + string_splitted[0] + " " + string_splitted[1] + " " + string_splitted[2]] = value[0]
+
+	return sequence_count
+
+
+def box_plot (real_data_list, extimated_data_list, dataset_name):
+	"""
+	dataset_name - string: dataset ID
+	real_data_list - list of sequence count for 'dataset_name'
+	extimated_data_list - list of estimated abundance (theta) for 'dataset_name'
+	"""
+
+	#Development print
+	print "\n\t *** Starting Boxplot Function *** \n\n"
+
+	#normalizing data (Z-score)
+	normalized_real_data_list = stats.zscore(real_data_list)
+	normalized_extimated_data_list = stats.zscore(extimated_data_list)
+
+
+	#Development print
+	print "\t Real Data: ", real_data_list[0:3], " ... ", real_data_list[-1], ". n = ", len(real_data_list), "."
+	print "\t Real Data - Normalized (Z-score): ", normalized_real_data_list[0:3], " ... ", normalized_real_data_list[-1], ". n = ", len(normalized_real_data_list), ".\n"
+	print "\t Extimated Data: ", extimated_data_list[0:3], " ... ", extimated_data_list[-1], ". n = ", len(extimated_data_list), "."
+	print "\t Extimated Data - Normalized (Z-score): ", normalized_extimated_data_list[0:3], " ... ", normalized_extimated_data_list[-1], ". n = ", len(normalized_extimated_data_list), ".\n"
+
+	#Set-up data
+	data = [normalized_real_data_list, normalized_extimated_data_list]
+
+	#Creating Boxplot
+	plt.figure()
+	ax = plt.axes()
+	plt.hold(True)
+	bp = plt.boxplot(data)
+
+	#Set-up boxplot apparence
+	plt.setp(bp['boxes'][0], color='red')
+	plt.setp(bp['caps'][0], color='red')
+	plt.setp(bp['caps'][1], color='red')
+	plt.setp(bp['whiskers'][0], color='red')
+	plt.setp(bp['whiskers'][1], color='red')
+	plt.setp(bp['fliers'][0], color='red')
+	plt.setp(bp['fliers'][1], color='red')
+	plt.setp(bp['medians'][0], color='red')
+	plt.setp(bp['boxes'][1], color='green')
+	plt.setp(bp['caps'][2], color='green')
+	plt.setp(bp['caps'][3], color='green')
+	plt.setp(bp['whiskers'][2], color='green')
+	plt.setp(bp['whiskers'][3], color='green')
+	plt.setp(bp['fliers'][2], color='green')
+	plt.setp(bp['fliers'][3], color='green')
+	plt.setp(bp['medians'][1], color='green')
+	ax.yaxis.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
+	ax.set_axisbelow(True)
+	ax.set_title('Boxplot comparison - {0}\n- n={1} redundant IS -'.format(dataset_name, len(real_data_list)))
+	#ax.set_xlabel('Datasets')
+	ax.set_ylabel('Abundance / SeqCount (Z-score normalized)')
+
+	# draw temporary green and red lines and use them to create a legend
+	hR, = plt.plot([1,1],'r-') #extimated
+	hG, = plt.plot([1,1],'g-') #real
+	plt.legend((hR, hG),('1) Extimated Data - Abundance', '2) Real Data - SequenceCount'))
+	hR.set_visible(False)
+	hG.set_visible(False)
+
+	#save figure and #show
+	plt.savefig(dataset_name + '.comparative_boxplot' + '.pdf', format='pdf')
+	#plt.show()
+
+	#Return
+	return 0
 
 
 
@@ -154,8 +255,24 @@ def main():
 	freq_phi = tuple(phi)
 	length_phi = tuple(phi.names)
 
-	nameFig = data[0:-19]
-	fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFig)
+	nameFile = data[0:-20]
+	fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile)
+
+	printThetaInfo(estimations_theta,locations_theta,nameFile)
+
+	host = "172.25.39.2"
+	user = "readonly"
+	passwd = "readonlypswd"
+	db = "sequence_qlam"
+	db_table = "osr_p16"
+	destfile = nameFile + ".sequence_count" + ".tsv"
+	sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
+
+	sequence_count_list = []
+	for v in sequence_count.values():
+		sequence_count_list.append(int(v))
+
+	box_plot(sequence_count_list, estimations_theta, nameFile)
 
 	print "\n[AP]\tTask Finished, closing.\n"
 
