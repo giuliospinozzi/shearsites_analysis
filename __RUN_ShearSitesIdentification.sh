@@ -3,7 +3,7 @@
 echo "
   +--------------------------------------------------------+
   |                                                        |
-  |               Shear Site Identification                |
+  |                   Shear Site Analysis                  |
   |                                                        |
   +--------------------------------------------------------+
   |  Author:   Giulio Spinozzi                             |
