@@ -86,36 +86,26 @@ def generateDataset(data):
 	return locations_list, length_list
 
 
-def plotPhi(length_phi,freq_phi):
+def fragmentsLenghtPlot(length_phi,freq_phi,length_list,nameFig):
 	length_phi_numbers = []
 	for num in length_phi:
 		length_phi_numbers.append(float(num))
-
-	# generate plot
+	# Phi plot
 	plt.plot(length_phi_numbers, freq_phi, 'r', hold=True, label="extimated distribution")
 
-
-def plotHistFreq(length_list):
-	# Plot (length-frequency) of input data
 	length_list_numbers = []
 	for num in length_list:
 		length_list_numbers.append(float(num))
 	binning = math.ceil(len(set(length_list_numbers))/2)
+	# Plot (length-frequency) of input data
 	plt.hist(length_list_numbers, bins=binning, normed=True, facecolor='green', alpha=0.3, hold=True, label="real distribution - histogram")
 
-	return length_list_numbers
-
-
-def plotGaussianDensity(length_list_numbers):
-	# Gaussian Density Plot (length-frequency) of input data
 	density = gaussian_kde(length_list_numbers)
 	xs = np.linspace(0,max(length_list_numbers)+25,len(set(length_list_numbers))*10+250)
+	# Gaussian kde plot
 	plt.plot(xs,density(xs), hold=True, label="real distribution - gaussian kde")
-	
-	return plt
 
-def plotCollapse(plt,nameFig):
-	fileName = nameFig + "collapsedPlot.pdf"
+	fileName = nameFig + "fragmentsLenghtPlot.pdf"
    	plt.legend()
 	# Labels
 	plt.xlabel('fragments length')
@@ -165,10 +155,7 @@ def main():
 	length_phi = tuple(phi.names)
 
 	nameFig = data[0:-19]
-	plotPhi(length_phi,freq_phi)
-	length_list_numbers = plotHistFreq(length_list)
-	plt = plotGaussianDensity(length_list_numbers)
-	plotCollapse(plt,nameFig)
+	fragmentsLenghtPlot(length_phi,freq_phi,length_list,nameFig)
 
 	print "\n[AP]\tTask Finished, closing.\n"
 

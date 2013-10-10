@@ -38,6 +38,8 @@ done
 #==============================================================================#
 
 
+echo "
++--------------------------------------------------------+"
 echo "BASH: output txt files for R model"
 ##### =============== BASH: output txt files for R model ================= #####
 for k in $(ls *.shearsites.tsv); do 
@@ -50,6 +52,8 @@ done
 #==============================================================================#
 
 
+echo "
++--------------------------------------------------------+"
 echo "RPY2: Abundance Estimation with Berry's Model in R"
 ##### ================ PYTHON: abundance_estimation.py =================== #####
 for k in $(ls *.shearsites.uniq.txt); do 
