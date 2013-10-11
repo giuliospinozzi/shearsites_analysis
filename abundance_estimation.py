@@ -241,7 +241,7 @@ def redundant_reads_count (file_as_list):
 	for line in file_as_list:
 		line_split = line.split('\t')
 		line_split[-1] = line_split[-1].rstrip('\n')
-		list_of_reads.append(" ".join([line_split[1], line_split[3], line_split[5]]))
+		list_of_reads.append(" ".join([line_split[1], line_split[2], line_split[5]]))
 	list_of_reads.sort()
 
 	list_of_redundant_reads_count = []
@@ -342,7 +342,7 @@ def main():
 			print k
 	print len(locations_theta)-len(dic_of_redundant_reads_count.items())
 	print count
-	
+
 	box_plot(sequence_count, estimations_theta, nameFile)
 
 	phi_VS_theta(length_phi, freq_phi, nameFile)
