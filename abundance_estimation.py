@@ -76,7 +76,6 @@ def generateDataset(data):
 	dataset_file = open(data, "r")
 	dataset = dataset_file.readlines()
 	dataset_file.close()
-
 	locations_list = []
 	length_list = []
 	for row in dataset:
@@ -84,7 +83,6 @@ def generateDataset(data):
 		row_split = row.split("\t")
 		locations_list.append(row_split[0])
 		length_list.append(row_split[1])
-
 	return locations_list, length_list
 
 
@@ -92,29 +90,27 @@ def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile):
 	length_phi_numbers = []
 	for num in length_phi:
 		length_phi_numbers.append(float(num))
+	plt.figure()
 	# Phi plot
 	plt.plot(length_phi_numbers, freq_phi, 'r', hold=True, label="extimated distribution")
-
 	length_list_numbers = []
 	for num in length_list:
 		length_list_numbers.append(float(num))
 	binning = math.ceil(len(set(length_list_numbers))/2)
 	# Plot (length-frequency) of input data
 	plt.hist(length_list_numbers, bins=binning, normed=True, facecolor='green', alpha=0.3, hold=True, label="real distribution - histogram")
-
 	density = gaussian_kde(length_list_numbers)
 	xs = np.linspace(0,max(length_list_numbers)+25,len(set(length_list_numbers))*10+250)
 	# Gaussian kde plot
 	plt.plot(xs,density(xs), hold=True, label="real distribution - gaussian kde")
-
 	fileName = nameFile + ".fragmentsLengthPlot.pdf"
    	plt.legend()
 	# Labels
 	plt.xlabel('fragments length')
 	plt.ylabel('probability')
 	plt.title(nameFile + ' Fragments length data')
-   	#plt.show()
    	plt.savefig(fileName, format="pdf")
+   	return length_phi_numbers
 
 
 def printThetaInfo(estimations_theta,locations_theta,nameFile):
@@ -137,14 +133,12 @@ def querySeqCount(host,user,passwd,db,db_table,destfile,nameFile):
      'destfile': destfile,
     }
 	os.system(query)
-
 	sequence_count = {}
 	f_in = open(destfile, "r")
 	for line in f_in:
 		string_splitted = line.split('\t')
 		value = string_splitted[3].split('\n')
 		sequence_count["chr" + string_splitted[0] + " " + string_splitted[1] + " " + string_splitted[2]] = value[0]
-
 	return sequence_count
 
 
@@ -154,30 +148,23 @@ def box_plot (real_data_list, extimated_data_list, dataset_name):
 	real_data_list - list of sequence count for 'dataset_name'
 	extimated_data_list - list of estimated abundance (theta) for 'dataset_name'
 	"""
-
 	#Development print
 	print "\n\t *** Starting Boxplot Function *** \n\n"
-
 	#normalizing data (Z-score)
 	normalized_real_data_list = stats.zscore(real_data_list)
 	normalized_extimated_data_list = stats.zscore(extimated_data_list)
-
-
 	#Development print
 	print "\t Real Data: ", real_data_list[0:3], " ... ", real_data_list[-1], ". n = ", len(real_data_list), "."
 	print "\t Real Data - Normalized (Z-score): ", normalized_real_data_list[0:3], " ... ", normalized_real_data_list[-1], ". n = ", len(normalized_real_data_list), ".\n"
 	print "\t Extimated Data: ", extimated_data_list[0:3], " ... ", extimated_data_list[-1], ". n = ", len(extimated_data_list), "."
 	print "\t Extimated Data - Normalized (Z-score): ", normalized_extimated_data_list[0:3], " ... ", normalized_extimated_data_list[-1], ". n = ", len(normalized_extimated_data_list), ".\n"
-
 	#Set-up data
 	data = [normalized_real_data_list, normalized_extimated_data_list]
-
 	#Creating Boxplot
 	plt.figure()
 	ax = plt.axes()
 	plt.hold(True)
 	bp = plt.boxplot(data)
-
 	#Set-up boxplot apparence
 	plt.setp(bp['boxes'][0], color='red')
 	plt.setp(bp['caps'][0], color='red')
@@ -200,19 +187,42 @@ def box_plot (real_data_list, extimated_data_list, dataset_name):
 	ax.set_title('Boxplot comparison - {0}\n- n={1} redundant IS -'.format(dataset_name, len(real_data_list)))
 	#ax.set_xlabel('Datasets')
 	ax.set_ylabel('Abundance / SeqCount (Z-score normalized)')
-
 	# draw temporary green and red lines and use them to create a legend
 	hR, = plt.plot([1,1],'r-') #extimated
 	hG, = plt.plot([1,1],'g-') #real
 	plt.legend((hR, hG),('1) Extimated Data - Abundance', '2) Real Data - SequenceCount'))
 	hR.set_visible(False)
 	hG.set_visible(False)
-
 	#save figure and #show
 	plt.savefig(dataset_name + '.comparative_boxplot' + '.pdf', format='pdf')
-	#plt.show()
-
 	#Return
+	return 0
+
+
+def expected_lengths_given_theta (length_phi, freq_phi, theta):
+	expected_lenght = 0
+	i=0
+	for leng in length_phi:
+		expected_lenght = expected_lenght + (1 - np.exp(-1*theta*freq_phi[i]))
+		i+=1
+	return expected_lenght
+
+
+def phi_VS_theta (length_phi, freq_phi,dataset_name):
+	# Retrieving points to plot
+	x_expected_unique_lenghts = []
+	y_number_of_parent_fragments = []
+	N = 1000
+	for theta in np.linspace(0, 10000, N):
+		y_number_of_parent_fragments.append(theta)
+		x_expected_unique_lenghts.append(expected_lengths_given_theta(length_phi, freq_phi, theta))
+	#Plot
+	plt.figure()
+	plt.plot(x_expected_unique_lenghts, y_number_of_parent_fragments, 'b', hold=True)
+	plt.xlabel('expected unique lengths (phi-i)')
+	plt.ylabel('number of parent fragments (theta-i)')
+	plt.title('phi VS theta')
+	plt.savefig(dataset_name + '.phiVStheta' + '.pdf', format='pdf')
 	return 0
 
 
@@ -256,7 +266,7 @@ def main():
 	length_phi = tuple(phi.names)
 
 	nameFile = data[0:-20]
-	fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile)
+	length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile)
 
 	printThetaInfo(estimations_theta,locations_theta,nameFile)
 
@@ -273,6 +283,8 @@ def main():
 		sequence_count_list.append(int(v))
 
 	box_plot(sequence_count_list, estimations_theta, nameFile)
+
+	phi_VS_theta(length_phi, freq_phi, nameFile)
 
 	print "\n[AP]\tTask Finished, closing.\n"
 
