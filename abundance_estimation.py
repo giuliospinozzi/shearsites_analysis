@@ -226,6 +226,55 @@ def phi_VS_theta (length_phi, freq_phi,dataset_name):
 	return 0
 
 
+def from_file_to_list (unique_file_path):
+	unique_file_path_split = unique_file_path.split('.uniq.txt')
+	source_file_path = unique_file_path_split[0] + '.tsv'
+	dataset_file = open(source_file_path, "r")
+	file_as_list = dataset_file.readlines()
+	dataset_file.close()
+	return file_as_list
+
+
+def redundant_reads_count (file_as_list):
+	
+	list_of_reads =[]
+	for line in file_as_list:
+		line_split = line.split('\t')
+		line_split[-1] = line_split[-1].rstrip('\n')
+		list_of_reads.append(" ".join([line_split[1], line_split[3], line_split[5]]))
+	list_of_reads.sort()
+
+	list_of_redundant_reads_count = []
+	dic_of_redundant_reads_count = {}
+	i=0
+	count=1
+	check_last = False
+	for line in list_of_reads[1:-1]:
+		i+=1
+		if (line == list_of_reads[i-1]):
+			count = count + 1
+			check_last = False
+		else:
+			#list_of_redundant_reads_count.append("\t".join(list_of_reads[i-1], count))
+			dic_of_redundant_reads_count.update({list_of_reads[i-1]:count})
+			count = 1
+			check_last = True
+	if (check_last == False):
+		#list_of_redundant_reads_count.append("\t".join(list_of_reads[i], count))
+		dic_of_redundant_reads_count.update({list_of_reads[i]:count})
+
+	#Convert dic to list
+	keys = dic_of_redundant_reads_count.keys()
+	keys.sort()
+
+	for key in keys:
+		list_of_redundant_reads_count.append(str(dic_of_redundant_reads_count[key]))
+		print key, dic_of_redundant_reads_count[key]
+
+
+	return dic_of_redundant_reads_count, list_of_redundant_reads_count
+
+
 
 
 #########################################################################################
@@ -276,13 +325,25 @@ def main():
 	db = "sequence_qlam"
 	db_table = "osr_p16"
 	destfile = nameFile + ".sequence_count" + ".tsv"
-	sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
+	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
 
-	sequence_count_list = []
-	for v in sequence_count.values():
-		sequence_count_list.append(int(v))
+	dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data))
 
-	box_plot(sequence_count_list, estimations_theta, nameFile)
+	sequence_count = []
+	for v in sequence_count_list:
+		sequence_count.append(int(v))
+
+	print locations_theta
+
+	count = 0
+	for k in dic_of_redundant_reads_count.keys():
+		if k not in locations_theta:
+			count +=1
+			print k
+	print len(locations_theta)-len(dic_of_redundant_reads_count.items())
+	print count
+	
+	box_plot(sequence_count, estimations_theta, nameFile)
 
 	phi_VS_theta(length_phi, freq_phi, nameFile)
 

@@ -116,7 +116,6 @@ def generate_BEDs_dict(bed_r1, bed_r2):
 # Shear site identification, it generates the output file (all the candidate shear sites or only the real ones)
 def shearSites_identification(dict_r1, dict_r2, outfilename, parameter):
 	# write python dict to a file
-
 	if parameter == True:
 	# All dataset, data not filtered (a bed file with all reads, R1-R2 as they are)
 		f_out = open(outfilename, 'w')
