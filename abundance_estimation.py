@@ -263,6 +263,13 @@ def redundant_reads_count (file_as_list):
 		#list_of_redundant_reads_count.append("\t".join(list_of_reads[i], count))
 		dic_of_redundant_reads_count.update({list_of_reads[i]:count})
 
+	#Convert dic to list
+	keys = dic_of_redundant_reads_count.keys()
+	keys.sort()
+
+	for key in keys:
+		list_of_redundant_reads_count.append(str(dic_of_redundant_reads_count[key]))
+
 	return dic_of_redundant_reads_count, list_of_redundant_reads_count
 
 
