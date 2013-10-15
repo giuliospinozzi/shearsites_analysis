@@ -148,16 +148,9 @@ def box_plot (real_data_list, extimated_data_list, dataset_name):
 	real_data_list - list of sequence count for 'dataset_name'
 	extimated_data_list - list of estimated abundance (theta) for 'dataset_name'
 	"""
-	#Development print
-	print "\n\t *** Starting Boxplot Function *** \n\n"
 	#normalizing data (Z-score)
 	normalized_real_data_list = stats.zscore(real_data_list)
 	normalized_extimated_data_list = stats.zscore(extimated_data_list)
-	#Development print
-	print "\t Real Data: ", real_data_list[0:3], " ... ", real_data_list[-1], ". n = ", len(real_data_list), "."
-	print "\t Real Data - Normalized (Z-score): ", normalized_real_data_list[0:3], " ... ", normalized_real_data_list[-1], ". n = ", len(normalized_real_data_list), ".\n"
-	print "\t Extimated Data: ", extimated_data_list[0:3], " ... ", extimated_data_list[-1], ". n = ", len(extimated_data_list), "."
-	print "\t Extimated Data - Normalized (Z-score): ", normalized_extimated_data_list[0:3], " ... ", normalized_extimated_data_list[-1], ". n = ", len(normalized_extimated_data_list), ".\n"
 	#Set-up data
 	data = [normalized_real_data_list, normalized_extimated_data_list]
 	#Creating Boxplot
@@ -248,7 +241,6 @@ def redundant_reads_count (file_as_list):
 	dic_of_redundant_reads_count = {}
 	i=0
 	count=1
-	check_last = False
 	for line in list_of_reads[1:]:
 		i+=1
 		if (line == list_of_reads[i-1]):
@@ -270,6 +262,34 @@ def redundant_reads_count (file_as_list):
 
 	return dic_of_redundant_reads_count, list_of_redundant_reads_count
 
+
+def corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta):
+
+	# Get Keys
+	red_keys = dic_of_redundant_reads_count.keys()
+	theta_keys = dic_of_theta.keys()
+
+	# Convert items in numbers
+	for key,value in dic_of_redundant_reads_count.iteritems():
+		dic_of_redundant_reads_count[key] = float(value)
+	for key,value in dic_of_theta.iteritems():
+		dic_of_theta[key] = float(value)	
+
+	# Get normalization factors
+	total_redundant = sum(dic_of_redundant_reads_count.values())
+	total_theta = sum(dic_of_theta.values())
+
+	# dic_of_relative_abundance
+	dic_of_relative_abundance = {}
+	for key,value in dic_of_theta.iteritems():
+		dic_of_relative_abundance.update({key:(value/total_theta)})
+
+	# dic_of_corrected_reads_count
+	dic_of_corrected_reads_count ={}
+	for key,value in dic_of_relative_abundance.iteritems():
+		dic_of_corrected_reads_count.update({key:(value*total_redundant)})
+
+	return dic_of_relative_abundance, dic_of_corrected_reads_count
 
 
 
@@ -300,10 +320,14 @@ def main():
 	# dev print
 	#print (results.r_repr())
 
-	# Put estimation for theta in estimations_theta and associated locations in locations_theta
+	# Put estimation for theta in estimations_theta and associated locations in locations_theta; then organize data in dic_of_theta
 	theta = results.rx2("theta")
 	estimations_theta = tuple(theta)
 	locations_theta = tuple(theta.names)
+	# dic_of_theta
+	dic_of_theta = {}
+	for i in range(len(locations_theta)):
+		dic_of_theta.update({locations_theta[i]:estimations_theta[i]})
 
 	# Put different fragment lengths in length_phi and associated frequencies in freq_phi
 	phi = results.rx2("phi")
@@ -325,13 +349,25 @@ def main():
 
 	dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data))
 
+	# Box Plot
 	sequence_count = []
 	for v in sequence_count_list:
 		sequence_count.append(int(v))
-
 	box_plot(sequence_count, estimations_theta, nameFile)
 
+	# Unique lengths retrieved for a genomic location VS expected number of parent fragment for the same location
 	phi_VS_theta(length_phi, freq_phi, nameFile)
+
+	# Produce .tsv output about measured and abundance-corrected redundant reads count
+	dic_of_relative_abundance, dic_of_corrected_reads_count = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
+	corrected_file = open(nameFile+".abundance_corrected_SeqCount"+".tsv", 'w')
+	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tExtimated_Relative_Abundance\tCorrected_Sequence_Count")
+	genome_locations = dic_of_redundant_reads_count.keys()
+	genome_locations.sort()
+	for key in genome_locations:
+		splitted_location = key.split(' ')
+		corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(dic_of_relative_abundance[key]) + "\t" + str(dic_of_corrected_reads_count[key]))
+	corrected_file.close()
 
 	print "\n[AP]\tTask Finished, closing.\n"
 
