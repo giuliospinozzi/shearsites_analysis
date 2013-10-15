@@ -249,7 +249,8 @@ def redundant_reads_count (file_as_list):
 	i=0
 	count=1
 	check_last = False
-	for line in list_of_reads[1:-1]:
+	#for line in list_of_reads[1:-1]: #changed: presumed syntax error
+	for line in list_of_reads[1:]:
 		i+=1
 		if (line == list_of_reads[i-1]):
 			count = count + 1
