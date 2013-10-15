@@ -249,20 +249,17 @@ def redundant_reads_count (file_as_list):
 	i=0
 	count=1
 	check_last = False
-	#for line in list_of_reads[1:-1]: #changed: presumed syntax error
 	for line in list_of_reads[1:]:
 		i+=1
 		if (line == list_of_reads[i-1]):
 			count = count + 1
-			check_last = False
 		else:
 			#list_of_redundant_reads_count.append("\t".join(list_of_reads[i-1], count))
 			dic_of_redundant_reads_count.update({list_of_reads[i-1]:count})
 			count = 1
-			check_last = True
-	if (check_last == False):
-		#list_of_redundant_reads_count.append("\t".join(list_of_reads[i], count))
-		dic_of_redundant_reads_count.update({list_of_reads[i]:count})
+	#list_of_redundant_reads_count.append("\t".join(list_of_reads[i], count))
+	dic_of_redundant_reads_count.update({list_of_reads[i]:count})
+
 
 	#Convert dic to list
 	keys = dic_of_redundant_reads_count.keys()
