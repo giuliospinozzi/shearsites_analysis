@@ -333,16 +333,6 @@ def main():
 	for v in sequence_count_list:
 		sequence_count.append(int(v))
 
-	print locations_theta
-
-	count = 0
-	for k in dic_of_redundant_reads_count.keys():
-		if k not in locations_theta:
-			count +=1
-			print k
-	print len(locations_theta)-len(dic_of_redundant_reads_count.items())
-	print count
-
 	box_plot(sequence_count, estimations_theta, nameFile)
 
 	phi_VS_theta(length_phi, freq_phi, nameFile)
