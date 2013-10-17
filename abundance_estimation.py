@@ -92,7 +92,7 @@ def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile):
 		length_phi_numbers.append(float(num))
 	plt.figure()
 	# Phi plot
-	plt.plot(length_phi_numbers, freq_phi, 'r', hold=True, label="extimated distribution")
+	plt.plot(length_phi_numbers, freq_phi, 'r', hold=True, label="estimated distribution")
 	length_list_numbers = []
 	for num in length_list:
 		length_list_numbers.append(float(num))
@@ -142,17 +142,17 @@ def querySeqCount(host,user,passwd,db,db_table,destfile,nameFile):
 	return sequence_count
 
 
-def box_plot (real_data_list, extimated_data_list, dataset_name):
+def box_plot (real_data_list, estimated_data_list, dataset_name):
 	"""
 	dataset_name - string: dataset ID
 	real_data_list - list of sequence count for 'dataset_name'
-	extimated_data_list - list of estimated abundance (theta) for 'dataset_name'
+	estimated_data_list - list of estimated abundance (theta) for 'dataset_name'
 	"""
 	#normalizing data (Z-score)
 	normalized_real_data_list = stats.zscore(real_data_list)
-	normalized_extimated_data_list = stats.zscore(extimated_data_list)
+	normalized_estimated_data_list = stats.zscore(estimated_data_list)
 	#Set-up data
-	data = [normalized_real_data_list, normalized_extimated_data_list]
+	data = [normalized_real_data_list, normalized_estimated_data_list]
 	#Creating Boxplot
 	plt.figure()
 	ax = plt.axes()
@@ -181,9 +181,9 @@ def box_plot (real_data_list, extimated_data_list, dataset_name):
 	#ax.set_xlabel('Datasets')
 	ax.set_ylabel('Abundance / SeqCount (Z-score normalized)')
 	# draw temporary green and red lines and use them to create a legend
-	hR, = plt.plot([1,1],'r-') #extimated
+	hR, = plt.plot([1,1],'r-') #estimated
 	hG, = plt.plot([1,1],'g-') #real
-	plt.legend((hR, hG),('1) Extimated Data - Abundance', '2) Real Data - SequenceCount'))
+	plt.legend((hR, hG),('1) Estimated Data - Abundance', '2) Real Data - SequenceCount'))
 	hR.set_visible(False)
 	hG.set_visible(False)
 	#save figure and #show
@@ -361,7 +361,7 @@ def main():
 	# Produce .tsv output about measured and abundance-corrected redundant reads count
 	dic_of_relative_abundance, dic_of_corrected_reads_count = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
 	corrected_file = open(nameFile+".abundance_corrected_SeqCount"+".tsv", 'w')
-	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tExtimated_Relative_Abundance\tCorrected_Sequence_Count")
+	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count")
 	genome_locations = dic_of_redundant_reads_count.keys()
 	genome_locations.sort()
 	for key in genome_locations:
