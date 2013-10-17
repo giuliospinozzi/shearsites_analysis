@@ -86,7 +86,7 @@ def generateDataset(data):
 	return locations_list, length_list
 
 
-def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile):
+def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset):
 	length_phi_numbers = []
 	for num in length_phi:
 		length_phi_numbers.append(float(num))
@@ -103,12 +103,12 @@ def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile):
 	xs = np.linspace(0,max(length_list_numbers)+25,len(set(length_list_numbers))*10+250)
 	# Gaussian kde plot
 	plt.plot(xs,density(xs), hold=True, label="real distribution - gaussian kde")
-	fileName = nameFile + ".fragmentsLengthPlot.pdf"
+	fileName = dataset + "." + nameFile + ".fragmentsLengthPlot.pdf"
    	plt.legend()
 	# Labels
 	plt.xlabel('fragments length')
 	plt.ylabel('probability')
-	plt.title(nameFile + ' Fragments length data')
+	plt.title(dataset + "." + nameFile + ' Fragments length data')
    	plt.savefig(fileName, format="pdf")
    	return length_phi_numbers
 
@@ -142,11 +142,30 @@ def querySeqCount(host,user,passwd,db,db_table,destfile,nameFile):
 	return sequence_count
 
 
-def box_plot (real_data_list, estimated_data_list, dataset_name):
+def queryDataset(host,user,passwd,db,db_table,destfile,nameFile):
+	# System Call
+	query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT DISTINCT sample, tissue, treatment FROM %(db_table)s WHERE tag='%(nameFile)s'\" > %(destfile)s" %{
+     'host': host,
+     'user': user,
+     'passwd': passwd,
+     'db': db,
+     'db_table': db_table,
+     'nameFile': nameFile,
+     'destfile': destfile,
+    }
+	os.system(query)
+	f_in = open(destfile, "r")
+	for line in f_in:
+		string_splitted = line.split('\t')
+		value = str(string_splitted[0]) + "." + str(string_splitted[1]) + "." + str(string_splitted[2])
+	os.remove(destfile)
+	return value
+
+def box_plot (real_data_list, estimated_data_list, nameFile,dataset):
 	"""
-	dataset_name - string: dataset ID
-	real_data_list - list of sequence count for 'dataset_name'
-	estimated_data_list - list of estimated abundance (theta) for 'dataset_name'
+	nameFile - string: dataset ID
+	real_data_list - list of sequence count for 'nameFile'
+	estimated_data_list - list of estimated abundance (theta) for 'nameFile'
 	"""
 	#normalizing data (Z-score)
 	normalized_real_data_list = stats.zscore(real_data_list)
@@ -177,7 +196,7 @@ def box_plot (real_data_list, estimated_data_list, dataset_name):
 	plt.setp(bp['medians'][1], color='green')
 	ax.yaxis.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
 	ax.set_axisbelow(True)
-	ax.set_title('Boxplot comparison - {0}\n- n={1} redundant IS -'.format(dataset_name, len(real_data_list)))
+	ax.set_title('Boxplot comparison - {0}\n- n={1} redundant IS -'.format(dataset + "." + nameFile, len(real_data_list)))
 	#ax.set_xlabel('Datasets')
 	ax.set_ylabel('Abundance / SeqCount (Z-score normalized)')
 	# draw temporary green and red lines and use them to create a legend
@@ -187,7 +206,7 @@ def box_plot (real_data_list, estimated_data_list, dataset_name):
 	hR.set_visible(False)
 	hG.set_visible(False)
 	#save figure and #show
-	plt.savefig(dataset_name + '.comparative_boxplot' + '.pdf', format='pdf')
+	plt.savefig(dataset + "." + nameFile + '.comparative_boxplot' + '.pdf', format='pdf')
 	#Return
 	return 0
 
@@ -201,7 +220,7 @@ def expected_lengths_given_theta (length_phi, freq_phi, theta):
 	return expected_lenght
 
 
-def phi_VS_theta (length_phi, freq_phi,dataset_name):
+def phi_VS_theta (length_phi, freq_phi,nameFile,dataset):
 	# Retrieving points to plot
 	x_expected_unique_lenghts = []
 	y_number_of_parent_fragments = []
@@ -215,7 +234,7 @@ def phi_VS_theta (length_phi, freq_phi,dataset_name):
 	plt.xlabel('expected unique lengths (phi-i)')
 	plt.ylabel('number of parent fragments (theta-i)')
 	plt.title('phi VS theta')
-	plt.savefig(dataset_name + '.phiVStheta' + '.pdf', format='pdf')
+	plt.savefig(dataset + "." + nameFile + '.phiVStheta' + '.pdf', format='pdf')
 	return 0
 
 
@@ -335,17 +354,20 @@ def main():
 	length_phi = tuple(phi.names)
 
 	nameFile = data[0:-20]
-	length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile)
-
-	printThetaInfo(estimations_theta,locations_theta,nameFile)
 
 	host = "172.25.39.2"
 	user = "readonly"
 	passwd = "readonlypswd"
 	db = "sequence_qlam"
 	db_table = "osr_p16"
-	destfile = nameFile + ".sequence_count" + ".tsv"
+	#destfile = nameFile + ".sequence_count" + ".tsv"
 	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
+	dataset = queryDataset(host,user,passwd,db,db_table,"tmpFile.txt",nameFile)
+	dataset = dataset.rstrip('\n')
+
+	length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset)
+
+	printThetaInfo(estimations_theta,locations_theta,nameFile)
 
 	dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data))
 
@@ -353,14 +375,14 @@ def main():
 	sequence_count = []
 	for v in sequence_count_list:
 		sequence_count.append(int(v))
-	box_plot(sequence_count, estimations_theta, nameFile)
+	box_plot(sequence_count, estimations_theta, nameFile,dataset)
 
 	# Unique lengths retrieved for a genomic location VS expected number of parent fragment for the same location
-	phi_VS_theta(length_phi, freq_phi, nameFile)
+	phi_VS_theta(length_phi, freq_phi, nameFile, dataset)
 
 	# Produce .tsv output about measured and abundance-corrected redundant reads count
 	dic_of_relative_abundance, dic_of_corrected_reads_count = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
-	corrected_file = open(nameFile+".abundance_corrected_SeqCount"+".tsv", 'w')
+	corrected_file = open(dataset + "." + nameFile+".abundance_corrected_SeqCount"+".tsv", 'w')
 	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count")
 	genome_locations = dic_of_redundant_reads_count.keys()
 	genome_locations.sort()
