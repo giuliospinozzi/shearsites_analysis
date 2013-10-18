@@ -286,7 +286,7 @@ def corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta):
 
 	# Get Keys
 	red_keys = dic_of_redundant_reads_count.keys()
-	theta_keys = dic_of_theta.keys()
+	#theta_keys = dic_of_theta.keys()
 
 	# Convert items in numbers
 	for key,value in dic_of_redundant_reads_count.iteritems():
@@ -304,11 +304,65 @@ def corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta):
 		dic_of_relative_abundance.update({key:(value/total_theta)})
 
 	# dic_of_corrected_reads_count
-	dic_of_corrected_reads_count ={}
+	dic_of_corrected_reads_count = {}
 	for key,value in dic_of_relative_abundance.iteritems():
 		dic_of_corrected_reads_count.update({key:(value*total_redundant)})
 
-	return dic_of_relative_abundance, dic_of_corrected_reads_count
+	# dic_of_percentage_difference
+	dic_of_percentage_difference = {}
+	for key in red_keys:
+		dic_of_percentage_difference.update({key:(round(((dic_of_corrected_reads_count[key]-dic_of_redundant_reads_count[key])/dic_of_redundant_reads_count[key]*100),1))})
+
+	return dic_of_relative_abundance, dic_of_corrected_reads_count, dic_of_percentage_difference
+
+
+def fragment_lengths_statistics (unique_file_path):
+
+	# Function MAD calculates Median Absolute Deviation
+	def MAD (median, list_of_values):
+		list_of_absolute_deviations = []
+		for value in list_of_values:
+			list_of_absolute_deviations.append(abs(median-value))
+		mad = round(np.median(list_of_absolute_deviations),1)
+		return mad
+
+	#Acquiring data
+	dataset_file = open(unique_file_path, "r")
+	line_list = dataset_file.read().splitlines()
+
+	#Filling dic_of_unique_lengths, dic_of_unique_lengths_number
+	dic_of_unique_lengths = {}
+	dic_of_unique_lengths_number = {}
+
+	#For cycle, step 1
+	previous_line_split = line_list[0].split('\t')
+	previous_line_split[1] = int(previous_line_split[1])
+	tmp_list_of_lenghts = [previous_line_split[1]]
+
+	# Whole for cycle
+	for line in line_list[1:]:
+		line_split = line.split('\t')
+		line_split[1] = int(line_split[1])
+		if (line_split[0] == previous_line_split[0]):
+			tmp_list_of_lenghts.append(line_split[1])
+		else:
+			dic_of_unique_lengths.update({previous_line_split[0]:tmp_list_of_lenghts})
+			dic_of_unique_lengths_number.update({previous_line_split[0]:len(tmp_list_of_lenghts)})
+			previous_line_split = line_split
+			tmp_list_of_lenghts = [previous_line_split[1]]
+
+	# Store last entry in dic_of_unique_lengths
+	dic_of_unique_lengths.update({previous_line_split[0]:tmp_list_of_lenghts})
+	dic_of_unique_lengths_number.update({previous_line_split[0]:len(tmp_list_of_lenghts)})
+
+	#Filling dic_of_median_of_unique_lengths, dic_of_MAD
+	dic_of_median_of_unique_lengths = {}
+	dic_of_MAD = {}
+	for key,value in dic_of_unique_lengths.iteritems():
+		dic_of_median_of_unique_lengths.update({key:(round(np.median(value),1))})
+		dic_of_MAD.update({key:(MAD(dic_of_median_of_unique_lengths[key], value))})
+
+	return dic_of_unique_lengths, dic_of_unique_lengths_number, dic_of_median_of_unique_lengths, dic_of_MAD
 
 
 
@@ -369,6 +423,7 @@ def main():
 
 	printThetaInfo(estimations_theta,locations_theta,nameFile)
 
+	# Retrieving redundant reads data
 	dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data))
 
 	# Box Plot
@@ -377,20 +432,32 @@ def main():
 		sequence_count.append(int(v))
 	box_plot(sequence_count, estimations_theta, nameFile,dataset)
 
-	# Unique lengths retrieved for a genomic location VS expected number of parent fragment for the same location
+	# Plot: unique lengths retrieved for a genomic location VS expected number of parent fragment for the same location
 	phi_VS_theta(length_phi, freq_phi, nameFile, dataset)
 
-	# Produce .tsv output about measured and abundance-corrected redundant reads count
-	dic_of_relative_abundance, dic_of_corrected_reads_count = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
-	corrected_file = open(dataset + "." + nameFile+".abundance_corrected_SeqCount"+".tsv", 'w')
-	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count")
+
+	#######################################################################################################
+	# Produce .tsv output about measured redundant reads count, abundance-corrected redundant reads count # 
+	# and some descriptive of unique fragment lengths                                                     #
+	#######################################################################################################
+
+	# Retrieving data
+	dic_of_relative_abundance, dic_of_corrected_reads_count, dic_of_percentage_difference = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
+	dic_of_unique_lengths, dic_of_unique_lengths_number, dic_of_median_of_unique_lengths, dic_of_MAD = fragment_lengths_statistics(data)
+
+	# Writing File
+	corrected_file = open(dataset + "." + nameFile+".OUTCOMES"+".tsv", 'w')
+	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber of fragments unique lengths\tLength Min\tLength Max\tLenght Median\tMAD\tExplicit List")
 	genome_locations = dic_of_redundant_reads_count.keys()
 	genome_locations.sort()
 	for key in genome_locations:
 		splitted_location = key.split(' ')
-		corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(dic_of_relative_abundance[key]) + "\t" + str(dic_of_corrected_reads_count[key]))
+		corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key]))
 	corrected_file.close()
 
+	#######################################################################################################
+
+	# Last print for user
 	print "\n[AP]\tTask Finished, closing.\n"
 
 
