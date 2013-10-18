@@ -365,6 +365,30 @@ def fragment_lengths_statistics (unique_file_path):
 	return dic_of_unique_lengths, dic_of_unique_lengths_number, dic_of_median_of_unique_lengths, dic_of_MAD
 
 
+def is_CEM (genome_location_string):
+	response = False
+	cem_symbol = None
+	cem_locations = [('chr11',64536791,64537194), ('chr17',47732128,47732367), ('chr17',2032108,2032381), ('chr2',24546189,24546598), ('chr2',73761972,73762443), ('chr16',28497050,28497538)]
+	#cem_locations.append(('chr1',19140600,19140800))	#Fake to test --dataset LTR22.LC90.shearsites.uniq.txt
+	cem_symbols_list = ['$','#','@','*','%','!']
+	#cem_symbols_list.append('TEST!')	#Fake to test
+	
+	splitted_location = genome_location_string.split(' ') # 0 -> chr; 1 -> locus; 2 -> strand
+	splitted_location[1] = int(splitted_location[1])
+
+	i=0;
+	for cem_location_tupla in cem_locations:
+		if (splitted_location[0] in cem_location_tupla[0]):
+			if (splitted_location[1] in range(cem_location_tupla[1],cem_location_tupla[2]+1)):
+				response = True
+				cem_symbol = cem_symbols_list[i]
+				#print response, cem_symbols_list	#Test 
+				return response, cem_symbol
+		i+=1
+
+	return response, cem_symbol
+
+
 
 #########################################################################################
 ### MAIN
@@ -438,7 +462,7 @@ def main():
 
 	#######################################################################################################
 	# Produce .tsv output about measured redundant reads count, abundance-corrected redundant reads count # 
-	# and some descriptive of unique fragment lengths                                                     #
+	# and some descriptive of unique fragments lengths                                                    #
 	#######################################################################################################
 
 	# Retrieving data
@@ -447,12 +471,16 @@ def main():
 
 	# Writing File
 	corrected_file = open(dataset + "." + nameFile+".OUTCOMES"+".tsv", 'w')
-	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber of fragments unique lengths\tLength Min\tLength Max\tLenght Median\tMAD\tExplicit List")
+	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tMAD\tExplicit_List\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
 	genome_locations = dic_of_redundant_reads_count.keys()
 	genome_locations.sort()
 	for key in genome_locations:
 		splitted_location = key.split(' ')
 		corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key]))
+		response, cem_symbol = is_CEM(key)
+		if (response == True):
+			corrected_file.write("\t" + cem_symbol)
+
 	corrected_file.close()
 
 	#######################################################################################################
