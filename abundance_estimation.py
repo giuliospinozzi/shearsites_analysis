@@ -411,7 +411,7 @@ def lengths_explicit_list (file_as_list): # from_file_to_list (unique_file_path,
 		count = Counter(value)
 		tmp_list = []
 		for key_2 in sorted(count.keys()):
-			tmp_list.append(str(key_2) + ":" + str(int(count[key_2])))
+			tmp_list.append(int(count[key_2]))
 		dic_of_lengths.update({key:tmp_list})
 
 	return dic_of_lengths
@@ -500,7 +500,7 @@ def main():
 
 	# Writing File
 	corrected_file = open(dataset + "." + nameFile+".outcomes"+".tsv", 'w')
-	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tRounded_Lenght_Median\tMAD\tUnique_Lengths_List\tExplicit_Lengths_list\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
+	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tRounded_Lenght_Median\tMAD\tUnique_Lengths_List\tUnique_Lengths_Amount\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
 	genome_locations = dic_of_redundant_reads_count.keys()
 	genome_locations.sort()
 	for key in genome_locations:
