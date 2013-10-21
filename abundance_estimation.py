@@ -397,7 +397,7 @@ def lengths_explicit_list (file_as_list): # from_file_to_list (unique_file_path,
 
 	dic_of_lengths = {}
 	line_split = file_as_list[0].split('\t')
-	dic_of_lengths.update{line_split[0]:[int(line_split[1])]}
+	dic_of_lengths.update({line_split[0]:[int(line_split[1])]})
 	
 	for line in file_as_list[1:]:
 		line_split = line.split('\t')
