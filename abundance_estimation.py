@@ -372,9 +372,9 @@ def is_CEM (genome_location_string):
 	response = False
 	cem_symbol = None
 	cem_locations = [('chr11',64536791,64537194), ('chr17',47732128,47732367), ('chr17',2032108,2032381), ('chr2',24546189,24546598), ('chr2',73761972,73762443), ('chr16',28497050,28497538)]
-	cem_locations.append(('chr1',1776600,1776700))	#Fake to test: 1776639
+	#cem_locations.append(('chr1',1776600,1776700))	#Fake to test: 1776639
 	cem_symbols_list = ['$','#','@','*','%','!']
-	cem_symbols_list.append('is_CEM_TEST')	#Fake to test
+	#cem_symbols_list.append('is_CEM_TEST')	#Fake to test
 	
 	splitted_location = genome_location_string.split(' ') # 0 -> chr; 1 -> locus; 2 -> strand
 	splitted_location[1] = int(splitted_location[1])
