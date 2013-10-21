@@ -434,11 +434,11 @@ def main():
 
 	nameFile = data[0:-20]
 
-	host = "172.25.39.2"
+	host = "172.25.39.57"
 	user = "readonly"
 	passwd = "readonlypswd"
 	db = "sequence_qlam"
-	db_table = "osr_p16"
+	db_table = "osr_p5n6_p20"
 	#destfile = nameFile + ".sequence_count" + ".tsv"
 	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
 	dataset = queryDataset(host,user,passwd,db,db_table,"tmpFile.txt",nameFile)
