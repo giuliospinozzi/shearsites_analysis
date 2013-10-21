@@ -411,7 +411,7 @@ def lengths_explicit_list (file_as_list): # from_file_to_list (unique_file_path,
 		count = Counter(value)
 		tmp_list = []
 		for key_2 in sorted(count.keys()):
-			tmp_list.append(key_2 + ":" + str(int(count[key_2])))
+			tmp_list.append(str(key_2) + ":" + str(int(count[key_2])))
 		dic_of_lengths.update({key:tmp_list})
 
 	return dic_of_lengths
