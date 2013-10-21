@@ -241,9 +241,10 @@ def phi_VS_theta (length_phi, freq_phi,nameFile,dataset):
 	return 0
 
 
-def from_file_to_list (unique_file_path):
+def from_file_to_list (unique_file_path, file_type):
 	unique_file_path_split = unique_file_path.split('.uniq.txt')
-	source_file_path = unique_file_path_split[0] + '.tsv'
+	#source_file_path = unique_file_path_split[0] + '.tsv'
+	source_file_path = unique_file_path_split[0] + file_type
 	dataset_file = open(source_file_path, "r")
 	file_as_list = dataset_file.readlines()
 	dataset_file.close()
@@ -451,7 +452,7 @@ def main():
 	printThetaInfo(estimations_theta,locations_theta,nameFile)
 
 	# Retrieving redundant reads data
-	dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data))
+	dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data,'.tsv'))
 
 	# Box Plot
 	sequence_count = []
@@ -474,7 +475,7 @@ def main():
 
 	# Writing File
 	corrected_file = open(dataset + "." + nameFile+".OUTCOMES"+".tsv", 'w')
-	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tRounded_Lenght_Median\tMAD\tExplicit_List\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
+	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tRounded_Lenght_Median\tMAD\tUnique_Length_List\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
 	genome_locations = dic_of_redundant_reads_count.keys()
 	genome_locations.sort()
 	for key in genome_locations:
