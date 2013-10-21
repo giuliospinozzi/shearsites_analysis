@@ -27,13 +27,17 @@ RUN_STARTED_AT=`date +"%Y-%m-%d %H:%M:%S"`;
 RUN_ID="`whoami`"" ${RUN_STARTED_AT}";
 #==============================================================================#
 
+##### ============================ RUN INFO ============================== #####
+BEDs="${1}";
+#==============================================================================#
+
 
 
 ##### ============== PYTHON: ShearSites_identification.py ================ #####
 echo "PYTHON: ShearSites Identification"
 for k in $(ls *.sorted.bed); do 
   n=${k:0:10};
-  python ShearSites_identification.py --bed1 $k --bed2 $n.sorted.allr2reads.bed;
+  python ShearSites_identification.py --bed1 $BEDs/$k --bed2 $BEDs/$n.sorted.allr2reads.bed;
 done
 #==============================================================================#
 
