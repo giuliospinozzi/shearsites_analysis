@@ -404,7 +404,7 @@ def lengths_explicit_list (file_as_list): # from_file_to_list (unique_file_path,
 		if (dic_of_lengths.has_key(line_split[0])):
 			dic_of_lengths[line_split[0]].append(int(line_split[1]))
 		else:
-			dic_of_lengths.update{line_split[0]:[int(line_split[1])]}
+			dic_of_lengths.update({line_split[0]:[int(line_split[1])]})
 
 	return dic_of_lengths
 
