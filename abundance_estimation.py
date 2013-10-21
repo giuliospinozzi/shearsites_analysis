@@ -139,6 +139,7 @@ def querySeqCount(host,user,passwd,db,db_table,destfile,nameFile):
 		string_splitted = line.split('\t')
 		value = string_splitted[3].split('\n')
 		sequence_count["chr" + string_splitted[0] + " " + string_splitted[1] + " " + string_splitted[2]] = value[0]
+	f_in.close()
 	return sequence_count
 
 
@@ -159,6 +160,7 @@ def queryDataset(host,user,passwd,db,db_table,destfile,nameFile):
 	for line in f_in:
 		string_splitted = line.split('\t')
 		value = str(string_splitted[0]) + "." + str(string_splitted[1]) + "." + str(string_splitted[2])
+	f_in.close()
 	os.remove(destfile)
 	return value
 
@@ -434,7 +436,7 @@ def main():
 
 	nameFile = data[0:-20]
 
-	host = "172.25.39.57"
+	host = "localhost"
 	user = "readonly"
 	passwd = "readonlypswd"
 	db = "sequence_qlam"
