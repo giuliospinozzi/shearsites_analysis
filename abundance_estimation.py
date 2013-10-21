@@ -96,7 +96,7 @@ def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset):
 	length_list_numbers = []
 	for num in length_list:
 		length_list_numbers.append(float(num))
-	binning = math.ceil(len(set(length_list_numbers))/2)
+	binning = int(math.ceil(len(set(length_list_numbers))/2))
 	# Plot (length-frequency) of input data
 	plt.hist(length_list_numbers, bins=binning, normed=True, facecolor='green', alpha=0.3, hold=True, label="real distribution - histogram")
 	density = gaussian_kde(length_list_numbers)
