@@ -15,6 +15,7 @@ from rpy2.robjects.packages import importr
 sonicLength = importr("sonicLength")
 
 from scipy.stats import gaussian_kde
+from collections import Counter
 
 # Uncomment for Rpy2 2.0
 # from rpy2.robjects import r
@@ -405,6 +406,13 @@ def lengths_explicit_list (file_as_list): # from_file_to_list (unique_file_path,
 			dic_of_lengths[line_split[0]].append(int(line_split[1]))
 		else:
 			dic_of_lengths.update({line_split[0]:[int(line_split[1])]})
+
+	for key, value in dic_of_lengths.iteritems():
+		count = Counter(value)
+		tmp_list = []
+		for key_2 in sorted(count.keys()):
+			tmp_list.append(key_2 + ":" + str(int(count[key_2])))
+		dic_of_lengths.update({key:tmp_list})
 
 	return dic_of_lengths
 
