@@ -37,7 +37,7 @@ BEDs="${1}";
 echo "PYTHON: ShearSites Identification"
 for k in $(ls *.sorted.bed); do 
   n=${k:0:10};
-  python ShearSites_identification.py --bed1 $BEDs/$k --bed2 $BEDs/$n.sorted.allr2reads.bed;
+  python ShearSites_identification.py --bed1 $k --bed2 $n.sorted.allr2reads.bed;
 done
 #==============================================================================#
 
