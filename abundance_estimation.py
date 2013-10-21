@@ -155,6 +155,7 @@ def queryDataset(host,user,passwd,db,db_table,destfile,nameFile):
     }
 	os.system(query)
 	f_in = open(destfile, "r")
+	value = None
 	for line in f_in:
 		string_splitted = line.split('\t')
 		value = str(string_splitted[0]) + "." + str(string_splitted[1]) + "." + str(string_splitted[2])
@@ -471,12 +472,12 @@ def main():
 
 	# Writing File
 	corrected_file = open(dataset + "." + nameFile+".OUTCOMES"+".tsv", 'w')
-	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tMAD\tExplicit_List\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
+	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tRounded_Lenght_Median\tMAD\tExplicit_List\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
 	genome_locations = dic_of_redundant_reads_count.keys()
 	genome_locations.sort()
 	for key in genome_locations:
 		splitted_location = key.split(' ')
-		corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key]))
+		corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(math.ceil(dic_of_median_of_unique_lengths[key]))+ "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key]))
 		response, cem_symbol = is_CEM(key)
 		if (response == True):
 			corrected_file.write("\t" + cem_symbol)
