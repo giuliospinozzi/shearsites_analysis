@@ -469,6 +469,7 @@ def main():
 	#destfile = nameFile + ".sequence_count" + ".tsv"
 	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
 	dataset = queryDataset(host,user,passwd,db,db_table,"tmpFile.txt",nameFile)
+	dataset.replace("/","-")
 	dataset = dataset.rstrip('\n')
 
 	length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset)
