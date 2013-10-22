@@ -139,7 +139,7 @@ def shearSites_identification(dict_r1, dict_r2, outfilename, parameter):
 					if (values_r1[4] == '+' and values_r2[4] == '-' and len_plus < 1200):
 						f_out.write(key + '\t' + values_r1[0] + '\t' + values_r1[1] + '\t' + values_r1[2] + '\t' + values_r1[3] + '\t' + values_r1[4] + '\t' + values_r2[0] + '\t' + values_r2[1] + '\t' + values_r2[2] + '\t' + values_r2[3] + '\t' + values_r2[4] + '\t' + str(len_plus) + '\n')
 					elif (values_r1[4] == '-' and values_r2[4] == '+') and (len_minus < 1200):
-						f_out.write(key + '\t' + values_r1[0] + '\t' + values_r1[1] + '\t' + values_r1[2] + '\t' + values_r1[3] + '\t' + values_r1[4] + '\t' + values_r2[0] + '\t' + values_r2[1] + '\t' + values_r2[2] + '\t' + values_r2[3] + '\t' + values_r2[4] + '\t' + str(len_minus) + '\n')
+						f_out.write(key + '\t' + values_r1[0] + '\t' + values_r1[2] + '\t' + values_r1[1] + '\t' + values_r1[3] + '\t' + values_r1[4] + '\t' + values_r2[0] + '\t' + values_r2[1] + '\t' + values_r2[2] + '\t' + values_r2[3] + '\t' + values_r2[4] + '\t' + str(len_minus) + '\n')
 
 	f_out.close()
 
