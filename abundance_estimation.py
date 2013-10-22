@@ -465,12 +465,12 @@ def main():
 	user = "readonly"
 	passwd = "readonlypswd"
 	db = "sequence_qlam"
-	db_table = "osr_p5n6_p20"
+	db_table = "gsk_FB386388_p20_f50ec1o3"
 	#destfile = nameFile + ".sequence_count" + ".tsv"
 	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
 	dataset = queryDataset(host,user,passwd,db,db_table,"tmpFile.txt",nameFile)
-	dataset.replace("/","-")
 	dataset = dataset.rstrip('\n')
+	dataset = dataset.replace("/","-")
 
 	length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset)
 
