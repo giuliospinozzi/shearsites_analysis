@@ -129,6 +129,7 @@ def shearSites_identification(dict_r1, dict_r2, outfilename, parameter):
 	else:
 	# Real shear sites
 		f_out = open(outfilename, 'w')
+		# Not a bed file!!!!!
 		for key in dict_r1.keys():
 			values_r1 = dict_r1[key]
 			if dict_r2.has_key(key):
@@ -184,6 +185,7 @@ def main():
 		dict_r1, dict_r2 = generate_BEDs_dict(bed_r1, bed_r2)
 
 		parameter = args.all
+		# Not a bed file!!!!!
 		shearSites_identification(dict_r1, dict_r2, outfilename, parameter)
 
 		# generateOutputForR("/home/giulio/Dropbox/tmp/")
