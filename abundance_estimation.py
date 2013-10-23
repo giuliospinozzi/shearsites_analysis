@@ -434,33 +434,6 @@ def main():
 	print "\n[AP]\t"+"######## "+f_name[0] + '.' + f_name[1]+" ########"
 	print "\n[AP]\tChecked inputs, now acquiring data"
 
-	locations_list, length_list = generateDataset(data)
-
-	# Alias for estAbund calling
-	estAbund = sonicLength.estAbund
-
-	# Call estAbund and store returned object in results
-	results = estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
-
-	# dev print
-	#print (results.r_repr())
-
-	# Put estimation for theta in estimations_theta and associated locations in locations_theta; then organize data in dic_of_theta
-	theta = results.rx2("theta")
-	estimations_theta = tuple(theta)
-	locations_theta = tuple(theta.names)
-	# dic_of_theta
-	dic_of_theta = {}
-	for i in range(len(locations_theta)):
-		dic_of_theta.update({locations_theta[i]:estimations_theta[i]})
-
-	# Put different fragment lengths in length_phi and associated frequencies in freq_phi
-	phi = results.rx2("phi")
-	freq_phi = tuple(phi)
-	length_phi = tuple(phi.names)
-
-	nameFile = data[0:-20]
-
 	host = "localhost"
 	user = "readonly"
 	passwd = "readonlypswd"
@@ -468,55 +441,84 @@ def main():
 	db_table = "gsk_FB386388_p20_f50ec1o3"
 	#destfile = nameFile + ".sequence_count" + ".tsv"
 	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
+	nameFile = data[0:-20]
 	dataset = queryDataset(host,user,passwd,db,db_table,"tmpFile.txt",nameFile)
-	dataset = dataset.rstrip('\n')
-	dataset = dataset.replace("/","-")
+	if dataset is not None:
+		dataset = dataset.rstrip('\n')
+		dataset = dataset.replace("/","-")
 
-	length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset)
+		locations_list, length_list = generateDataset(data)
 
-	printThetaInfo(estimations_theta,locations_theta,nameFile)
+		# Alias for estAbund calling
+		estAbund = sonicLength.estAbund
 
-	# Retrieving redundant reads data
-	dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data,'.tsv'))
+		# Call estAbund and store returned object in results
+		results = estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
 
-	# Box Plot
-	sequence_count = []
-	for v in sequence_count_list:
-		sequence_count.append(int(v))
-	box_plot(sequence_count, estimations_theta, nameFile,dataset)
+		# dev print
+		#print (results.r_repr())
 
-	# Plot: unique lengths retrieved for a genomic location VS expected number of parent fragment for the same location
-	phi_VS_theta(length_phi, freq_phi, nameFile, dataset)
+		# Put estimation for theta in estimations_theta and associated locations in locations_theta; then organize data in dic_of_theta
+		theta = results.rx2("theta")
+		estimations_theta = tuple(theta)
+		locations_theta = tuple(theta.names)
+		# dic_of_theta
+		dic_of_theta = {}
+		for i in range(len(locations_theta)):
+			dic_of_theta.update({locations_theta[i]:estimations_theta[i]})
+
+		# Put different fragment lengths in length_phi and associated frequencies in freq_phi
+		phi = results.rx2("phi")
+		freq_phi = tuple(phi)
+		length_phi = tuple(phi.names)
+
+		length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset)
+
+		printThetaInfo(estimations_theta,locations_theta,nameFile)
+
+		# Retrieving redundant reads data
+		dic_of_redundant_reads_count, sequence_count_list = redundant_reads_count(from_file_to_list(data,'.tsv'))
+
+		# Box Plot
+		sequence_count = []
+		for v in sequence_count_list:
+			sequence_count.append(int(v))
+		box_plot(sequence_count, estimations_theta, nameFile,dataset)
+
+		# Plot: unique lengths retrieved for a genomic location VS expected number of parent fragment for the same location
+		phi_VS_theta(length_phi, freq_phi, nameFile, dataset)
 
 
-	#######################################################################################################
-	# Produce .tsv output about measured redundant reads count, abundance-corrected redundant reads count # 
-	# and some descriptive of unique fragments lengths                                                    #
-	#######################################################################################################
+		#######################################################################################################
+		# Produce .tsv output about measured redundant reads count, abundance-corrected redundant reads count # 
+		# and some descriptive of unique fragments lengths                                                    #
+		#######################################################################################################
 
-	# Retrieving data
-	dic_of_relative_abundance, dic_of_corrected_reads_count, dic_of_percentage_difference = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
-	dic_of_unique_lengths, dic_of_unique_lengths_number, dic_of_median_of_unique_lengths, dic_of_MAD = fragment_lengths_statistics(data)
-	dic_of_lengths = lengths_explicit_list(from_file_to_list(data,'.txt'))
+		# Retrieving data
+		dic_of_relative_abundance, dic_of_corrected_reads_count, dic_of_percentage_difference = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
+		dic_of_unique_lengths, dic_of_unique_lengths_number, dic_of_median_of_unique_lengths, dic_of_MAD = fragment_lengths_statistics(data)
+		dic_of_lengths = lengths_explicit_list(from_file_to_list(data,'.txt'))
 
-	# Writing File
-	corrected_file = open(dataset + "." + nameFile+".outcomes"+".tsv", 'w')
-	corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tRounded_Lenght_Median\tMAD\tUnique_Lengths_List\tUnique_Lengths_Amount\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
-	genome_locations = dic_of_redundant_reads_count.keys()
-	genome_locations.sort()
-	for key in genome_locations:
-		splitted_location = key.split(' ')
-		corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(math.ceil(dic_of_median_of_unique_lengths[key]))+ "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key]) + "\t" + str(dic_of_lengths[key]))
-		response, cem_symbol = is_CEM(key)
-		if (response == True):
-			corrected_file.write("\t" + cem_symbol)
+		# Writing File
+		corrected_file = open(dataset + "." + nameFile+".outcomes"+".tsv", 'w')
+		corrected_file.write("Chromosome\tIntegration_locus\tStrand\tSequence_Count\tEstimated_Relative_Abundance\tCorrected_Sequence_Count\tPercentage_Variation\tNumber_of_fragments_of_unique_lengths\tLength_Min\tLength_Max\tLenght_Median\tRounded_Lenght_Median\tMAD\tUnique_Lengths_List\tUnique_Lengths_Amount\tCEM_region_?") ## ! NB ! ## \tCEM_region_?" has to remain the last!!!
+		genome_locations = dic_of_redundant_reads_count.keys()
+		genome_locations.sort()
+		for key in genome_locations:
+			splitted_location = key.split(' ')
+			corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(math.ceil(dic_of_median_of_unique_lengths[key]))+ "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key]) + "\t" + str(dic_of_lengths[key]))
+			response, cem_symbol = is_CEM(key)
+			if (response == True):
+				corrected_file.write("\t" + cem_symbol)
 
-	corrected_file.close()
+		corrected_file.close()
 
-	#######################################################################################################
+		#######################################################################################################
 
-	# Last print for user
-	print "\n[AP]\tTask Finished, closing.\n"
+		# Last print for user
+		print "\n[AP]\tTask Finished, closing.\n"
+	else:
+		print "\n[AP]\tThe dataset is not in the reference DB. Skipped.\n"
 
 
 # sentinel
