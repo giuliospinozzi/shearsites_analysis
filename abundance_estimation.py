@@ -124,28 +124,6 @@ def printThetaInfo(estimations_theta,locations_theta,nameFile):
 		f_out.write(str(locations_theta[l]) + '\t' + str(estimations_theta[l]) + '\n')
 
 
-def querySeqCount(host,user,passwd,db,db_table,destfile,nameFile):
-	# System Call
-	query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT chr, integration_locus, strand, count(*) AS sequence_count FROM %(db_table)s WHERE tag='%(nameFile)s' GROUP BY chr, integration_locus,  strand ORDER BY chr ASC , integration_locus ASC\" > %(destfile)s " %{
-     'host': host,
-     'user': user,
-     'passwd': passwd,
-     'db': db,
-     'db_table': db_table,
-     'nameFile': nameFile,
-     'destfile': destfile,
-    }
-	os.system(query)
-	sequence_count = {}
-	f_in = open(destfile, "r")
-	for line in f_in:
-		string_splitted = line.split('\t')
-		value = string_splitted[3].split('\n')
-		sequence_count["chr" + string_splitted[0] + " " + string_splitted[1] + " " + string_splitted[2]] = value[0]
-	f_in.close()
-	return sequence_count
-
-
 def queryDataset(host,user,passwd,db,db_table,destfile,nameFile):
 	# System Call
 	query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT DISTINCT sample, tissue, treatment FROM %(db_table)s WHERE tag='%(nameFile)s'\" > %(destfile)s" %{
@@ -203,7 +181,6 @@ def box_plot (real_data_list, estimated_data_list, nameFile,dataset):
 	ax.yaxis.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
 	ax.set_axisbelow(True)
 	ax.set_title('Boxplot comparison - {0}\n- n={1} redundant IS -'.format(dataset + "." + nameFile, len(real_data_list)))
-	#ax.set_xlabel('Datasets')
 	ax.set_ylabel('Abundance / SeqCount (Z-score normalized)')
 	# draw temporary green and red lines and use them to create a legend
 	hR, = plt.plot([1,1],'r-') #estimated
@@ -246,7 +223,6 @@ def phi_VS_theta (length_phi, freq_phi,nameFile,dataset):
 
 def from_file_to_list (unique_file_path, file_type):
 	unique_file_path_split = unique_file_path.split('.uniq.txt')
-	#source_file_path = unique_file_path_split[0] + '.tsv'
 	source_file_path = unique_file_path_split[0] + file_type
 	dataset_file = open(source_file_path, "r")
 	file_as_list = dataset_file.readlines()
@@ -272,10 +248,8 @@ def redundant_reads_count (file_as_list):
 		if (line == list_of_reads[i-1]):
 			count = count + 1
 		else:
-			#list_of_redundant_reads_count.append("\t".join(list_of_reads[i-1], count))
 			dic_of_redundant_reads_count.update({list_of_reads[i-1]:count})
 			count = 1
-	#list_of_redundant_reads_count.append("\t".join(list_of_reads[i], count))
 	dic_of_redundant_reads_count.update({list_of_reads[i]:count})
 
 
@@ -378,7 +352,6 @@ def is_CEM (genome_location_string):
 	cem_locations = [('chr11',64536791,64537194), ('chr17',47732128,47732367), ('chr17',2032108,2032381), ('chr2',24546189,24546598), ('chr2',73761972,73762443), ('chr16',28497050,28497538)]
 	#cem_locations.append(('chr1',1776600,1776700))	#Fake to test: 1776639
 	cem_symbols_list = ['$','#','@','*','%','!']
-	#cem_symbols_list.append('is_CEM_TEST')	#Fake to test
 	
 	splitted_location = genome_location_string.split(' ') # 0 -> chr; 1 -> locus; 2 -> strand
 	splitted_location[1] = int(splitted_location[1])
@@ -389,7 +362,6 @@ def is_CEM (genome_location_string):
 			if (splitted_location[1] in range(cem_location_tupla[1],cem_location_tupla[2]+1)):
 				response = True
 				cem_symbol = cem_symbols_list[i]
-				#print response, cem_symbols_list	#Test 
 				return response, cem_symbol
 		i+=1
 
@@ -441,8 +413,7 @@ def main():
 	passwd = "readonlypswd"
 	db = args.db_schema
 	db_table = args.db_table
-	#destfile = nameFile + ".sequence_count" + ".tsv"
-	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
+
 	nameFile = data[0:-20]
 	dataset = queryDataset(host,user,passwd,db,db_table,"tmpFile.txt",nameFile)
 	if dataset is not None:
@@ -456,9 +427,6 @@ def main():
 
 		# Call estAbund and store returned object in results
 		results = estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
-
-		# dev print
-		#print (results.r_repr())
 
 		# Put estimation for theta in estimations_theta and associated locations in locations_theta; then organize data in dic_of_theta
 		theta = results.rx2("theta")

@@ -32,7 +32,7 @@ RUN_ID="`whoami`"" ${RUN_STARTED_AT}";
 #==============================================================================#
 
 
-echo "${RUN_ID}
+echo "<< ${RUN_ID} >>
 "
 
 ##### ============================ SETTINGS ============================== #####
@@ -47,6 +47,8 @@ OUTDIR="${NGSWORKINGPATH}/${PROJECT}/${EXPERIMENT}/quantification/"${DBTABLE};
 
 
 ##### ============== PYTHON: ShearSites_identification.py ================ #####
+echo "
++--------------------------------------------------------+"
 echo "PYTHON: ShearSites Identification"
 for k in $(ls ${INPUTDIR_POOL_BED}/*.sorted.bed); do
   n=${k:0:-28};
@@ -79,5 +81,14 @@ for k in $(ls *.shearsites.uniq.txt); do
 done
 #==============================================================================#
 
+echo "
+**********************************************************"
+echo "Moving output files in the destination directory..."
+mkdir ${OUTDIR}
 cp *.tsv *.txt *.pdf ${OUTDIR}
+echo "...done!"
+echo "
+Removing temp files..."
 rm *.pdf *.txt *.tsv
+echo "...Finished!
+**********************************************************"

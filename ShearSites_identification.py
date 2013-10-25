@@ -93,8 +93,7 @@ def generate_BEDs_dict(bed_r1, bed_r2):
 		key = string_splitted[3].split('/1')
 		key = key[0]
 		dict_r1[key] = string_splitted[0], string_splitted[1], string_splitted[2], string_splitted[4], string_splitted[5]
-	# print "\nR1 Keys: " 
-	# print dict_r1.keys()
+
 	for line in f_r2:
 		array.append(line)
 		string_splitted = line.split('\t')
@@ -107,8 +106,6 @@ def generate_BEDs_dict(bed_r1, bed_r2):
 				dict_r2[key] = string_splitted[0], string_splitted[1], string_splitted[2], string_splitted[4], string_splitted[5]
 		else:
 			dict_r2[key] = string_splitted[0], string_splitted[1], string_splitted[2], string_splitted[4], string_splitted[5]
-	# print "\nR2 Keys: "
-	# print dict_r2.keys()
 
 	return dict_r1, dict_r2
 
@@ -145,17 +142,6 @@ def shearSites_identification(dict_r1, dict_r2, outfilename, parameter):
 	f_out.close()
 
 
-# # This method generates the output file format for R analysis with Berry Model (sonicLength)
-# def generateOutputForR(path):
-# 	# The system call produces a txt file with chr, locus of integration (start), strand and length of fragment for each tsv.
-# 	# Unique tuples and non unique
-# 	call = "for k in $(ls *.shearsites.tsv); do awk '{print $2\" \"$3\" \"$6\"\t\"$12}' %(path)s$k | sort > %(path)s${k:0:21}.txt ;done" %{	'path': path,
-# 	}
-# 	call_uniq = "for k in $(ls *.shearsites.tsv); do awk '{print $2\" \"$3\" \"$6\"\t\"$12}' %(path)s$k | sort | uniq > %(path)s${k:0:21}.uniq.txt ;done" %{	'path': path,
-# 	}
-# 	os.system(call)
-# 	os.system(call_uniq)
-
 
 
 #########################################################################################
@@ -189,7 +175,6 @@ def main():
 		# Not a bed file!!!!!
 		shearSites_identification(dict_r1, dict_r2, outfilename, parameter)
 
-		# generateOutputForR("/home/giulio/Dropbox/tmp/")
 	else:
 		print "\n[AP]\tEmpty input file: no output!!"
 
