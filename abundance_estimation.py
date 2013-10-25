@@ -55,6 +55,8 @@ APP --dataset LTR60.LC90.shearsites.uniq.txt
 
 parser = argparse.ArgumentParser(usage = usage_example, epilog = "[ hSR-TIGET - Vector Integration Core - Bioinformatics ] \n", description = description)
 parser.add_argument('--dataset', dest="dataset_file", help="Dataset file to process in R. No default option.", action="store", required=True)
+parser.add_argument('--db_schema', dest="db_schema", help="Database schema. No default option.", action="store", required=True)
+parser.add_argument('--db_table', dest="db_table", help="Database table. No default option.", action="store", required=True)
 args = parser.parse_args()
 
 
@@ -437,8 +439,8 @@ def main():
 	host = "localhost"
 	user = "readonly"
 	passwd = "readonlypswd"
-	db = "sequence_qlam"
-	db_table = "gsk_FB386388_p20_f50ec1o3"
+	db = args.db_schema
+	db_table = args.db_table
 	#destfile = nameFile + ".sequence_count" + ".tsv"
 	#sequence_count = querySeqCount(host,user,passwd,db,db_table,destfile,nameFile)
 	nameFile = data[0:-20]
@@ -495,7 +497,7 @@ def main():
 		#######################################################################################################
 
 		# Retrieving data
-		dic_of_relative_abundance, dic_of_corrected_reads_count, dic_of_percentage_difference = corrected_reads_count (dic_of_redundant_reads_count, dic_of_theta)
+		dic_of_relative_abundance, dic_of_corrected_reads_count, dic_of_percentage_difference = corrected_reads_count(dic_of_redundant_reads_count, dic_of_theta)
 		dic_of_unique_lengths, dic_of_unique_lengths_number, dic_of_median_of_unique_lengths, dic_of_MAD = fragment_lengths_statistics(data)
 		dic_of_lengths = lengths_explicit_list(from_file_to_list(data,'.txt'))
 

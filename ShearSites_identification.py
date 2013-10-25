@@ -171,8 +171,9 @@ def main():
 	
 	bed_r1 = args.bedfile_r1
 	bed_r2 = args.bedfile_r2
+	len_file_bed_1 = len(bed_r1)-38
 
-	f_name = bed_r1.split(".")
+	f_name = bed_r1[len_file_bed_1:-28].split(".")
 	outfilename = f_name[0] + '.' + f_name[1] + '.shearsites.tsv'
 
 	print "\n[AP]\t"+"######## "+f_name[0] + '.' + f_name[1]+" ########"

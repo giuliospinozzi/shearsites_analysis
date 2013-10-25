@@ -8,17 +8,21 @@ echo "
   +--------------------------------------------------------+
   |  Author:   Giulio Spinozzi                             |
   |  Date:     October 2013                                |
-  |  Version:  1.0                                         |  
+  |  Version:  2.0                                         |  
   |  Contact:  spinozzi.giulio@hsr.it                      |
   +--------------------------------------------------------+
 
-  REQUIRED VARS and relative ORDER POSITION
-        1. ShearSites_identification.py 
+  REQUIRED FILES:
+        - ShearSites_identification.py 
             (Python script to generate the Shear Sites for each couple of barcode)   
-        2. LTRXX.LCXX.shearsites.tsv 
+        - LTRXX.LCXX.shearsites.tsv 
             (the output file of the previous python script with R1-R2 data of Shear Sites)
-        3. abundance_estimation.py 
+        - abundance_estimation.py 
             (Python script to generate abundance estimation with Berry's model in R)
+
+  REQUIRED VARS and relative ORDER POSITION:
+        1. db target schema
+        2. db target table
 "
 
 
@@ -27,16 +31,25 @@ RUN_STARTED_AT=`date +"%Y-%m-%d %H:%M:%S"`;
 RUN_ID="`whoami`"" ${RUN_STARTED_AT}";
 #==============================================================================#
 
-##### ============================ RUN INFO ============================== #####
-BEDs="${1}";
-#==============================================================================#
 
+echo "${RUN_ID}
+"
+
+##### ============================ SETTINGS ============================== #####
+DBSCHEMA="${1}";
+DBTABLE="${2}";
+PROJECT="ShearSites";
+EXPERIMENT="qLam";
+NGSWORKINGPATH="/opt/NGS/results";
+INPUTDIR_POOL_BED="${NGSWORKINGPATH}/${PROJECT}/${EXPERIMENT}/bed/"${DBTABLE};
+OUTDIR="${NGSWORKINGPATH}/${PROJECT}/${EXPERIMENT}/quantification/"${DBTABLE};
+#==============================================================================#
 
 
 ##### ============== PYTHON: ShearSites_identification.py ================ #####
 echo "PYTHON: ShearSites Identification"
-for k in $(ls *.sorted.bed); do 
-  n=${k:0:10};
+for k in $(ls ${INPUTDIR_POOL_BED}/*.sorted.bed); do
+  n=${k:0:-28};
   python ShearSites_identification.py --bed1 $k --bed2 $n.sorted.allr2reads.bed;
 done
 #==============================================================================#
@@ -62,6 +75,9 @@ echo "RPY2: Abundance Estimation with Berry's Model in R"
 ##### ================ PYTHON: abundance_estimation.py =================== #####
 for k in $(ls *.shearsites.uniq.txt); do 
   n=${k:0:10};
-  python abundance_estimation.py --dataset $k;
+  python abundance_estimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
 done
 #==============================================================================#
+
+cp *.tsv *.txt *.pdf ${OUTDIR}
+rm *.pdf *.txt *.tsv
