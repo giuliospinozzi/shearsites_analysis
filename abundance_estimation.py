@@ -35,7 +35,7 @@ header = """
   - This is a wrapper with rpy2 for simulate the Berry's model in R.
   
  Note:
-  - The script needs the dataset file (LTR60.LC90.shearsites.uniq.txt)
+  - The script needs the dataset file (LTR60.LC90.shearsites.uniq.txt), a valid db_schema and db_table
 
  Steps
 	1. Loads the input file
@@ -48,7 +48,7 @@ description = "This is a wrapper with rpy2 for simulate the Berry's model in R."
 
 usage_example = """
 Examples of usage:
-APP --dataset LTR60.LC90.shearsites.uniq.txt
+APP --dataset LTR60.LC90.shearsites.uniq.txt --db_schema sequence_qlam --db_table osr_p5n6_p20
 """
 
 # print header
