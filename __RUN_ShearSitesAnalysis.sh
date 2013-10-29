@@ -41,8 +41,8 @@ DBTABLE="${2}";
 PROJECT="ShearSites";
 EXPERIMENT="qLam";
 NGSWORKINGPATH="/opt/NGS/results";
-INPUTDIR_POOL_BED="${NGSWORKINGPATH}/${PROJECT}/${EXPERIMENT}/bed/"${DBTABLE};
-OUTDIR="${NGSWORKINGPATH}/${PROJECT}/${EXPERIMENT}/quantification/"${DBTABLE};
+INPUTDIR_POOL_BED="${NGSWORKINGPATH}/${PROJECT}/${EXPERIMENT}/NASarchive/bed/"${DBTABLE};
+OUTDIR="${NGSWORKINGPATH}/${PROJECT}/${EXPERIMENT}/NASarchive/quantification/"${DBTABLE};
 #==============================================================================#
 
 
