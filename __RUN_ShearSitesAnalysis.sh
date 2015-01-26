@@ -103,19 +103,19 @@ if [ -z "$3" ]
     ";
     exit;
 fi
-# if [ -z "$4" ]
-#   then
-#     echo "----------------> [ERROR] No DBSCHEMA Supplied <---------------
-#     ";
-#     exit;
-# fi
-# if [ -z "$5" ]
-#   then
-#     echo "-----------------> [ERROR] No DBTABLE Supplied <---------------
-#     ";
-#     exit;
-# fi
-#==============================================================================#
+if [ -z "$4" ]
+  then
+    echo "----------------> [ERROR] No DBSCHEMA Supplied <---------------
+    ";
+    exit;
+fi
+if [ -z "$5" ]
+  then
+    echo "-----------------> [ERROR] No DBTABLE Supplied <---------------
+    ";
+    exit;
+fi
+==============================================================================#
 
 
 echo "
@@ -151,14 +151,14 @@ done
 #==============================================================================#
 
 
-# echo "
-# +--------------------------------------------------------+"
-# echo "RPY2: Abundance Estimation with Berry's Model in R"
-# ##### ================ PYTHON: abundance_estimation.py =================== #####
-# for k in $(ls *.shearsites.uniq.txt); do 
-#   python /opt/applications/scripts/shearsites_analysis/abundance_estimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
-# done
-# #==============================================================================#
+echo "
++--------------------------------------------------------+"
+echo "RPY2: Abundance Estimation with Berry's Model in R"
+##### ================ PYTHON: abundance_estimation.py =================== #####
+for k in $(ls *.shearsites.uniq.txt); do 
+  python /opt/applications/scripts/shearsites_analysis/abundance_estimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
+done
+#==============================================================================#
 
 # echo "
 # **********************************************************"
