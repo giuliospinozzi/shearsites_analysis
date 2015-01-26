@@ -132,7 +132,7 @@ echo "
 echo "PYTHON: ShearSites Identification"
 for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
   n=${k:0:-21};
-  python ShearSites_identification.py --bed1 $k --bed2 $n.sorted.allr2reads.bed;
+  python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $k --bed2 $n.sorted.allr2reads.bed;
 done
 #==============================================================================#
 
@@ -156,7 +156,7 @@ done
 # echo "RPY2: Abundance Estimation with Berry's Model in R"
 # ##### ================ PYTHON: abundance_estimation.py =================== #####
 # for k in $(ls *.shearsites.uniq.txt); do 
-#   python abundance_estimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
+#   python /opt/applications/scripts/shearsites_analysis/abundance_estimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
 # done
 # #==============================================================================#
 
