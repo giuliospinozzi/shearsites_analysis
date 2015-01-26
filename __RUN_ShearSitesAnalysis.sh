@@ -137,18 +137,18 @@ done
 #==============================================================================#
 
 
-# echo "
-# +--------------------------------------------------------+"
-# echo "BASH: output txt files for R model"
-# ##### =============== BASH: output txt files for R model ================= #####
-# for k in $(ls *.shearsites.tsv); do 
-#   awk '{print $2" "$3" "$6"\t"$12}' $k | sort | uniq > ${k:0:-4}.uniq.txt;
-# done
+echo "
++--------------------------------------------------------+"
+echo "BASH: output txt files for R model"
+##### =============== BASH: output txt files for R model ================= #####
+for k in $(ls *.shearsites.tsv); do 
+  awk '{print $2" "$3" "$6"\t"$12}' $k | sort | uniq > ${k:0:-4}.uniq.txt;
+done
 
-# for k in $(ls *.shearsites.tsv); do 
-#   awk '{print $2" "$3" "$6"\t"$12}' $k | sort > ${k:0:-4}.txt;
-# done
-# #==============================================================================#
+for k in $(ls *.shearsites.tsv); do 
+  awk '{print $2" "$3" "$6"\t"$12}' $k | sort > ${k:0:-4}.txt;
+done
+#==============================================================================#
 
 
 # echo "
