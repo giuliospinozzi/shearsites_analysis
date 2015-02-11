@@ -7,7 +7,7 @@ echo "
   |                                                        |
   +--------------------------------------------------------+
   |  Author:   Giulio Spinozzi                             |
-  |  Date:     October 2013                                |
+  |  Date:     January 2015                                |
   |  Version:  3.0                                         |  
   |  Contact:  spinozzi.giulio@hsr.it                      |
   +--------------------------------------------------------+
@@ -160,17 +160,19 @@ for k in $(ls *.shearsites.uniq.txt); do
 done
 #==============================================================================#
 
-# echo "
-# **********************************************************"
-# echo "Moving output files in the destination directory..."
-# mkdir ${OUTDIR}
-# cp *.tsv *.txt *.pdf ${OUTDIR}
-# echo "...done!"
-# echo "
-# Removing temp files..."
-# rm *.pdf *.txt *.tsv
-# echo "...Finished!
-# **********************************************************"
+
+echo "
+**********************************************************"
+echo "Moving output files in the destination directory..."
+mkdir ${OUTDIR}
+cp *.tsv *.txt *.pdf ${OUTDIR}
+echo "...done!"
+echo "
+Removing temp files..."
+rm *.pdf *.txt *.tsv
+echo "...Finished!
+**********************************************************"
+
 
 echo "
 
