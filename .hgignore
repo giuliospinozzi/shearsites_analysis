@@ -32,3 +32,5 @@ ShearSites_Analysis.sublime-workspace
 *.xlsx
 *.pzfx
 *.pdf
+syntax: regexp
+old_version/*
