@@ -219,6 +219,10 @@ def main():
 		dataset = dataset.rstrip('\n')
 		dataset = dataset.replace("/","-")
 
+		if len(locations_list) < 2:
+			print "\n[SKIP]\t{dataset} has only one unique line! Can't estimate anything.\n\tSKIP THIS FILE!\n".format(dataset=str(dataset))
+            return 0
+
 		locations_list, length_list = generateDataset(data)
 
 		# Alias for estAbund calling
@@ -252,6 +256,8 @@ def main():
 		print "\n[AP]\tTask Finished, closing.\n"
 	else:
 		print "\n[AP]\tThe dataset is not in the reference DB. Skipped.\n"
+
+	return 0
 
 
 # sentinel

@@ -112,11 +112,12 @@ def applyCorrection(original_file, ISfixed_file, out_file, out_file_separator='\
     for original_line, IS_fixed_line in zip(loadFile(original_file), loadFile(ISfixed_file)):
         # soft check: only coordinates MAY be different
         if ((original_line[0] != IS_fixed_line[0]) or (original_line[-2] != IS_fixed_line[-2]) or (original_line[-1] != IS_fixed_line[-1])):
-            print "\n[ERROR]\t{original_file} and {ISfixed_file} are properly paired!\n\tExit\n".format(original_file=str(original_file), ISfixed_file=str(ISfixed_file))
-            sys.exit()
+            print "\n[ERROR]\t{original_file} and {ISfixed_file} are not properly paired!\n\tSKIP THIS FILE!\n".format(original_file=str(original_file), ISfixed_file=str(ISfixed_file))
+            return 0
         # soft check: start-end coordinates must be equal within a file
         if ((original_line[1] != original_line[2]) or (IS_fixed_line[1] != IS_fixed_line[2])):
-            print "\n[ERROR]\tstart-end coordinates don't match while processing {original_file} / {ISfixed_file}\n\tExit\n".format(original_file=str(original_file), ISfixed_file=str(ISfixed_file))
+            print "\n[ERROR]\tstart-end coordinates don't match while processing {original_file} / {ISfixed_file}\n\tSKIP THIS FILE!\n".format(original_file=str(original_file), ISfixed_file=str(ISfixed_file))
+            return 0
         # length correction
         if original_line[1] != IS_fixed_line[1]:
             diff = int(original_line[1]) - int(IS_fixed_line[1])

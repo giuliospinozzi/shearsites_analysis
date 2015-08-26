@@ -124,7 +124,7 @@ if [ -z "$5" ]
     ";
     exit;
 fi
-==============================================================================#
+#==============================================================================#
 
 
 echo "
@@ -140,8 +140,12 @@ echo "
 echo "PYTHON: ShearSites Identification"
 ##### ============== PYTHON: ShearSites_identification.py ================ #####
 for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
+  FILENAME=`basename $k`;
+  BARCODE=${FILENAME:0:-21};
   n=${k:0:-21};
-  python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $k --bed2 $n.sorted.allr2reads.bed;
+  grep -v "chrM" $k > $BARCODE.NOchrM.bed
+  grep -v "chrM" $n.sorted.allr2reads.bed > $BARCODE.sorted.allr2reads.NOchrM.bed
+  python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $BARCODE.NOchrM.bed --bed2 $BARCODE.sorted.allr2reads.NOchrM.bed;
 done
 # out files: *.shearsites.tsv
 #==============================================================================#
