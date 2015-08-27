@@ -47,7 +47,7 @@ DBTABLE="${5}";  #new_method
 
 ##### ========================== FIXED PARAMETERS ======================== #####
 BASEDIR="/opt/NGS/results/$DISEASE/$PATIENT";
-OUTDIR="$BASEDIR/quantification";
+OUTDIR="$BASEDIR/quantification/$POOL";
 #==============================================================================#
 
 
@@ -156,7 +156,7 @@ echo "
 echo "RPY2: Abundance Estimation with Berry's Model in R"
 ##### ================ PYTHON: abundance_estimation.py =================== #####
 for k in $(ls *.shearsites.uniq.txt); do 
-  python /opt/applications/scripts/shearsites_analysis/abundance_estimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
+  python abundance_estimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
 done
 #==============================================================================#
 
@@ -164,8 +164,10 @@ done
 echo "
 **********************************************************"
 echo "Moving output files in the destination directory..."
+mkdir $BASEDIR/quantification
 mkdir ${OUTDIR}
-cp *.tsv *.txt *.pdf ${OUTDIR}
+mkdir ${OUTDIR}/redundant
+cp *.tsv *.txt *.pdf ${OUTDIR}/redundant
 echo "...done!"
 echo "
 Removing temp files..."

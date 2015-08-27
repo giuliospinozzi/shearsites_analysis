@@ -126,7 +126,7 @@ def printThetaInfo(estimations_theta,locations_theta,nameFile):
 
 def queryDataset(host,user,passwd,db,db_table,destfile,nameFile):
 	# System Call
-	query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT DISTINCT sample, tissue, treatment FROM %(db_table)s WHERE tag='%(nameFile)s'\" > %(destfile)s" %{
+	query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT DISTINCT sample, tissue, treatment, vector, enzyme FROM %(db_table)s WHERE tag='%(nameFile)s'\" > %(destfile)s" %{
      'host': host,
      'user': user,
      'passwd': passwd,
@@ -140,7 +140,7 @@ def queryDataset(host,user,passwd,db,db_table,destfile,nameFile):
 	value = None
 	for line in f_in:
 		string_splitted = line.split('\t')
-		value = str(string_splitted[0]) + "." + str(string_splitted[1]) + "." + str(string_splitted[2])
+		value = str(string_splitted[0]) + "." + str(string_splitted[1]) + "." + str(string_splitted[2]) + "." + str(string_splitted[3]) + "." + str(string_splitted[4])
 	f_in.close()
 	os.remove(destfile)
 	return value
@@ -349,9 +349,11 @@ def fragment_lengths_statistics (unique_file_path):
 def is_CEM (genome_location_string):
 	response = False
 	cem_symbol = None
-	cem_locations = [('chr11',64536791,64537194), ('chr17',47732128,47732367), ('chr17',2032108,2032381), ('chr2',24546189,24546598), ('chr2',73761972,73762443), ('chr16',28497050,28497538)]
+	cem_coordinates = None
+	cem_locations = [('chr11',64537165,64537171), ('chr17',2032349,2032355), ('chr17',47732336,47732342), ('chr2',24546568,24546574), ('chr2',73762395,73762401), ('chr16',28497495,28497501), ('chr3', 52306691, 52306697), ('chr8', 8866483, 8866489)]
 	#cem_locations.append(('chr1',1776600,1776700))	#Fake to test: 1776639
-	cem_symbols_list = ['$','#','@','*','%','!']
+	cem_symbols_list = ['CEM6_37_1','CEM6_37_2','CEM6_37_3','CEM6_37_4','CEM6_37_5','CEM6_37_6', 'CEM1_25', 'CEM1_41_illumina']
+	cem_coordinates_list = ['chr11:64537168','chr17:2032352','chr17:47732339','chr2:24546571','chr2:73762398','chr16:28497498', 'chr3:52306694', 'chr8:8866486']
 	
 	splitted_location = genome_location_string.split(' ') # 0 -> chr; 1 -> locus; 2 -> strand
 	splitted_location[1] = int(splitted_location[1])
@@ -362,10 +364,11 @@ def is_CEM (genome_location_string):
 			if (splitted_location[1] in range(cem_location_tupla[1],cem_location_tupla[2]+1)):
 				response = True
 				cem_symbol = cem_symbols_list[i]
-				return response, cem_symbol
+				cem_coordinates = cem_coordinates_list[i]
+				return response, cem_symbol, cem_coordinates
 		i+=1
 
-	return response, cem_symbol
+	return response, cem_symbol, cem_coordinates
 
 
 def lengths_explicit_list (file_as_list): # from_file_to_list (unique_file_path, '.txt')
@@ -422,6 +425,10 @@ def main():
 
 		locations_list, length_list = generateDataset(data)
 
+		if len(locations_list) < 2:
+			print "\n[SKIP]\t{dataset} has only one unique line! Can't estimate anything.\n\tSKIP THIS FILE!\n".format(dataset=str(dataset))
+			return 0
+
 		# Alias for estAbund calling
 		estAbund = sonicLength.estAbund
 
@@ -477,11 +484,28 @@ def main():
 		for key in genome_locations:
 			splitted_location = key.split(' ')
 			corrected_file.write("\n" + splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(math.ceil(dic_of_median_of_unique_lengths[key]))+ "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key]) + "\t" + str(dic_of_lengths[key]))
-			response, cem_symbol = is_CEM(key)
+			response, cem_symbol, cem_coordinates = is_CEM(key)
 			if (response == True):
 				corrected_file.write("\t" + cem_symbol)
 
-		corrected_file.close()
+		# Write database file - Like corrected_file with more field appended in the end
+		db_file = open(dataset + "." + nameFile+".db_file"+".tsv", 'w')
+		genome_locations = dic_of_redundant_reads_count.keys()
+		genome_locations.sort()
+		dataset_split = dataset.split('.')
+		dataset_label = '_'.join(dataset_split)
+		for key in genome_locations:
+			splitted_location = key.split(' ')
+			db_file.write(splitted_location[0] + "\t" + splitted_location[1] + "\t" + splitted_location[2] + "\t" + str(dic_of_redundant_reads_count[key]) + "\t" + str(round(dic_of_relative_abundance[key],5)) + "\t" + str(round(dic_of_corrected_reads_count[key],0)) + "\t" + str(dic_of_percentage_difference[key]) + "\t" + str(dic_of_unique_lengths_number[key]) + "\t" + str(min(dic_of_unique_lengths[key])) + "\t" + str(max(dic_of_unique_lengths[key])) + "\t" + str(dic_of_median_of_unique_lengths[key]) + "\t" + str(math.ceil(dic_of_median_of_unique_lengths[key]))+ "\t" + str(dic_of_MAD[key]) + "\t" + str(dic_of_unique_lengths[key])[1:-1] + "\t" + str(dic_of_lengths[key])[1:-1] + "\t")
+			db_file.write("\t".join(dataset_split) + "\t" + dataset_label + "\t")
+			response, cem_symbol, cem_coordinates = is_CEM(key)
+			if (response == True):
+				db_file.write(cem_symbol + "\t" + cem_coordinates)
+			else:
+				db_file.write("\t")
+			db_file.write("\n")
+
+		db_file.close()
 
 		#######################################################################################################
 
@@ -489,6 +513,8 @@ def main():
 		print "\n[AP]\tTask Finished, closing.\n"
 	else:
 		print "\n[AP]\tThe dataset is not in the reference DB. Skipped.\n"
+
+	return 0
 
 
 # sentinel
