@@ -112,13 +112,13 @@ def build_ISdict(IS_file, range_file):
         chromosome = range_line[0]
         startLocus = range_line[1]
         endLocus = range_line[2]
-        strand = range_line[-2]
+        strand = range_line[-1]
         integrationLocus = IS_line[1]
         for n in range(int(startLocus), int(endLocus)+1):
             key = "_".join([chromosome, str(n), strand])
             IS_dict[key] = integrationLocus
         # soft check # comment after test!
-        if ((chromosome != IS_line[0]) or (strand != IS_line[-2])):
+        if ((chromosome != IS_line[0]) or (strand != IS_line[-1])):
             print "\n[ERROR]\t{IS_file} and {range_file} are weird or not properly paired! Chr and/or strand don't match!\n".format(IS_file=str(IS_file), range_file=str(range_file))
             return False
         if ((int(integrationLocus) > int(endLocus)) or (int(integrationLocus) < int(startLocus))):

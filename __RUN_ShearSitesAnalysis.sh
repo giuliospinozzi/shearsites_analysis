@@ -144,8 +144,8 @@ echo "PYTHON: ShearSites Identification"
 for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
   FILENAME=`basename $k`;
   BARCODE=${FILENAME:0:-21};
-  grep -v "chrM" $k > $BARCODE.NOchrM.bed
-  grep -v "chrM" ${k:0:-21}.sorted.allr2reads.bed > $BARCODE.sorted.allr2reads.NOchrM.bed
+  grep -v "chrM" $k > $BARCODE.NOchrM.bed;
+  grep -v "chrM" ${k:0:-21}.sorted.allr2reads.bed > $BARCODE.sorted.allr2reads.NOchrM.bed;
   python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $BARCODE.NOchrM.bed --bed2 $BARCODE.sorted.allr2reads.NOchrM.bed;
 done
 # out files: *.shearsites.tsv
@@ -169,15 +169,15 @@ echo "
 +--------------------------------------------------------+"
 echo "PYTHON: Launch create_matrix"
 ##### =================== PYTHON: Launch create_matrix ==================== #####
-create_matrix --dbDataset "$DBSCHEMA.$DBTABLE,sequence_qlam.cem_reference" --columns sample,tissue,treatment,vector,enzyme --IS_method gauss --interaction_limit 4 --alpha 0.3 --statistics --tsv --collision
+create_matrix --dbDataset "$DBSCHEMA.$DBTABLE,sequence_qlam.cem_reference" --columns sample,tissue,treatment,vector,enzyme --IS_method gauss --interaction_limit 4 --alpha 0.3 --statistics --tsv --collision;
 #===============================================================================#
 
 echo "
 +--------------------------------------------------------+"
 echo "BASH: extract ISs bed data"
 ##### ================ BASH: extract ISs from matrix ================= #####
-awk '{print "chr"$3"\t"$5"\t"$6"\t\t\t"$4}' *${DBTABLE}_StatREPORT_ISs-File*.tsv | tail -n +2 > ISrange.bed
-awk '{print "chr"$3"\t"$9"\t"$9"\t\t\t"$4}' *${DBTABLE}_StatREPORT_ISs-File*.tsv | tail -n +2 > IScoordinate.bed
+awk '{print "chr"$3"\t"$5"\t"$6"\t\t\t"$4}' *${DBTABLE}_StatREPORT_ISs-File*.tsv | tail -n +2 > ISrange.bed;
+awk '{print "chr"$3"\t"$9"\t"$9"\t\t\t"$4}' *${DBTABLE}_StatREPORT_ISs-File*.tsv | tail -n +2 > IScoordinate.bed;
 #==========================================================================#
 
 echo "
@@ -185,7 +185,7 @@ echo "
 echo "PYTHON: apply IS aggregation to ShearSite data"
 ##### ========= PYTHON: apply IS aggregation to ShearSite data ============= #####
 # input files: *.shearsites.raw.sort.uniq.bed
-python ShearSites_ISaggregation.py
+python ShearSites_ISaggregation.py;
 # out filename: *.shearsites.ISfixed.bed (or set args)
 #=================================================================================#
 
@@ -194,7 +194,7 @@ echo "
 echo "PYTHON: apply length correction to ShearSite data"
 ##### ========== PYTHON: apply length correction to ShearSite data =========== #####
 # input files: *.shearsites.raw.sort.uniq.bed, *.shearsites.ISfixed.bed (or set args)
-python ShearSites_lengthCorrection.py
+python ShearSites_lengthCorrection.py;
 # out filename: *.shearsites.ISfixed.LENGTHfixed.bed (or set args)
 #=================================================================================#
 
