@@ -127,12 +127,14 @@ fi
 #==============================================================================#
 
 
+
 echo "
 
 ---------------------------------------------------------------------------------
                     STARTING PROCESSING AT: $RUN_STARTED_AT
 ---------------------------------------------------------------------------------
     " 
+
 
 
 echo "
@@ -142,9 +144,8 @@ echo "PYTHON: ShearSites Identification"
 for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
   FILENAME=`basename $k`;
   BARCODE=${FILENAME:0:-21};
-  n=${k:0:-21};
   grep -v "chrM" $k > $BARCODE.NOchrM.bed
-  grep -v "chrM" $n.sorted.allr2reads.bed > $BARCODE.sorted.allr2reads.NOchrM.bed
+  grep -v "chrM" ${k:0:-21}.sorted.allr2reads.bed > $BARCODE.sorted.allr2reads.NOchrM.bed
   python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $BARCODE.NOchrM.bed --bed2 $BARCODE.sorted.allr2reads.NOchrM.bed;
 done
 # out files: *.shearsites.tsv
@@ -158,6 +159,8 @@ for k in $(ls *.shearsites.tsv); do
   awk '{print $2"\t"$3"\t"$3"\t\t\t"$6"\t"$12}' $k | sort | sort -t $'\t' -k1,1 -k2,2 | uniq > ${k:0:-4}.raw.sort.uniq.bed;
 done
 # out files: *.shearsites.raw.sort.uniq.bed
+#...not properly a bed, lengths are put after strand in 7th field (thickStart)
+# this fact holds for the whole script
 #==============================================================================#
 
 
@@ -171,30 +174,20 @@ create_matrix --dbDataset "$DBSCHEMA.$DBTABLE,sequence_qlam.cem_reference" --col
 
 echo "
 +--------------------------------------------------------+"
-echo "BASH: extract ISs coordinates bed data"
-##### ========= BASH: extract ISs coordinates from matrix =========== #####
+echo "BASH: extract ISs bed data"
+##### ================ BASH: extract ISs from matrix ================= #####
 awk '{print "chr"$3"\t"$5"\t"$6"\t\t\t"$4}' *${DBTABLE}_StatREPORT_ISs-File*.tsv | tail -n +2 > ISrange.bed
 awk '{print "chr"$3"\t"$9"\t"$9"\t\t\t"$4}' *${DBTABLE}_StatREPORT_ISs-File*.tsv | tail -n +2 > IScoordinate.bed
 #==========================================================================#
 
-
-
 echo "
 +--------------------------------------------------------+"
-echo "BASH: apply IS correction to ShearSite data"
-##### ========= BASH: apply IS correction to ShearSite data ============= #####
-for k in $(ls *.shearsites.raw.sort.uniq.bed); do
-  # Old version
-  # $BEDTOOLS intersect -a $k -b ISrange.bed -wb -s > ${k:0:-4}.tmp.txt;
-  # awk '{print $6"\t"$7"\t"$8"\t\t\t"$9"\t"$5}' ${k:0:-4}.tmp.txt > ${k:0:-4}.tmp.bed;
-  # $BEDTOOLS intersect -a ${k:0:-4}.tmp.bed -b IScoordinate.bed -wb -s > ${k:0:-4}.txt;
-  # awk '{print $6"\t"$7"\t"$8"\t\t\t"$9"\t"$5}' ${k:0:-4}.txt | sort | uniq > ${k:0:-29}.shearsites.sort.uniq.bed;
-  $BEDTOOLS intersect -a $k -b ISrange.bed -wb -s | awk '{print $6"\t"$7"\t"$8"\t\t\t"$9"\t"$5}' > ${k:0:-4}.tmp.bed;
-  $BEDTOOLS intersect -a ${k:0:-4}.tmp.bed -b IScoordinate.bed -wb -s | awk '{print $6"\t"$7"\t"$8"\t\t\t"$9"\t"$5}' > ${k:0:-29}.shearsites.ISfixed.bed;
-done
-# *.raw.sort.uniq.bed -> *.shearsites.ISfixed.bed
-# ...not properly a bed, lengths are put after strand in 7th field (thickStart)
-#=============================================================================#
+echo "PYTHON: apply IS aggregation to ShearSite data"
+##### ========= PYTHON: apply IS aggregation to ShearSite data ============= #####
+# input files: *.shearsites.raw.sort.uniq.bed
+python ShearSites_ISaggregation.py
+# out filename: *.shearsites.ISfixed.bed (or set args)
+#=================================================================================#
 
 echo "
 +--------------------------------------------------------+"
@@ -204,6 +197,7 @@ echo "PYTHON: apply length correction to ShearSite data"
 python ShearSites_lengthCorrection.py
 # out filename: *.shearsites.ISfixed.LENGTHfixed.bed (or set args)
 #=================================================================================#
+
 
 
 echo "
@@ -217,6 +211,7 @@ done
 #==============================================================================#
 
 
+
 echo "
 +--------------------------------------------------------+"
 echo "RPY2: Abundance Estimation with Berry's Model in R"
@@ -228,18 +223,18 @@ done
 
 
 
-echo "
-**********************************************************"
-echo "Moving output files in the destination directory..."
-mkdir $BASEDIR/quantification
-mkdir ${OUTDIR}
-cp *.tsv *.txt *.pdf ${OUTDIR}
-# echo "...done!"
 # echo "
-# Removing temp files..."
-# rm *.pdf *.txt *.tsv *.bed *.xlsx
-echo "...Finished!
-**********************************************************"
+# **********************************************************"
+# echo "Moving output files in the destination directory..."
+# mkdir $BASEDIR/quantification
+# mkdir ${OUTDIR}
+# cp *.tsv *.txt *.pdf ${OUTDIR}
+# # echo "...done!"
+# # echo "
+# # Removing temp files..."
+# # rm *.pdf *.txt *.tsv *.bed *.xlsx
+# echo "...Finished!
+# **********************************************************"
 
 
 
