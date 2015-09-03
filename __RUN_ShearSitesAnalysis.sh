@@ -16,17 +16,17 @@ echo "
         - ShearSites_identification.py 
             (Python script to generate the Shear Sites
              for each couple of barcode)   
-        - LTRXX.LCXX.shearsites.tsv 
-            (the output file of the previous python script
-             with R1-R2 data of Shear Sites)
-		- create_matrix command available
-			(Integration_Analysis.py)
-		- ShearSites_lengthCorrection.py
-			(Python script to apply fragment lengths correction
-			  after grouping around ISs)
+        - create_matrix command available
+            (Integration_Analysis.py)
+        - ShearSites_ISaggregation.py
+            (Python script to apply fragment mapping aggregation
+             around ISs)
+        - ShearSites_lengthCorrection.py
+            (Python script to apply fragment lengths correction
+             after aggregation around ISs)
         - ShearSites_abundanceEstimation.py
             (Python script to estimate abundance through
-              sonicLength R package)
+             sonicLength R package)
 
   REQUIRED VARS and relative ORDER POSITION:
         1. db target schema
@@ -45,18 +45,17 @@ echo "<< ${RUN_ID} >>
 "
 
 ##### ========================== INPUT PARAMETERS ======================== #####
-DISEASE="${1}";  #MLD
-PATIENT="${2}";  #MLD01
-POOL="${3}";     #pool1
-DBSCHEMA="${4}"; #sequence_qlam
-DBTABLE="${5}";  #new_method
+DISEASE="${1}";  # AssayValidation
+PATIENT="${2}";  # CEMJY
+POOL="${3}";     # LANE_1
+DBSCHEMA="${4}"; # sequence_assayvalidation
+DBTABLE="${5}";  # LANE_1
 #==============================================================================#
 
 
 ##### ========================== FIXED PARAMETERS ======================== #####
 BASEDIR="/opt/NGS/results/$DISEASE/$PATIENT";
 OUTDIR="$BASEDIR/quantification/$POOL";
-BEDTOOLS="/opt/applications/bin/bedtools/bedtools-2.17.0/bin/bedtools";
 #==============================================================================#
 
 
@@ -184,7 +183,7 @@ echo "
 +--------------------------------------------------------+"
 echo "PYTHON: apply IS aggregation to ShearSite data"
 ##### ========= PYTHON: apply IS aggregation to ShearSite data ============= #####
-# input files: *.shearsites.raw.sort.uniq.bed
+# input files: *.shearsites.raw.sort.uniq.bed (or set args)
 python ShearSites_ISaggregation.py;
 # out filename: *.shearsites.ISfixed.bed (or set args)
 #=================================================================================#
@@ -215,26 +214,28 @@ done
 echo "
 +--------------------------------------------------------+"
 echo "RPY2: Abundance Estimation with Berry's Model in R"
-##### ================ PYTHON: abundance_estimation.py =================== #####
+##### ========== RPY2: Abundance Estimation with Berry's Model in R ============== #####
 for k in $(ls *.shearsites.fixed.sort.uniq.txt); do 
   python ShearSites_abundanceEstimation.py --dataset $k --db_schema $DBSCHEMA --db_table $DBTABLE;
 done
-#==============================================================================#
+#======================================================================================#
 
 
 
-# echo "
-# **********************************************************"
-# echo "Moving output files in the destination directory..."
-# mkdir $BASEDIR/quantification
-# mkdir ${OUTDIR}
-# cp *.tsv *.txt *.pdf ${OUTDIR}
-# # echo "...done!"
-# # echo "
-# # Removing temp files..."
-# # rm *.pdf *.txt *.tsv *.bed *.xlsx
-# echo "...Finished!
-# **********************************************************"
+echo "
+**********************************************************"
+echo "Moving output files in the destination directory..."
+
+mkdir $BASEDIR/quantification
+mkdir ${OUTDIR}
+mkdir ${OUTDIR}/ISfixed
+cp *.tsv *.txt *.pdf *.xlsx ${OUTDIR}/ISfixed
+echo "...done!"
+echo "
+Removing temp files..."
+rm *.pdf *.txt *.tsv *.bed *.xlsx
+echo "...Finished!
+**********************************************************"
 
 
 
@@ -243,4 +244,4 @@ echo "
 ---------------------------------------------------------------------------------
                       ENDING PROCESSING AT: `date +'%Y-%m-%d %H:%M:%S'`
 ---------------------------------------------------------------------------------
-    " 
+     "

@@ -68,11 +68,11 @@ def checkArgs(args):
         sys.exit()
 
 
-def generateDataset(data):
+def generateDataset(dataset_file):
     # Load dataset
-    dataset_file = open(data, 'r')
-    dataset = dataset_file.readlines()
-    dataset_file.close()
+    file_object = open(dataset_file, 'r')
+    dataset = file_object.readlines()
+    file_object.close()
     locations_list = []
     length_list = []
     for row in dataset:
@@ -83,7 +83,7 @@ def generateDataset(data):
     return locations_list, length_list
 
 
-def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset):
+def fragmentsLengthPlot(length_phi,freq_phi,length_list,TAG,dataset_label):
     length_phi_numbers = []
     for num in length_phi:
         length_phi_numbers.append(float(num))
@@ -100,33 +100,33 @@ def fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset):
     xs = np.linspace(0,max(length_list_numbers)+25,len(set(length_list_numbers))*10+250)
     # Gaussian kde plot
     plt.plot(xs,density(xs), hold=True, label="real distribution - gaussian kde")
-    fileName = dataset + "." + nameFile + ".fragmentsLengthPlot.pdf"
+    fileName = dataset_label + "." + TAG + ".fragmentsLengthPlot.pdf"
     plt.legend()
     # Labels
     plt.xlabel('fragments length')
     plt.ylabel('probability')
-    plt.title(dataset + "." + nameFile + ' Fragments length data')
+    plt.title(dataset_label + "." + TAG + ' Fragments length data')
     plt.savefig(fileName, format="pdf")
     return length_phi_numbers
 
 
-def printThetaInfo(estimations_theta,locations_theta,nameFile):
-    f_out = open(nameFile+".theta.tsv","w")
+def printThetaInfo(estimations_theta,locations_theta,TAG):
+    f_out = open(TAG+".theta.tsv","w")
     dict_theta = {}
     for l in range(0,len(locations_theta)):
         dict_theta[locations_theta[l]] = estimations_theta[l]
         f_out.write(str(locations_theta[l]) + '\t' + str(estimations_theta[l]) + '\n')
 
 
-def queryDataset(host,user,passwd,db,db_table,destfile,nameFile):
+def queryDataset(host,user,passwd,db,db_table,destfile,TAG):
     # System Call
-    query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT DISTINCT sample, tissue, treatment, vector, enzyme FROM %(db_table)s WHERE tag='%(nameFile)s'\" > %(destfile)s" %{
+    query = "mysql -h %(host)s -u %(user)s --password=%(passwd)s %(db)s --skip-column-names -e \"SELECT DISTINCT sample, tissue, treatment, vector, enzyme FROM %(db_table)s WHERE tag='%(TAG)s'\" > %(destfile)s" %{
      'host': host,
      'user': user,
      'passwd': passwd,
      'db': db,
      'db_table': db_table,
-     'nameFile': nameFile,
+     'TAG': TAG,
      'destfile': destfile,
     }
     os.system(query)
@@ -149,7 +149,7 @@ def expected_lengths_given_theta (length_phi, freq_phi, theta):
     return expected_lenght
 
 
-def phi_VS_theta (length_phi, freq_phi,nameFile,dataset):
+def phi_VS_theta (length_phi, freq_phi,TAG,dataset_label):
     # Retrieving points to plot
     x_expected_unique_lenghts = []
     y_number_of_parent_fragments = []
@@ -163,7 +163,7 @@ def phi_VS_theta (length_phi, freq_phi,nameFile,dataset):
     plt.xlabel('expected unique lengths (phi-i)')
     plt.ylabel('number of parent fragments (theta-i)')
     plt.title('phi VS theta')
-    plt.savefig(dataset + "." + nameFile + '.phiVStheta' + '.pdf', format='pdf')
+    plt.savefig(dataset_label + "." + TAG + '.phiVStheta' + '.pdf', format='pdf')
     return 0
 
 
@@ -199,30 +199,35 @@ def main():
     """
     Main part of the program.
     """
-    #first check args and file paths
+    # Check args and file paths
     checkArgs(args)
     
-    data = args.dataset_file
-    f_name = data.split(".")
-    print "\n[AP]\t"+"######## "+f_name[0] + '.' + f_name[1]+" ########"
-    print "\n[AP]\tChecked inputs, now acquiring data"
-
+    # Screen print for user
+    dataset_file = args.dataset_file
+    dataset_file_split = dataset_file.split(".")
+    print "\n[AP]\t" + "######## " + dataset_file_split[0] + '.' + dataset_file_split[1] + " ########"
+    print "\n[AP]\tInput checked, now acquiring data ... "
+    
+    # DB connection parameter
     host = "localhost"
     user = "readonly"
     passwd = "readonlypswd"
     db = args.db_schema
     db_table = args.db_table
-
-    nameFile = data[0:-31]  #remove '.shearsites.fixed.sort.uniq.txt'
-    dataset = queryDataset(host,user,passwd,db,db_table,"tmpFile.txt",nameFile)
-    if dataset is not None:
-        dataset = dataset.rstrip('\n')
-        dataset = dataset.replace("/","-")
+    
+    # Get human readable dataset_label from TAG, through DB
+    TAG = dataset_file[0:-31]  #remove '.shearsites.fixed.sort.uniq.txt'
+    dataset_label = queryDataset(host, user, passwd, db, db_table, "{TAG}_dataset_label.DB.tmp".format(TAG=str(TAG)), TAG)
+    
+    if dataset_label is not None:
+        dataset_label = dataset_label.rstrip('\n')
+        dataset_label = dataset_label.replace("/","-")
         
-        locations_list, length_list = generateDataset(data)
+        locations_list, length_list = generateDataset(dataset_file)
         
         if len(locations_list) < 2:
-            print "\n[SKIP]\t{dataset} has only one unique line! Can't estimate anything.\n\tSKIP THIS FILE!\n".format(dataset=str(dataset))
+            print "\n[AP]\t{dataset_label} has only one unique line! Can't estimate anything.".format(dataset_label=str(dataset_label))
+            print "[AP]\tSKIP THIS DATASET!\n"
             return 0
 
         # Alias for estAbund calling
@@ -245,18 +250,31 @@ def main():
         freq_phi = tuple(phi)
         length_phi = tuple(phi.names)
 
-        length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,nameFile,dataset)
+        length_phi_numbers = fragmentsLengthPlot(length_phi,freq_phi,length_list,TAG,dataset_label)
 
-        printThetaInfo(estimations_theta,locations_theta,nameFile)
+        printThetaInfo(estimations_theta,locations_theta,TAG)
 
         # Plot: unique lengths retrieved for a genomic location VS expected number of parent fragment for the same location
-        phi_VS_theta(length_phi, freq_phi, nameFile, dataset)
+        phi_VS_theta(length_phi, freq_phi, TAG, dataset_label)
 
-        # Last print for user
+        # Last screen print for user
         print "\n[AP]\tTask Finished, closing.\n"
     else:
-        print "\n[AP]\tThe dataset is not in the reference DB. Skipped.\n"
-
+        # This is usually an error, print some debug info
+        print "\n[AP]\tCan't find metadata in DB!"
+        print "\t\tDataset details:"
+        print "\t\t* dataset_file: {dataset_file}".format(dataset_file=str(dataset_file))
+        print "\t\t* extracted TAG: {TAG}".format(TAG=str(TAG))
+        print "\t\tDB details:"
+        print "\t\t* host: {host}".format(host=str(host))
+        print "\t\t* user: {user}".format(user=str(user))
+        print "\t\t* passwd: {passwd}".format(passwd=str(passwd))
+        print "\t\t* db: {db}".format(db=str(db))
+        print "\t\t* db_table: {db_table}".format(db_table=str(db_table))
+        print "\t\tDataset Label returned by query:"
+        print "\t\t* dataset_label: {dataset_label}".format(dataset_label=str(dataset_label))
+        print "\n[AP]\tSKIP THIS DATASET!\n"
+        
     return 0
 
 
