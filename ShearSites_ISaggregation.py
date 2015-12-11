@@ -15,7 +15,7 @@ header = """
   - This is a pipeline plugin for the Shear Site aggregation around ISs.
   
  Note:
-  - the script needs *.shearsites.raw.sort.uniq.bed, ISrange.bed,
+  - the script needs *.shearsites.tsv, ISrange.bed,
     IScoordinate.bed
 
  Steps
@@ -23,11 +23,11 @@ header = """
        from cwd (or as supplied by --folder)
     1. Load IScoordinate.bed (or as supplied through --IS_filename)
        from cwd (or as supplied by --folder)
-    2. Load *.shearsites.raw.sort.uniq.bed files (or as supplied through --infiles_nameEnd)
+    2. Load *.shearsites.tsv files (or as supplied through --infiles_nameEnd)
        from cwd (or as supplied by --folder)
     3. Fix mapping coordinates: entries mapping inside ranges provided by ISrange.bed
        are shifted to the related IS positions provided by IScoordinate.bed
-    4. Write results in *.shearsites.ISfixed.bed files (or as supplied
+    4. Write results in *.shearsites.ISfixed.tsv files (or as supplied
        by --outFile_nameEnd)
 """ 
 
@@ -42,8 +42,8 @@ parser = argparse.ArgumentParser(usage = usage_example, epilog = "[ hSR-TIGET - 
 parser.add_argument('--folder', dest="folder", help="path of the folder to operate into", action="store", default=os.getcwd(), required=False)
 parser.add_argument('--range_filename', dest="range_filename", help="alternative name for ISrange.bed input file", action="store", default="ISrange.bed", required=False)
 parser.add_argument('--IS_filename', dest="IS_filename", help="alternative name for IScoordinate.bed input file", action="store", default="IScoordinate.bed", required=False)
-parser.add_argument('--inFiles_nameEnd', dest="inFiles_nameEnd", help="string composed by suffixes + extension, to identify input bed files", action="store", default=".shearsites.raw.sort.uniq.bed", required=False)
-parser.add_argument('--outFile_nameEnd', dest="outFile_nameEnd", help="string to name out files, used as suffixes + extension", action="store", default=".shearsites.ISfixed.bed", required=False)
+parser.add_argument('--inFiles_nameEnd', dest="inFiles_nameEnd", help="string composed by suffixes + extension, to identify input bed files", action="store", default=".shearsites.tsv", required=False)
+parser.add_argument('--outFile_nameEnd', dest="outFile_nameEnd", help="string to name out files, used as suffixes + extension", action="store", default=".shearsites.ISfixed.tsv", required=False)
 #parser.add_argument('--an_arg', dest="an_arg", help="some help", action="store", required=True)
 #parser.add_argument('--another_arg', dest="another_arg", help="some help again", action="store", default="default_value", required=False)
 args = parser.parse_args()
@@ -129,26 +129,17 @@ def build_ISdict(IS_file, range_file):
 
 def applyCorrection(in_file, out_file, IS_dict, out_file_separator='\t', out_file_end_of_line='\n'):
     """
-    
     """
     # Compute outFile_lines
     outFile_lines = []
     i = 0
     for in_line in loadFile(in_file):
-        chromosome = in_line[0]
-        locus = in_line[1]
-        strand = in_line[-2]
-        fragLength = in_line[-1]
+        chromosome = in_line[1]
+        locus = in_line[2]
+        strand = in_line[5]
         key = "_".join([chromosome, locus, strand])
-        out_line = [chromosome, IS_dict[key], IS_dict[key], "", "", strand, fragLength]
+        out_line = in_line[:2] + [IS_dict[key]] + in_line[3:]
         outFile_lines.append(out_line)
-        # soft check
-        i+=1
-        if locus != in_line[2]:
-            print "\n[ERROR]\tline {i} in {in_file} has different start and end locus!\n".format(in_file=str(in_file), i=str(i))
-            print "\tprint line as list: ", in_line
-            print "\tSKIP THIS FILE!\n"
-            return 0
         
     # Write out_file
     with open(out_file, 'w') as out_stream:

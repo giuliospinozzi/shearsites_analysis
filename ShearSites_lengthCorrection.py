@@ -16,17 +16,17 @@ header = """
     aggregation around ISs.
   
  Note:
-  - the script needs *.shearsites.raw.sort.uniq.bed and 
-    *.shearsites.ISfixed.bed files. Such files MUST BE PAIRED LINE BY LINE.
+  - the script needs .shearsites.tsv and 
+    *.shearsites.ISfixed.tsv files. Such files MUST BE PAIRED LINE BY LINE.
     Controls NOT YET IMPLEMENTED, only 'soft checks'.
 
  Steps
-    1. Load *.shearsites.raw.sort.uniq.bed (or as supplied through --origFile_nameEnd)
+    1. Load .shearsites.tsv (or as supplied through --origFile_nameEnd)
        from cwd (or as supplied by --folder)
-    2. Load .shearsites.ISfixed.bed (or as supplied through --ISfixedFile_nameEnd)
+    2. Load .shearsites.ISfixed.tsv (or as supplied through --ISfixedFile_nameEnd)
        from cwd (or as supplied by --folder)
     3. Fix Shear Site lengths by line-by-line comparison
-    4. Write results in *.shearsites.ISfixed.LENGTHfixed.bed files (or as supplied
+    4. Write results in *.shearsites.ISfixed.LENGTHfixed.tsv files (or as supplied
        by --outFile_nameEnd)
 """ 
 
@@ -39,9 +39,9 @@ usage_example = ""
 # print header
 parser = argparse.ArgumentParser(usage = usage_example, epilog = "[ hSR-TIGET - Vector Integration Core - Bioinformatics ] \n", description = description)
 parser.add_argument('--folder', dest="folder", help="path of the folder to operate into", action="store", default=os.getcwd(), required=False)
-parser.add_argument('--origFile_nameEnd', dest="origFile_nameEnd", help="string composed by suffixes + extension, to identify original files", action="store", default=".shearsites.raw.sort.uniq.bed", required=False)
-parser.add_argument('--ISfixedFile_nameEnd', dest="ISfixedFile_nameEnd", help="string composed by suffixes + extension to identify IS fixed files", action="store", default=".shearsites.ISfixed.bed", required=False)
-parser.add_argument('--outFile_nameEnd', dest="outFile_nameEnd", help="string to name out files, used as suffixes + extension", action="store", default=".shearsites.ISfixed.LENGTHfixed.bed", required=False)
+parser.add_argument('--origFile_nameEnd', dest="origFile_nameEnd", help="string composed by suffixes + extension, to identify original files", action="store", default=".shearsites.tsv", required=False)
+parser.add_argument('--ISfixedFile_nameEnd', dest="ISfixedFile_nameEnd", help="string composed by suffixes + extension to identify IS fixed files", action="store", default=".shearsites.ISfixed.tsv", required=False)
+parser.add_argument('--outFile_nameEnd', dest="outFile_nameEnd", help="string to name out files, used as suffixes + extension", action="store", default=".shearsites.ISfixed.LENGTHfixed.tsv", required=False)
 #parser.add_argument('--an_arg', dest="an_arg", help="some help", action="store", required=True)
 #parser.add_argument('--another_arg', dest="another_arg", help="some help again", action="store", default="default_value", required=False)
 args = parser.parse_args()
@@ -105,24 +105,21 @@ def loadFile(path, split_data='\t', end_of_line='\n'):
 def applyCorrection(original_file, ISfixed_file, out_file, out_file_separator='\t', out_file_end_of_line='\n'):
     """
     Fix Shear Site lengths by line-by-line comparison of original_file and ISfixed_file.
-    Results in out_file. Bed format like input ones.
+    Results in out_file. TSV ormat like input ones.
     """
     # Compute outFile_lines
     outFile_lines = []
     for original_line, IS_fixed_line in zip(loadFile(original_file), loadFile(ISfixed_file)):
-        # soft check: only coordinates MAY be different
-        if ((original_line[0] != IS_fixed_line[0]) or (original_line[-2] != IS_fixed_line[-2]) or (original_line[-1] != IS_fixed_line[-1])):
+        # soft check: only mapping coordinates MAY be different
+        if ((original_line[0] != IS_fixed_line[0]) or (original_line[1] != IS_fixed_line[1]) or (original_line[3] != IS_fixed_line[3]) or (original_line[4] != IS_fixed_line[4]) or (original_line[5] != IS_fixed_line[5]) or (original_line[6] != IS_fixed_line[6]) or (original_line[7] != IS_fixed_line[7]) or (original_line[8] != IS_fixed_line[8]) or (original_line[9] != IS_fixed_line[9]) or (original_line[10] != IS_fixed_line[10]) or (original_line[11] != IS_fixed_line[11])):
             print "\n[ERROR]\t{original_file} and {ISfixed_file} are not properly paired!\n\tSKIP THIS FILE!\n".format(original_file=str(original_file), ISfixed_file=str(ISfixed_file))
             return 0
-        # soft check: start-end coordinates must be equal within a file
-        if ((original_line[1] != original_line[2]) or (IS_fixed_line[1] != IS_fixed_line[2])):
-            print "\n[ERROR]\tstart-end coordinates don't match while processing {original_file} / {ISfixed_file}\n\tSKIP THIS FILE!\n".format(original_file=str(original_file), ISfixed_file=str(ISfixed_file))
-            return 0
+        
         # length correction
-        if original_line[1] != IS_fixed_line[1]:
-            diff = int(original_line[1]) - int(IS_fixed_line[1])
+        if original_line[2] != IS_fixed_line[2]:
+            diff = int(original_line[2]) - int(IS_fixed_line[2])
             fragLength = int(original_line[-1])
-            if original_line[1] == '+':
+            if original_line[5] == '+':
                 fragLength = fragLength + diff
             else:
                 fragLength = fragLength - diff
