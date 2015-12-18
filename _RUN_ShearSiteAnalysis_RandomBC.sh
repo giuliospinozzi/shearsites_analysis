@@ -148,7 +148,7 @@ echo "
     " 
 
 
-
+# With chrM removal
 echo "
 +-----------------------------------------------------------------+"
 echo "PYTHON: ShearSites Identification"
@@ -162,6 +162,19 @@ for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
 done
 # out files: *.shearsites.tsv
 #==============================================================================#
+
+# # All data
+# echo "
+# +-----------------------------------------------------------------+"
+# echo "PYTHON: ShearSites Identification"
+# ##### ============== PYTHON: ShearSites_identification.py ================ #####
+# for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
+#   #FILENAME=`basename $k`;
+#   #BARCODE=${FILENAME:0:-21};
+#   python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $k --bed2 ${k:0:-21}.sorted.allr2reads.bed;
+# done
+# # out files: *.shearsites.tsv
+# #==============================================================================#
 
 echo "
 +-----------------------------------------------------------------+"
@@ -208,7 +221,7 @@ python ShearSites_lengthCorrection.py;
 # out filename: .shearsites.ISfixed.LENGTHfixed.tsv (or set args)
 #=================================================================================#
 
-### With fastq GZIP compression
+# # With fastq GZIP compression
 # echo "
 # +-----------------------------------------------------------------+"
 # echo "FASTX_TRIMMER: extract random barcodes from R2 fastq file"
@@ -224,7 +237,7 @@ python ShearSites_lengthCorrection.py;
 # rm R2_selected_reads.fastq.gz;
 # #==========================================================================================#
 
-### Simple fastq
+# Simple fastq
 echo "
 +-----------------------------------------------------------------+"
 echo "FASTX_TRIMMER: extract random barcodes from R2 fastq file"
@@ -258,12 +271,11 @@ echo "Moving output files in the destination directory..."
 mkdir $BASEDIR/quantification
 mkdir ${OUTDIR}
 mkdir ${OUTDIR}/RandomBC
-cp *.pdf *.tsv *.xlsx ${OUTDIR}/RandomBC
+cp *.pdf *.tsv *.xlsx *.log ${OUTDIR}/RandomBC
 echo "...done!"
 echo "
 Removing temp files..."
-rm *.pdf *.tsv *.bed *.xlsx *.ISfixed.tsv *.ISfixed.LENGTHfixed.tsv
-# add rm *.txt (headers files) and *.fasta (.randomBC.fasta)
+rm *.pdf *.tsv *.bed *.xlsx *.ISfixed.tsv *.ISfixed.LENGTHfixed.tsv *.txt *.randomBC.fasta
 echo "...Finished!
 **********************************************************"
 
