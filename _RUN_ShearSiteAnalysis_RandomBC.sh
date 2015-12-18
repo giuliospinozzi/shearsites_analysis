@@ -275,7 +275,7 @@ cp *.pdf *.tsv *.xlsx *.log ${OUTDIR}/RandomBC
 echo "...done!"
 echo "
 Removing temp files..."
-rm *.pdf *.tsv *.bed *.xlsx *.ISfixed.tsv *.ISfixed.LENGTHfixed.tsv *.txt *.randomBC.fasta
+rm *.pdf *.tsv *.bed *.xlsx *.txt *.randomBC.fasta
 echo "...Finished!
 **********************************************************"
 
