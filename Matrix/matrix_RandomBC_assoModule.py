@@ -36,54 +36,6 @@ def humanSorted(l):
     return sort_nicely(l)
     
 
-def generateFilePath (filename, folder=os.getcwd()):
-    """
-    Purpose: WRITE A FILE
-    
-    IN: 
-    filename - ... (trying to crack with a path raise an error)
-    folder - ... complete path (e.g. starting with '/') are checked and taken as they are.
-                 words or partial path ('foldername' or 'foldername/subfolder') will be
-                 taken as cwd/...
-    OUT:
-    complete_path - complete path from folder+filename (checked)
-    """
-    # Check folder and create if it doesn't exist
-    try:
-        folder = os.path.abspath(os.path.normpath(folder))   ### good mod, backward compatible!
-    except Exception, err_message:
-        print "\n[ERROR] '{folder}' is not formatted as valid output path!".format(folder=str(folder))
-        print "os.path.normpath returned: ", err_message
-        sys.exit("\n[QUIT]\n")
-    if os.path.isfile(folder):
-        print "\n[ERROR] Output path must be a folder path, not a file! Your input: '{folder}'".format(folder=str(folder))
-        sys.exit("\n[QUIT]\n")
-    if not os.path.exists(folder):
-        try:
-            os.makedirs(folder)
-        except Exception, err_message:
-            print "\n[ERROR] '{folder}' is not a valid folder path or you don't have sufficient privileges to create it!".format(folder=str(folder))
-            print "os.makedirs returned: ", err_message
-            sys.exit("\n[QUIT]\n")
-    if not os.access(folder, os.W_OK):
-        print "\n[ERROR] Can't write anything in {folder}'".format(folder=str(folder))
-        sys.exit("\n[QUIT]\n")
-    # Cast filename
-    filename = str(filename)
-    # Create complete path and warn if exists!
-    complete_path = os.path.join(folder, filename)
-    if os.path.isfile(complete_path):
-        print "\n[WARNING] {complete_path} already exists!".format(complete_path=str(complete_path))
-    # Simulate writing
-    try:
-        filehandle = open(complete_path, 'w')
-        filehandle.close()
-    except IOError:
-        print "\n[ERROR] '{complete_path}' is not a valid file path or you don't have sufficient privileges to write there!".format(complete_path=str(complete_path))
-        sys.exit("\n[QUIT]\n")
-    return complete_path
-    
-    
 def getFilePath (filename, folder=os.getcwd()):
     """
     Purpose: READ A FILE

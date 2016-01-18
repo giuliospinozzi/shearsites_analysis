@@ -24,6 +24,10 @@ POOL = "LANE_1"
 data_files_delimiter = '\t'
 data_files_name_filter = ".randomBC.tsv"  # always valid despite corrections applied
 
+# Output - outputModule
+#ground_dir, DISEASE, PATIENT, POOL as for Data
+outfolder = "Matrixes"
+out_files_delimiter = "\t"
 
 #++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++#
 
@@ -31,3 +35,7 @@ def verbosePrint(x, verbose=verbose):
     if verbose:
         print x
 
+#++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
+
+if __name__ == "__main__":
+    pass

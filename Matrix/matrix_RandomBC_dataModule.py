@@ -37,7 +37,7 @@ def humanSorted(l):
 def buildInputPath(ground_dir, DISEASE, PATIENT, POOL):
     # Check ground_dir
     try:
-        ground_dir = os.path.abspath(os.path.normpath(ground_dir))
+        ground_dir = os.path.normpath(ground_dir)
     except Exception, err_message:
         print "\n[ERROR] ground_dir='{ground_dir}' is not formatted as valid path!".format(ground_dir=str(ground_dir))
         print "os.path.normpath returned: ", err_message
