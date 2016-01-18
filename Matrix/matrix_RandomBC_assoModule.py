@@ -13,7 +13,8 @@ import re
 
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-verbose = True
+import matrix_RandomBC_globModule
+verbose = matrix_RandomBC_globModule.verbose
 
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
@@ -215,7 +216,7 @@ def loadAssoFile(asso_file_name, asso_folder, asso_delimiter):
     # Arrange data
     asso_dict = arrangeAssoData(asso_file_nested_list)
     # Print a Summary if verbose
-    verbosePrint("\n>>> Association File loaded!")
+    verbosePrint("\n\n>>> Association File loaded!")
     verbosePrint("> path = {path}".format(path=str(asso_file_complete_path)))
     master_keys = humanSorted(asso_dict.keys())
     verbosePrint("> n lines = {n_lines}".format(n_lines=str(len(master_keys))))
@@ -233,7 +234,7 @@ def loadAssoFile(asso_file_name, asso_folder, asso_delimiter):
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
 
 if __name__ == "__main__":
-    # Input vars
+    # Test vars
     asso_folder = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/asso"  # /opt/applications/scripts/isatk/elements/association
     asso_file_name = "asso.assayvalidation.lane1.tsv"
     asso_delimiter = '\t'

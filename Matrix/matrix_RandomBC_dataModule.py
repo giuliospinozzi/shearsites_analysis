@@ -11,7 +11,8 @@ import re
 import csv
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-verbose = True
+import matrix_RandomBC_globModule
+verbose = matrix_RandomBC_globModule.verbose
 
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
@@ -195,18 +196,26 @@ def loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, da
     Results are returned in two dict: POOL_alldata_dict, POOL_IS_dict; both have
     barcodes as keys.
     """
+    verbosePrint("\n\n>>> Loading data ...")
     INDIR = buildInputPath(ground_dir, DISEASE, PATIENT, POOL)
+    verbosePrint("> path: {path}".format(path=str(INDIR)))
     filtered_dir_content = listDir(INDIR, name_filter=data_files_name_filter)
+    verbosePrint("> exploited substring for data detection: '{data_files_name_filter}'".format(data_files_name_filter=str(data_files_name_filter)))
+    verbosePrint("> n data files detected: {n_files}".format(n_files=str(len(filtered_dir_content))))
+    verbosePrint("> data file list: {filtered_dir_content}".format(filtered_dir_content=str(filtered_dir_content)))
+    verbosePrint("")
     POOL_alldata_dict = {}
     POOL_IS_dict = {}
     for path in filtered_dir_content:
         filename = str(os.path.basename(path))
         barcode = ".".join((filename.split("."))[:2])
+        verbosePrint("> Processing {filename}, barcode={barcode} ...".format(filename=str(filename), barcode=str(barcode)))
         data_file_nested_list = loadFile (path, data_files_delimiter)
         alldata_dict, IS_dict = arrangeData(data_file_nested_list)
         POOL_alldata_dict[barcode] = alldata_dict
         POOL_IS_dict[barcode] = IS_dict
-        # If verbose Write a summary!!
+        # If verbose, maybe some details about file content should be printed (new function deepVerbosePrint?)
+    verbosePrint("\n>>> Data Loaded!\n")
     return POOL_alldata_dict, POOL_IS_dict
 
 
@@ -214,27 +223,49 @@ def loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, da
 
 if __name__ == "__main__":
     
-#    # Input vars
+#    # Test vars - Gemini
 #    ground_dir = "/opt/NGS/results"
 #    DISEASE = "AssayValidation"
 #    PATIENT = "CEMJY"
 #    POOL = "LANE_1"
 #    data_files_delimiter = '\t'
 #    data_files_name_filter = ".randomBC.tsv"  # always valid despite corrections applied
-#    # Test
+#
+#    # Test code - Gemini
+#    # loadDataFiles calls buildInputPath and then loops over files returned by listDir
+#    # Each file is loaded by loadFile and arranged as nested dictionary by arrangeData: alldata_dict, IS_dict
+#    # Each file is associated to a barcode, so results of the whole POOL are aggregated in POOL_alldata_dict, POOL_IS_dict, increasing nesting with 'barcode' keys.
 #    POOL_alldata_dict, POOL_IS_dict = loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter)
     
-    # Local Test
+    # Test vars for Test in Local
     delimiter = '\t'
-    filtered_dir_content = listDir("/home/stefano/Desktop/RandomBC_matrix_development/test_input/data", name_filter=".randomBC.tsv")  # always valid despite corrections applied
+    path = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/data"
+    data_files_name_filter = ".randomBC.tsv"
+    filtered_dir_content = listDir(path, name_filter=data_files_name_filter)  # always valid despite corrections applied
+    # Tmp code for Test in Local
+    verbosePrint("\n\n>>> Loading data ...")
+    verbosePrint("> path: {path}".format(path=str(path)))
+    verbosePrint("> exploited substring for data detection: '{data_files_name_filter}'".format(data_files_name_filter=str(data_files_name_filter)))
+    verbosePrint("> n data files detected: {n_files}".format(n_files=str(len(filtered_dir_content))))
+    verbosePrint("> data file list: {filtered_dir_content}".format(filtered_dir_content=str(filtered_dir_content)))
+    verbosePrint("")
     POOL_IS_dict = {}
     POOL_alldata_dict = {}
     for path in filtered_dir_content:
         filename = str(os.path.basename(path))
         barcode = ".".join((filename.split("."))[:2])
+        verbosePrint("> Processing {filename}, barcode={barcode} ...".format(filename=str(filename), barcode=str(barcode)))
         data_file_nested_list = loadFile (path, delimiter)
         alldata_dict, IS_dict = arrangeData(data_file_nested_list)
         POOL_IS_dict[barcode] = IS_dict
         POOL_alldata_dict[barcode] = alldata_dict
-    
-    
+    verbosePrint("\n>>> Data Loaded!\n")
+
+
+
+
+
+
+
+
+ 
