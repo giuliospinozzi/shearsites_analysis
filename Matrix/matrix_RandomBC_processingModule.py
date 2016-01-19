@@ -39,19 +39,19 @@ def buildDataFrame(POOL_IS_dict):
     
 def buildSeqCountMatrix(df):
     # pivot to get SEQUENCE COUNTS of ISs in df
-    seqCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='seq_count', aggfunc='sum', margins=True)
+    seqCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='seq_count', aggfunc='sum', margins=False)
     return seqCount_matrix
     
 def buildCellCountMatrix(df):
     # pivot to get counts of distinct SHEARSITE-RANDOMTAG couples for each ISs in df
-    cellCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='seq_count', aggfunc=np.count_nonzero, margins=True)
+    cellCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='seq_count', aggfunc=np.count_nonzero, margins=False)
     return cellCount_matrix
     
 def buildShsCountMatrix(df):
     # pivot to get counts of distinct SHEARSITES for each ISs in df
     # unique method exploited by lambda in aggfunc is a method of pd.Series class
     ### NOTE: here MARGINS are not as expected (not partial 'sums' of course, but the 'overall' len(x.unique()) column!!)
-    ShsCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='shearsite', aggfunc=lambda x: len(x.unique()))
+    ShsCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='shearsite', aggfunc=lambda x: len(x.unique()), margins=False)
     return ShsCount_matrix
 
 

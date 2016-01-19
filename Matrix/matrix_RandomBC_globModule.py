@@ -27,7 +27,10 @@ data_files_name_filter = ".randomBC.tsv"  # always valid despite corrections app
 # Output - outputModule
 #ground_dir, DISEASE, PATIENT, POOL as for Data
 outfolder = "Matrixes"
-out_files_delimiter = "\t"
+out_files_delimiter = '\t'
+relabelling = True
+use_fields = 6  # can be an int or a sequence of ints
+concat = "_"  # char to concatenate fields
 
 #++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++#
 

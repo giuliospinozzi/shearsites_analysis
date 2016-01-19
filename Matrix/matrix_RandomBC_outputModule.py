@@ -7,29 +7,19 @@ Created on Mon Jan 18 13:46:57 2016
 
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
 import os, sys
-import re
+import collections
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
 import matrix_RandomBC_globModule
 verbose = matrix_RandomBC_globModule.verbose
+use_fields = matrix_RandomBC_globModule.use_fields
+concat = matrix_RandomBC_globModule.concat
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
 
 def verbosePrint(x, verbose=verbose):
     if verbose:
         print x
-
-def humanSorted(l):
-    def tryint(s):
-        try:
-            return int(s)
-        except:
-            return s
-    def alphanum_key(s):
-        return [ tryint(c) for c in re.split('([0-9]+)', s) ]
-    def sort_nicely(l):
-        return sorted(l, key=alphanum_key)
-    return sort_nicely(l)
 
 
 def buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder):
@@ -62,11 +52,40 @@ def buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder):
         sys.exit("\n[QUIT]\n")
     return OUTDIR
 
-   
+
+def relabelling(df, asso_dict, use_fields=use_fields, concat=concat, inplace=False):
+    # use_fields can be an int or a sequence of ints
+    
+    def buildRelabellingDict(asso_dict, use_fields, concat):
+        relabellingDict = {}
+        for k, d in asso_dict.items():
+            fields = []
+            [fields.append(d[n]) for n in use_fields]
+            new_label = concat.join(fields)
+            relabellingDict[k] = new_label
+        return relabellingDict
+    
+    if isinstance(use_fields, collections.Iterable):
+        use_fields = tuple(use_fields)
+    else:
+        use_fields = tuple((use_fields,))
+    
+    if inplace is True:
+        # copy : boolean, default True
+        df.rename(columns=buildRelabellingDict(asso_dict, use_fields, concat), inplace=True)
+    else:
+        # new object
+        return df.rename(columns=buildRelabellingDict(asso_dict, use_fields, concat), inplace=False)
+                
+
 def writeMatrix(df, complete_path, out_files_delimiter, metadata=None, verbose=verbose):
     # metadata is thought to get asso_dict as input
-    df.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index_label= 'IS_genomicID', encoding='utf-8')
-    verbosePrint("> Created file '{complete_path}'".format(complete_path=str(complete_path)))
+    if metadata is None:
+        df.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index_label= 'IS_genomicID', encoding='utf-8')
+    else:
+        df_relabelled = relabelling(df, metadata)  # see default kwargs
+        df_relabelled.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index_label= 'IS_genomicID', encoding='utf-8')
+    verbosePrint(">>> Created file '{complete_path}'".format(complete_path=str(complete_path)))
     return complete_path
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
