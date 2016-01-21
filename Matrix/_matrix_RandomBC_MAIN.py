@@ -44,6 +44,9 @@ outfolder = matrix_RandomBC_globModule.outfolder
 out_files_delimiter = matrix_RandomBC_globModule.out_files_delimiter
 relabelling = matrix_RandomBC_globModule.relabelling
 
+# Export CEM
+export_cem = matrix_RandomBC_globModule.export_cem
+
 
 #++++++++++++++++++++++++ CODE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -56,27 +59,43 @@ asso_dict = matrix_RandomBC_assoModule.loadAssoFile(asso_file_name, asso_folder,
 POOL_alldata_dict, POOL_IS_dict = matrix_RandomBC_dataModule.loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter)
 ##############################################################################################################################################################
 
-### Process Data ###########################################################
+### Process Data ##################################################################
 df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
 seqCount_matrix = matrix_RandomBC_processingModule.buildSeqCountMatrix(df)
-cellCount_matrix = matrix_RandomBC_processingModule.buildCellCountMatrix(df)
 ShsCount_matrix = matrix_RandomBC_processingModule.buildShsCountMatrix(df)
-############################################################################
+barcodeCount_matrix = matrix_RandomBC_processingModule.buildBarcodeCountMatrix(df)
+cellCount_matrix = matrix_RandomBC_processingModule.buildCellCountMatrix(df)
+###################################################################################
 
-### Output ####################################################################################################################
+### Output ###################################################################################################################################################
 metadata = None  # No relabelling
 if relabelling:
     metadata = asso_dict
 OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder)
 seqCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "seqCount_matrix.tsv"))
 matrix_RandomBC_outputModule.writeMatrix(seqCount_matrix, seqCount_matrix_outPath, out_files_delimiter, metadata=metadata)
-cellCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "cellCount_matrix.tsv"))
-matrix_RandomBC_outputModule.writeMatrix(cellCount_matrix, cellCount_matrix_outPath, out_files_delimiter, metadata=metadata)
 ShsCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "ShsCount_matrix.tsv"))
 matrix_RandomBC_outputModule.writeMatrix(ShsCount_matrix, ShsCount_matrix_outPath, out_files_delimiter, metadata=metadata)
-###############################################################################################################################
+barcodeCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "barcodeCount_matrix.tsv"))
+matrix_RandomBC_outputModule.writeMatrix(barcodeCount_matrix, barcodeCount_matrix_outPath, out_files_delimiter, metadata=metadata)
+cellCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "cellCount_matrix.tsv"))
+matrix_RandomBC_outputModule.writeMatrix(cellCount_matrix, cellCount_matrix_outPath, out_files_delimiter, metadata=metadata)
 
-##++++++++++++++++++++++++ LOCAL TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+if export_cem:
+    # Normalize matrixes
+    seqCount_matrix_norm = seqCount_matrix.apply(lambda x: x/x.sum())
+    ShsCount_matrix_norm = ShsCount_matrix.apply(lambda x: x/x.sum())
+    barcodeCount_matrix_norm = barcodeCount_matrix.apply(lambda x: x/x.sum())
+    cellCount_matrix_norm = cellCount_matrix.apply(lambda x: x/x.sum())
+    # Prepare: more matrixes can be added!
+    df_dict = {'sequence_count': seqCount_matrix, 'shearsite_count': ShsCount_matrix, 'TAG_count': barcodeCount_matrix, 'shearsite&TAG_count': cellCount_matrix,
+               'sequence_count_quantification': seqCount_matrix_norm, 'shearsite_count_quantification': ShsCount_matrix_norm, 'TAG_count_quantification': barcodeCount_matrix_norm, 'shearsite&TAG_count_quantification': cellCount_matrix_norm}
+    # Export
+    from matrix_RandomBC_exportCEM import exportCEM
+    outpath = exportCEM(df_dict, asso_dict) # kwargs: should filename, sep, eol be set here explicitly through matrix_RandomBC_globModule?
+#############################################################################################################################################################
+
+##++++++++++++++++++++++++ LOCAL TEST ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #
 #### Load Association File Data
 ## OVERRIDE ASSO VARS FOR LOCAL TEST
@@ -121,6 +140,7 @@ matrix_RandomBC_outputModule.writeMatrix(ShsCount_matrix, ShsCount_matrix_outPat
 #seqCount_matrix = matrix_RandomBC_processingModule.buildSeqCountMatrix(df)
 #cellCount_matrix = matrix_RandomBC_processingModule.buildCellCountMatrix(df)
 #ShsCount_matrix = matrix_RandomBC_processingModule.buildShsCountMatrix(df)
+#barcodeCount_matrix = matrix_RandomBC_processingModule.buildBarcodeCountMatrix(df)
 #
 #### Output
 ##OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder)
@@ -138,9 +158,12 @@ matrix_RandomBC_outputModule.writeMatrix(ShsCount_matrix, ShsCount_matrix_outPat
 #
 #ShsCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "ShsCount_matrix.tsv"))
 #matrix_RandomBC_outputModule.writeMatrix(ShsCount_matrix, ShsCount_matrix_outPath, out_files_delimiter, metadata=metadata)
-
-
-
+#
+#barcodeCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "barcodeCount_matrix.tsv"))
+#matrix_RandomBC_outputModule.writeMatrix(barcodeCount_matrix, barcodeCount_matrix_outPath, out_files_delimiter, metadata=metadata)
+#
+#if export_cem:
+#    print "\nCannot run exportCEM in Local!\n"
 
 
 

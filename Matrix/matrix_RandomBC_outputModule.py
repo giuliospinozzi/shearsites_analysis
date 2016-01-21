@@ -54,7 +54,10 @@ def buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder):
 
 
 def relabelling(df, asso_dict, use_fields=use_fields, concat=concat, inplace=False):
-    # use_fields can be an int or a sequence of ints
+    # NOTE: - df col names must be the keys of asso_dict!
+    #       - use_fields can be an int or a sequence of ints
+    #       - relabelling is exploited also in export_CEM module!
+    #         However, kwargs are passed explicitly there.
     
     def buildRelabellingDict(asso_dict, use_fields, concat):
         relabellingDict = {}
@@ -79,7 +82,8 @@ def relabelling(df, asso_dict, use_fields=use_fields, concat=concat, inplace=Fal
                 
 
 def writeMatrix(df, complete_path, out_files_delimiter, metadata=None, verbose=verbose):
-    # metadata is thought to get asso_dict as input
+    # metadata takes None or asso_dict for relabelling.
+    # relabelling function has use_fields fixed by default as global var
     if metadata is None:
         df.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index_label= 'IS_genomicID', encoding='utf-8')
     else:

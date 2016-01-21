@@ -41,18 +41,32 @@ def buildSeqCountMatrix(df):
     # pivot to get SEQUENCE COUNTS of ISs in df
     seqCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='seq_count', aggfunc='sum', margins=False)
     return seqCount_matrix
-    
-def buildCellCountMatrix(df):
-    # pivot to get counts of distinct SHEARSITE-RANDOMTAG couples for each ISs in df
-    cellCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='seq_count', aggfunc=np.count_nonzero, margins=False)
-    return cellCount_matrix
-    
+
 def buildShsCountMatrix(df):
     # pivot to get counts of distinct SHEARSITES for each ISs in df
     # unique method exploited by lambda in aggfunc is a method of pd.Series class
     ### NOTE: here MARGINS are not as expected (not partial 'sums' of course, but the 'overall' len(x.unique()) column!!)
     ShsCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='shearsite', aggfunc=lambda x: len(x.unique()), margins=False)
     return ShsCount_matrix
+
+def buildBarcodeCountMatrix(df):
+    # drop useless data from df and get DF
+    DF = df.drop('shearsite', 1)
+    DF = DF.drop('seq_count', 1)
+    # group-by remaining fields but randomBC - > duplicate entries may arise
+    grouped = DF.groupby(['barcode','genomic_coordinates'], as_index=False)
+    # aggregate duplicates taking the 'count-distinct' as values
+    barcodeCount_df = grouped.aggregate(lambda x: len(np.unique(x)))
+    barcodeCount_df.rename(columns={'randomBC': 'randomBC_countDistinct'}, inplace=True)
+    # pivot to shape barcodeCount_df as matrix of distinct RANDOM-BARCODES for each ISs in 
+    barcodeCount_matrix = pd.pivot_table(barcodeCount_df, index='genomic_coordinates', columns='barcode', values='randomBC_countDistinct')
+    return barcodeCount_matrix
+
+def buildCellCountMatrix(df):
+    # pivot to get counts of distinct SHEARSITE-RANDOMTAG couples for each ISs in df
+    cellCount_matrix = pd.pivot_table(df, index='genomic_coordinates', columns='barcode', values='seq_count', aggfunc=np.count_nonzero, margins=False)
+    return cellCount_matrix
+
 
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#

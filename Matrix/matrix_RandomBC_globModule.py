@@ -32,11 +32,29 @@ relabelling = True
 use_fields = 6  # can be an int or a sequence of ints
 concat = "_"  # char to concatenate fields
 
+# Export CEM
+export_cem = True
+
 #++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++#
 
 def verbosePrint(x, verbose=verbose):
     if verbose:
         print x
+
+
+import re
+     
+def humanSorted(l):
+    def tryint(s):
+        try:
+            return int(s)
+        except:
+            return s
+    def alphanum_key(s):
+        return [ tryint(c) for c in re.split('([0-9]+)', s) ]
+    def sort_nicely(l):
+        return sorted(l, key=alphanum_key)
+    return sort_nicely(l)
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
 
