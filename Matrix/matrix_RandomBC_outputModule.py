@@ -8,19 +8,21 @@ Created on Mon Jan 18 13:46:57 2016
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
 import os, sys
 import collections
+import matrix_RandomBC_globModule
+
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-import matrix_RandomBC_globModule
 verbose = matrix_RandomBC_globModule.verbose
 use_fields = matrix_RandomBC_globModule.use_fields
 concat = matrix_RandomBC_globModule.concat
 
+
+#++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
+verbosePrint = matrix_RandomBC_globModule.verbosePrint
+# humanSorted = matrix_RandomBC_globModule.humanSorted
+
+
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
-
-def verbosePrint(x, verbose=verbose):
-    if verbose:
-        print x
-
 
 def buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder):
     # Check ground_dir

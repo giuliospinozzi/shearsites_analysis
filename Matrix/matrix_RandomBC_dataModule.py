@@ -6,33 +6,20 @@ Created on Fri Jan  8 10:20:07 2016
 """
 
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
-import os, sys
-import re
-import csv
+import os, sys, csv
+import matrix_RandomBC_globModule
+
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-import matrix_RandomBC_globModule
 verbose = matrix_RandomBC_globModule.verbose
 
 
+#++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
+verbosePrint = matrix_RandomBC_globModule.verbosePrint
+humanSorted = matrix_RandomBC_globModule.humanSorted
+
+
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
-
-def verbosePrint(x, verbose=verbose):
-    if verbose:
-        print x
-
-def humanSorted(l):
-    def tryint(s):
-        try:
-            return int(s)
-        except:
-            return s
-    def alphanum_key(s):
-        return [ tryint(c) for c in re.split('([0-9]+)', s) ]
-    def sort_nicely(l):
-        return sorted(l, key=alphanum_key)
-    return sort_nicely(l)
-
 
 def buildInputPath(ground_dir, DISEASE, PATIENT, POOL):
     # Check ground_dir
@@ -237,12 +224,12 @@ if __name__ == "__main__":
 #    # Each file is associated to a barcode, so results of the whole POOL are aggregated in POOL_alldata_dict, POOL_IS_dict, increasing nesting with 'barcode' keys.
 #    POOL_alldata_dict, POOL_IS_dict = loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter)
     
-    # Test vars for Test in Local
+    # Test vars - Local
     delimiter = '\t'
     path = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/data"
     data_files_name_filter = ".randomBC.tsv"
     filtered_dir_content = listDir(path, name_filter=data_files_name_filter)  # always valid despite corrections applied
-    # Tmp code for Test in Local
+    # Test code - Local
     verbosePrint("\n\n>>> Loading data ...")
     verbosePrint("> path: {path}".format(path=str(path)))
     verbosePrint("> exploited substring for data detection: '{data_files_name_filter}'".format(data_files_name_filter=str(data_files_name_filter)))

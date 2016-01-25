@@ -6,7 +6,7 @@ Created on Mon Jan 18 09:49:24 2016
 """
 
 
-#++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++ Global Vars +++++++++++++++++++++++++++++++++++#
 
 # Screen print
 verbose = True
@@ -22,7 +22,7 @@ DISEASE = "AssayValidation"
 PATIENT = "CEMJY"
 POOL = "LANE_1"
 data_files_delimiter = '\t'
-data_files_name_filter = ".randomBC.tsv"  # always valid despite corrections applied
+data_files_name_filter = ".ISfixed.LENGTHfixed.randomBC.tsv"  # BE CAREFUL HERE!
 
 # Output - outputModule
 #ground_dir, DISEASE, PATIENT, POOL as for Data
@@ -32,18 +32,22 @@ relabelling = True
 use_fields = 6  # can be an int or a sequence of ints
 concat = "_"  # char to concatenate fields
 
-# Export CEM
+### Export CEM
+# config
 export_cem = True
+data_id = ""  # something related to data_files_name_filter
+# build out file name structure
+out_filename = "CEMdata" + "_" + DISEASE + "_" + POOL
+if data_id: out_filename += "_" + data_id 
+out_filename += ".tsv"
 
-#++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++#
+import re
 
 def verbosePrint(x, verbose=verbose):
     if verbose:
         print x
 
-
-import re
-     
 def humanSorted(l):
     def tryint(s):
         try:

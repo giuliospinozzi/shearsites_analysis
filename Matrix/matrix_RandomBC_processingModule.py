@@ -9,12 +9,15 @@ Created on Mon Jan 18 11:29:56 2016
 import pandas as pd
 import numpy as np
 import collections
+import matrix_RandomBC_globModule
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-import matrix_RandomBC_globModule
 # verbose = matrix_RandomBC_globModule.verbose
-humanSorted = matrix_RandomBC_globModule.humanSorted
 
+
+#++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
+# verbosePrint = matrix_RandomBC_globModule.verbosePrint
+humanSorted = matrix_RandomBC_globModule.humanSorted
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++++#
 

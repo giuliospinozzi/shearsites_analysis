@@ -7,34 +7,19 @@ Created on Thu Jan  7 13:57:28 2016
 
 
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
-import os, sys
-import csv
-import re
-
+import os, sys, csv
+import matrix_RandomBC_globModule
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-import matrix_RandomBC_globModule
 verbose = matrix_RandomBC_globModule.verbose
 
 
+#++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
+verbosePrint = matrix_RandomBC_globModule.verbosePrint
+humanSorted = matrix_RandomBC_globModule.humanSorted
+
+
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
-
-def verbosePrint(x, verbose=verbose):
-    if verbose:
-        print x
-
-def humanSorted(l):
-    def tryint(s):
-        try:
-            return int(s)
-        except:
-            return s
-    def alphanum_key(s):
-        return [ tryint(c) for c in re.split('([0-9]+)', s) ]
-    def sort_nicely(l):
-        return sorted(l, key=alphanum_key)
-    return sort_nicely(l)
-    
 
 def getFilePath (filename, folder=os.getcwd()):
     """
