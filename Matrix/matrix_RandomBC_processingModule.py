@@ -6,9 +6,9 @@ Created on Mon Jan 18 11:29:56 2016
 """
 
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
+import sys
 import pandas as pd
 import numpy as np
-import collections
 import matrix_RandomBC_globModule
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
@@ -18,23 +18,68 @@ import matrix_RandomBC_globModule
 #++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
 # verbosePrint = matrix_RandomBC_globModule.verbosePrint
 humanSorted = matrix_RandomBC_globModule.humanSorted
+flattenDict = matrix_RandomBC_globModule.flattenDict
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++++#
 
-def flattenDict(d, parent_key='', sep='@@'):
-    '''
-    - sep is used only in computation, so a 'robust' separator is advised
-    - parent_key can be used to add a fixed string on the key begins while flattening
-    '''
-    items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + str(k) if parent_key else k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(flattenDict(v, new_key, sep=sep).items())
-        else:
-            items.append((tuple(new_key.split(sep)), v))
-    return dict(items)
+  
+def buildExhaustiveDataFrame(POOL_alldata_dict):
     
+    # Prepare POOL_alldata_dict for flattening -> d
+    d = {}
+    for barcode in POOL_alldata_dict.keys():
+        if barcode not in d.keys():
+            d[barcode] = {}
+        for IS_id in POOL_alldata_dict[barcode].keys():
+            if IS_id not in d[barcode].keys():
+                d[barcode][IS_id] = {}
+            for header in POOL_alldata_dict[barcode][IS_id].keys():
+                if header not in d[barcode][IS_id].keys():
+                    d[barcode][IS_id][header] = [str(POOL_alldata_dict[barcode][IS_id][header]['length']),
+                                                 POOL_alldata_dict[barcode][IS_id][header]['r1_chr'],
+                                                 str(POOL_alldata_dict[barcode][IS_id][header]['r1_end']),
+                                                 str(POOL_alldata_dict[barcode][IS_id][header]['r1_quality']),
+                                                 str(POOL_alldata_dict[barcode][IS_id][header]['r1_start']),
+                                                 POOL_alldata_dict[barcode][IS_id][header]['r1_strand'],
+                                                 POOL_alldata_dict[barcode][IS_id][header]['r2_chr'],
+                                                 str(POOL_alldata_dict[barcode][IS_id][header]['r2_end']),
+                                                 str(POOL_alldata_dict[barcode][IS_id][header]['r2_quality']),
+                                                 str(POOL_alldata_dict[barcode][IS_id][header]['r2_start']),
+                                                 POOL_alldata_dict[barcode][IS_id][header]['r2_strand'],
+                                                 POOL_alldata_dict[barcode][IS_id][header]['randomBC'],
+                                                ]
+                    # d[barcode][IS_id][header] = ['length', 'r1_chr', 'r1_end', 'r1_quality', 'r1_start', 'r1_strand', 'r2_chr', 'r2_end', 'r2_quality', 'r2_start', 'r2_strand', 'randomBC']
+                else:
+                    print "\n[ERROR] Duplicate header found in {barcode} - {IS_id} : '{header}'".format(barcode=barcode, IS_id=IS_id, header=header)
+                    sys.exit("\n[QUIT]\n")
+    
+    # flatten d and build exhaustive_df
+    l=[]
+    [l.append(list(k) + v) for k,v in flattenDict(d).items()]
+    columns = ['barcode', 'genomic_coordinates', 'header', 'length', 'r1_chr', 'r1_end', 'r1_quality', 'r1_start', 'r1_strand', 'r2_chr', 'r2_end', 'r2_quality', 'r2_start', 'r2_strand', 'randomBC']
+    exhaustive_df = pd.DataFrame(l, columns=columns)
+    
+    # DONE! Here the structure is actually exhaustive
+    
+    # here drop columns and append headers through group-by
+    exhaustive_df = exhaustive_df.drop(['r1_chr', 'r1_end', 'r1_quality', 'r1_start', 'r1_strand', 'r2_chr', 'r2_end', 'r2_quality', 'r2_start', 'r2_strand'], 1)
+    for x in ['header', 'r1_chr', 'r1_end', 'r1_quality', 'r1_start', 'r1_strand', 'r2_chr', 'r2_end', 'r2_quality', 'r2_start', 'r2_strand']:
+        columns.remove(x)
+    exhaustive_df = exhaustive_df.groupby(columns)['header'].apply(lambda x: x.tolist())
+    exhaustive_df = pd.DataFrame(exhaustive_df)
+    exhaustive_df = exhaustive_df.reset_index()
+    # add seq_count column
+    exhaustive_df['seq_count'] = exhaustive_df['header'].apply(lambda x: len(x))
+    
+    return exhaustive_df   # up to now: like df = buildDataFrame() with 'header' column added (header list)
+
+##############################################################################################################################################################################
+### NOTE: buildExhaustiveDataFrame will be improved to manage ALL data at the end. Up to now, is just like df = buildDataFrame() with 'header' column added (header list)    #
+###       Despite the structure is ongoing, buildXxxxMatrix below can be adapted right now!                                                                                  #
+###       Functions exploiting pivot_table should be always ok (check it)                                                                                                    #
+###       Conversely, function exploiting 'drop-and-groupby' should be converted in a 'extractcolumns-and-groupby' fashion!                                                  #
+##############################################################################################################################################################################
+
 def buildDataFrame(POOL_IS_dict):
     l=[]
     [l.append(list(k) + [v]) for k,v in flattenDict(POOL_IS_dict).items()]

@@ -42,12 +42,12 @@ if data_id: out_filename += "_" + data_id
 out_filename += ".tsv"
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++#
-import re
 
 def verbosePrint(x, verbose=verbose):
     if verbose:
         print x
 
+import re
 def humanSorted(l):
     def tryint(s):
         try:
@@ -59,6 +59,21 @@ def humanSorted(l):
     def sort_nicely(l):
         return sorted(l, key=alphanum_key)
     return sort_nicely(l)
+
+import collections   
+def flattenDict(d, parent_key='', sep='@@'):
+    '''
+    - sep is used only in computation, so a 'robust' separator is advised
+    - parent_key can be used to add a fixed string on the key begins while flattening
+    '''
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + str(k) if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flattenDict(v, new_key, sep=sep).items())
+        else:
+            items.append((tuple(new_key.split(sep)), v))
+    return dict(items)
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
 
