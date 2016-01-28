@@ -25,6 +25,7 @@ humanSorted = matrix_RandomBC_globModule.humanSorted
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 
+
 def checkNucleotideBalancing(any_df):
     # try to take required columns -> new DF
     required_columns = ['randomBC', 'seq_count']
@@ -50,15 +51,15 @@ def checkNucleotideBalancing(any_df):
     nucleotidesCount_DF = pd.concat(l, axis=1)
     #######################################################################################
     # eg of output usage: PLOT ----> nucleotidesCount_DF.T.plot(kind='bar', stacked=True) #
+    # for better graphics please call plotNucleotideBalancing(nucleotidesCount_DF)        #
     #######################################################################################
     return nucleotidesCount_DF
     
-def plotNucleotideBalancing(nucleotidesCount_DF, title='PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=""):
+def plotNucleotideBalancing(nucleotidesCount_DF, title='PILED-UP RANDOM-BARCODES', stacked_bar=True, show_live=True, export=""):
     # Note: nucleotidesCount_DF from checkNucleotideBalancing
     # Note: export is supposed to be a complete-and-valid path.
     #       False, None, empty-string means "no export"
     
-    plt.close() # it's a try
     # Rename columns of nucleotidesCount_DF
     columns_relabelling = {}
     [columns_relabelling.update({i:i+1}) for i in range(len(list(nucleotidesCount_DF)))]
@@ -81,10 +82,16 @@ def plotNucleotideBalancing(nucleotidesCount_DF, title='PILED-UP SEQUENCES', sta
     ax2.set_ylim([0,100])
     # Plot data
     nucleotidesCount_DF.T.plot(kind='bar', stacked=stacked_bar, ax=ax, position=1)
+    if show_live:
+        plt.show()
     # Save plot
     if export:
         export = os.path.normpath(export)
         plt.savefig(export)
+    # close
+    if not show_live:
+        plt.close()
+
 
 
 def checkRandomBCfrequency(any_df):
@@ -101,20 +108,68 @@ def checkRandomBCfrequency(any_df):
     # create distinctBC_DF: distinct randomBC are row indexes,
     # seq_count is the only column, values are randomBC counts.
     distinctBC_DF = pd.pivot_table(DF, columns='randomBC', values='seq_count', aggfunc=sum).to_frame()
+    #######################################################################################
+    # eg of output usage: PLOT ----> distinctBC_DF.plot(kind='bar')                       #
+    # however this is not usually feasible due to the large amount of distinct BC         #
+    # for typical usage please call plotRandomBCfrequency(distinctBC_DF)                  #
+    #######################################################################################
     return distinctBC_DF
 
-def plotRandomBCfrequency(distinctBC_DF, show_live=True):
+def plotRandomBCfrequency(distinctBC_DF, title='RANDOM-BARCODE FREQUENCY', show_top_ranked=10, show_live=True, export=""):
+    # Note: distinctBC_DF from checkRandomBCfrequency
+    # Note: export is supposed to be a complete-and-valid path.
+    #       False, None, empty-string mean "no export"
+    # Note: show_top_ranked is supposed to be an int.
+    #       False, None, '0' mean "do not print top ranked barcodes"
+    
+    # Sort data
     distinctBC_DF = pd.DataFrame.sort(distinctBC_DF, columns='seq_count', ascending=False)
-    distinctBC_DF = distinctBC_DF.reset_index()
-    distinctBC_DF = distinctBC_DF.loc[:,'seq_count']
-    plt.close() # it's a try
+    # Prepare text data if show_top_ranked
+    top_represented_rBC = None
+    if show_top_ranked:
+        N = show_top_ranked
+        top_represented_rBC = "TOP-{N} RANDOM-BARCODES:".format(N=str(N))
+        for i in range(N):
+            top_represented_rBC += "\n {i}) {rBC}".format(i=str(i+1), rBC=str(list(distinctBC_DF.index.values)[i]))
+    # Prepare data to plot
+    distinctBC_DF = distinctBC_DF.reset_index()  # distinctBC_DF is sorted so reset_index() yields the ranking as index!
+    distinctBC_DF = distinctBC_DF.loc[:,'seq_count']  # take only data to plot
     # Set up interactive mode (plot pop-upping)
     if show_live:
         plt.ion()
     else:
         plt.ioff()
-    distinctBC_DF.plot(kind='bar')
-    # sistemare bene la grafica
+    # Prepare plot environment
+    fig = plt.figure() # Create matplotlib figure
+    plt.title(title)
+    ax = fig.add_subplot(111) # Create matplotlib axes
+    ax2 = ax.twinx() # Create another axes that shares the same x-axis as ax
+    # Prepare axis
+    y2_lim = 100 * float(distinctBC_DF.max()) / float(distinctBC_DF.sum())
+    ax.set_xlabel('distinct barcodes ranked by count (N={N})'.format(N=str(len(list(distinctBC_DF)))))
+    ax.set_ylabel('count (max={M}, min={m}, #classes={n})'.format(M=str(distinctBC_DF.max()), m=str(distinctBC_DF.min()), n=str(len(distinctBC_DF.unique()))))
+    ax.set_ylim([0, distinctBC_DF.max()])
+    ax2.set_ylabel('%')
+    ax2.set_ylim([0,y2_lim])
+    # Plot text data if show_top_ranked
+    if show_top_ranked:
+        ax.text(1.0/2.0*len(list(distinctBC_DF)), 1.0/2.0*distinctBC_DF.max(), top_represented_rBC, bbox={'facecolor':'blue', 'alpha':0.3, 'pad':10})
+    # Plot data
+    distinctBC_DF.plot(kind='area', ax=ax)
+    if show_live:
+        plt.show()
+    # Save plot
+    if export:
+        export = os.path.normpath(export)
+        plt.savefig(export)
+    # close
+    if not show_live:
+        plt.close()
+
+
+
+
+
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -162,6 +217,9 @@ if __name__ == "__main__":
     # Check advancements in matrix_RandomBC_processingModule.buildExhaustiveDataFrame
     
     #### Test Functions in this module
-    #overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
-    #plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
-    
+    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
+    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
+    overall_distinctBC_DF = checkRandomBCfrequency(exhaustive_df)
+    plotRandomBCfrequency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE FREQUENCY', show_top_ranked=10, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCfrequency.pdf"))
+    # Any df is accepted so the contents of each plot is the whole input DF.
+    # title and export kwargs allows you to put the proper label to your contents!
