@@ -9,8 +9,9 @@ Created on Tue Jan 26 10:38:43 2016
 import sys, os
 import matrix_RandomBC_globModule
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-#import editdistance  # e.g.: editdistance.eval('banana', 'bahama') >>> 2L
+import editdistance  # e.g.: editdistance.eval('banana', 'bahama') >>> 2L
 
 
 #++++++++++++++++++++++ Global Vars ++++++++++++++++++++++++++++++++++++++#
@@ -168,6 +169,81 @@ def plotRandomBCfrequency(distinctBC_DF, title='RANDOM-BARCODE FREQUENCY', show_
 
 
 
+def checkEditDistance(any_df):
+    # Note: 'randomBC' column required. 'shearsite' column as user whishes. 'genomic_coordinates' column exploited just for warning,
+    #       if present. Any other column in any_df is ignored and cannot provide any further splitting/hierarchy on data.
+    # Note: This function is DESIGNED TO BE USED ON DATA FROM A SINGLE INTEGRATION SITE, ALONG ITS SHEARSITES;
+    #       This is because within an IS, for each shersite, randomBCs are supposed to be UNIQUE (they usually have a seq_count!).
+    #       HOWEVER, THIS FUNCTION ALWAYS WORKS:
+    #          - if more than one IS is present, data will be still processed as belonging to one unique IS
+    #          - if no shearsites are present, data will be processed as belonging to one unique shear site of nominal length '0'
+    #          - when any (or all) among above cases happen, uniqueness of randomBCs will be forced, due to groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
+    
+    def editDistanceMatrix (randomBC_list, shearsite_label=""):
+        # Note: randomBC_list must be a list of unique BCs, supposed to be unique
+        # Note: shearsite_label add a prefix to columns/rows labels/indexes; 
+        #       with shearsite_label="" they remain just the BC's in randomBC_list
+        sorted_unique_randomBC_list = sorted(list(set(randomBC_list)))
+        if sorted_unique_randomBC_list != sorted(list(randomBC_list)):
+            print "\n[ERROR] checkEditDistance (through editDistanceMatrix) found duplicate randomBCs!"
+            sys.exit("\n[QUIT]\n")
+        l = []
+        l_append = l.append
+        shearsite_label = str(shearsite_label)
+        for col_rBC in sorted_unique_randomBC_list:
+            key_col_rBC = shearsite_label+col_rBC
+            d = {key_col_rBC: []}
+            d_append = d[key_col_rBC].append
+            for row_rBC in sorted_unique_randomBC_list:
+                d_append(editdistance.eval(col_rBC, row_rBC))
+            key_row_rBC = [shearsite_label+row_rBC for row_rBC in sorted_unique_randomBC_list]
+            l_append(pd.DataFrame(data=d, index=key_row_rBC))
+        ED_matrix = pd.concat(l, axis=1, join='inner')
+        return ED_matrix
+    
+    # data collector
+    l = []
+    # try to take required columns -> l
+    required_columns = ['randomBC']
+    try:
+        [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
+    except:
+        print "\n[ERROR] checkEditDistance wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+        sys.exit("\n[QUIT]\n")
+    
+    # check for correct usage
+    try:
+        IS_set = set(any_df.loc[:,'genomic_coordinates'].tolist())
+        if len(IS_set) != 1:
+            print "\n[WARNING] checkEditDistance found data from more than one IS found: {IS_list}. However, all the data will be processed as belonging to one unique IS!".format(IS_list=str(humanSorted(list(IS_set))))
+    except:
+        print "\n[WARNING] checkEditDistance cannot perform IS control on input data ('genomic_coordinates' not found). Thus, all the data will be processed as belonging to one unique IS!"
+    
+    # try to take other required columns, and fix if absent -> l
+    try:
+        l.append(any_df.loc[:,'shearsite'].to_frame())
+    except:
+        print "\n[WARNING] checkEditDistance can't find 'shearsite' data. All the data will be processed as belonging to one unique shear site of nominal length '0'."
+        l.append(pd.DataFrame(data={'shearsite':['0']*len(any_df.loc[:,'randomBC'])}))
+    
+    # Prepare DF: concat(l) --> DF
+    DF = pd.concat(l, axis=1, join='inner')
+    # Group (append!) randomBCs by shearsite on DF
+    DF = DF.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
+    # Here DF is returned as Series with Name=randomBC, Index=shearsite and values are lists of unique randomBC (nb: within the same list)
+    # (np.unique is redundant in the best case use. Otherwise is forced. See note above)
+    
+    # Collect edit distance matrixe dataframes in l
+    l = []
+    l_append =l.append
+    for shearsite_label, randomBC_list in DF.iteritems():
+        # here kwarg shearsite_label is fundamental to l_append dataframes with mutually disjoint columns/rows labels/indexes
+        # and then exploit 'join' as a quick way to reshape data as a whole
+        l_append(editDistanceMatrix(randomBC_list, shearsite_label=shearsite_label+"_", ))
+    # Reshape data in a unique dataframe using multiple joins, exploiting unique columns and rows labels and indexes!
+    editDistance_DF = pd.DataFrame().join(l, how='outer')
+    return editDistance_DF
+
 
 
 
@@ -217,9 +293,9 @@ if __name__ == "__main__":
     # Check advancements in matrix_RandomBC_processingModule.buildExhaustiveDataFrame
     
     #### Test Functions in this module
-    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
-    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
-    overall_distinctBC_DF = checkRandomBCfrequency(exhaustive_df)
-    plotRandomBCfrequency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE FREQUENCY', show_top_ranked=10, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCfrequency.pdf"))
+    #overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
+    #plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
+    #overall_distinctBC_DF = checkRandomBCfrequency(exhaustive_df)
+    #plotRandomBCfrequency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE FREQUENCY', show_top_ranked=10, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCfrequency.pdf"))
     # Any df is accepted so the contents of each plot is the whole input DF.
     # title and export kwargs allows you to put the proper label to your contents!
