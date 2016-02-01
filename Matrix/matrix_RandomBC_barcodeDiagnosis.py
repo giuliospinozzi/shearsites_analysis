@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import editdistance  # e.g.: editdistance.eval('banana', 'bahama') >>> 2L
+import seaborn.apionly as sns  # this way mpl defaults are kept
 
 
 #++++++++++++++++++++++ Global Vars ++++++++++++++++++++++++++++++++++++++#
@@ -169,82 +170,136 @@ def plotRandomBCfrequency(distinctBC_DF, title='RANDOM-BARCODE FREQUENCY', show_
 
 
 
-def checkEditDistance(any_df):
-    # Note: 'randomBC' column required. 'shearsite' column as user whishes. 'genomic_coordinates' column exploited just for warning,
-    #       if present. Any other column in any_df is ignored and cannot provide any further splitting/hierarchy on data.
+def checkEditDistance(any_df, all_combinations=False):
+    # Note about any_df: 'randomBC' column required. 
+    #                    'shearsite' column is optional. It split the data in groups of equal 'shersite'.
+    #                    'genomic_coordinates' is 'very' optional and may just produce warnings.
+    #                    Any other column in any_df is just ignored and cannot provide any further splitting/hierarchy on data.
     # Note: This function is DESIGNED TO BE USED ON DATA FROM A SINGLE INTEGRATION SITE, ALONG ITS SHEARSITES;
     #       This is because within an IS, for each shersite, randomBCs are supposed to be UNIQUE (they usually have a seq_count!).
     #       HOWEVER, THIS FUNCTION ALWAYS WORKS:
-    #          - if more than one IS is present, data will be still processed as belonging to one unique IS
-    #          - if no shearsites are present, data will be processed as belonging to one unique shear site of nominal length '0'
+    #          - if more than one IS is present, or 'genomic_coordinates' is just not available, data will be still processed as belonging to one unique IS (a warn is printed)
+    #          - if no shearsites are present, data will be processed as belonging to one unique shear site of nominal length '0' (a warn is printed)
     #          - when any (or all) among above cases happen, uniqueness of randomBCs will be forced, due to groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
-    
-    def editDistanceMatrix (randomBC_list, shearsite_label=""):
-        # Note: randomBC_list must be a list of unique BCs, supposed to be unique
-        # Note: shearsite_label add a prefix to columns/rows labels/indexes; 
-        #       with shearsite_label="" they remain just the BC's in randomBC_list
-        sorted_unique_randomBC_list = sorted(list(set(randomBC_list)))
-        if sorted_unique_randomBC_list != sorted(list(randomBC_list)):
-            print "\n[ERROR] checkEditDistance (through editDistanceMatrix) found duplicate randomBCs!"
-            sys.exit("\n[QUIT]\n")
+        
+    def editDistanceMatrix (seqList1, seqList2, groupLabel1="", groupLabel2=""):
+        # return a matrix with col from seqList1 and row from seqList2
+        # groupLabel kwargs add a fixed string to row and col names
+        sorted_unique_seqList1 = sorted(list(set(seqList1)))
+        sorted_unique_seqList2 = sorted(list(set(seqList2)))
         l = []
         l_append = l.append
-        shearsite_label = str(shearsite_label)
-        for col_rBC in sorted_unique_randomBC_list:
-            key_col_rBC = shearsite_label+col_rBC
-            d = {key_col_rBC: []}
-            d_append = d[key_col_rBC].append
-            for row_rBC in sorted_unique_randomBC_list:
-                d_append(editdistance.eval(col_rBC, row_rBC))
-            key_row_rBC = [shearsite_label+row_rBC for row_rBC in sorted_unique_randomBC_list]
-            l_append(pd.DataFrame(data=d, index=key_row_rBC))
+        for seq_col in sorted_unique_seqList1:
+            col_key = groupLabel1+seq_col
+            d = {col_key: []}
+            d_append = d[col_key].append
+            for seq_row in sorted_unique_seqList2:
+                d_append(editdistance.eval(seq_col, seq_row))
+            row_keys = [groupLabel2+seq_row for seq_row in seqList2]
+            l_append(pd.DataFrame(data=d, index=row_keys))
         ED_matrix = pd.concat(l, axis=1, join='inner')
         return ED_matrix
+        
+    def buildGroupLabel (shearsite, prefix="", suffix="", sep="_", ignore=0):
+        # ignore=0 to waste fake shearsite=0
+        if str(shearsite) == str(ignore):
+            if ((not prefix) and (not suffix)):
+                return ""
+            elif ((not prefix) or (not suffix)):
+                return prefix+suffix+sep
+            else:
+                return sep.join([prefix,suffix,""])
+        else:
+            if ((not prefix) and (not suffix)):
+                return str(shearsite)+sep
+            elif (not prefix):
+                return sep.join([str(shearsite),suffix,""])
+            elif (not suffix):
+                return sep.join([prefix,str(shearsite),""])
+            else:
+                return sep.join([prefix,str(shearsite),suffix,""])
     
     # data collector
     l = []
     # try to take required columns -> l
     required_columns = ['randomBC']
-    try:
-        [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
-    except:
-        print "\n[ERROR] checkEditDistance wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
-        sys.exit("\n[QUIT]\n")
-    
-    # check for correct usage
-    try:
-        IS_set = set(any_df.loc[:,'genomic_coordinates'].tolist())
-        if len(IS_set) != 1:
-            print "\n[WARNING] checkEditDistance found data from more than one IS found: {IS_list}. However, all the data will be processed as belonging to one unique IS!".format(IS_list=str(humanSorted(list(IS_set))))
-    except:
-        print "\n[WARNING] checkEditDistance cannot perform IS control on input data ('genomic_coordinates' not found). Thus, all the data will be processed as belonging to one unique IS!"
-    
+    #try:
+    [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
+    #except:
+        #print "\n[ERROR] checkEditDistance wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+        #sys.exit("\n[QUIT]\n")
     # try to take other required columns, and fix if absent -> l
     try:
         l.append(any_df.loc[:,'shearsite'].to_frame())
     except:
-        print "\n[WARNING] checkEditDistance can't find 'shearsite' data. All the data will be processed as belonging to one unique shear site of nominal length '0'."
-        l.append(pd.DataFrame(data={'shearsite':['0']*len(any_df.loc[:,'randomBC'])}))
-    
+        verbosePrint("\n[WARNING] checkEditDistance can't find 'shearsite' data. All the data will be processed as belonging to one unique shear site of nominal length '0'.")
+        l.append(pd.DataFrame(data={'shearsite':['0']*len(any_df.loc[:,'randomBC'])}, index=any_df.loc[:,'randomBC'].index))
+        # Note: here the index of 'fake shearsite data' must be forced to be the same of 'randomBC' due to the join in concat!!
+        
     # Prepare DF: concat(l) --> DF
     DF = pd.concat(l, axis=1, join='inner')
+    
+    # check for correct usage - IS
+    try:
+        IS_set = set(any_df.loc[:,'genomic_coordinates'].tolist())
+        if len(IS_set) != 1:
+            verbosePrint("\n[WARNING] checkEditDistance found data from more than one IS found: {IS_list}. However, all the data will be processed as belonging to one unique IS!".format(IS_list=str(humanSorted(list(IS_set)))))
+    except:
+        verbosePrint("\n[WARNING] checkEditDistance cannot perform IS control on input data ('genomic_coordinates' not found). Thus, all the data will be processed as belonging to one unique IS!")
+    # check for correct usage - Duplicate BCs (in shearsite groups, if given, or in general)
+    a = DF.groupby('shearsite')['randomBC'].apply(lambda x: sorted(np.unique(x.tolist())))
+    b = DF.groupby('shearsite')['randomBC'].apply(lambda x: sorted(x.tolist()))
+    if not (a == b).all().all():
+        verbosePrint("\n[WARNING] Duplicate randomBCs found (within shearsite groups, if given). Uniqueness will be forced through pandas.DataFrame.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))!")
+    
     # Group (append!) randomBCs by shearsite on DF
     DF = DF.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
     # Here DF is returned as Series with Name=randomBC, Index=shearsite and values are lists of unique randomBC (nb: within the same list)
-    # (np.unique is redundant in the best case use. Otherwise is forced. See note above)
+    # (np.unique is redundant in the use case for which this function was designed. Otherwise is forced (warnings if verbose!). See notes at the top
     
-    # Collect edit distance matrixe dataframes in l
+    # Collect edit distance matrix dataframes in l
     l = []
     l_append =l.append
-    for shearsite_label, randomBC_list in DF.iteritems():
-        # here kwarg shearsite_label is fundamental to l_append dataframes with mutually disjoint columns/rows labels/indexes
-        # and then exploit 'join' as a quick way to reshape data as a whole
-        l_append(editDistanceMatrix(randomBC_list, shearsite_label=shearsite_label+"_", ))
-    # Reshape data in a unique dataframe using multiple joins, exploiting unique columns and rows labels and indexes!
+    for shearsite, randomBC_list in DF.iteritems():
+        # here kwargs 'groupLabel' are fundamental to l_append dataframes with mutually disjoint column labels
+        # and then exploit (outer) 'join' at the end as a quick way to reshape data as a whole
+        if all_combinations:
+            inner_l = []
+            inner_l_append = inner_l.append
+            # compute all rows for current columns
+            for shearsite2, randomBC_list2 in DF.iteritems():
+                inner_l_append(editDistanceMatrix(randomBC_list, randomBC_list2, groupLabel1=buildGroupLabel(shearsite), groupLabel2=buildGroupLabel(shearsite2)))
+            l_append(pd.concat(inner_l, axis=0, join='inner'))
+        else:
+            # compute only square sub-matrixes with rows equals to current columns
+            l_append(editDistanceMatrix(randomBC_list, randomBC_list, groupLabel1=buildGroupLabel(shearsite), groupLabel2=buildGroupLabel(shearsite)))
+    
+    # Reshape data in a unique dataframe using multiple (outer) joins, exploiting unique columns, in any case:
+    # editDistance_DF is a squared dataframe where rows and cols are equally labelled
+    # (usually with randomBCs-seqs or with shearsite_randomBCs-seqs)
     editDistance_DF = pd.DataFrame().join(l, how='outer')
     return editDistance_DF
 
-
+def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap=sns.diverging_palette(10, 133, l=60, n=12, center="dark", as_cmap=True), show_live=True, export=""):
+    # Note: cmap = "RdYlBu" is simple and still fine
+    # Note: with sns.palplot(sns.diverging_palette(10, 133, l=60, n=12, center="dark")) you can test and visualize palettes
+    
+    # Set up interactive mode (plot pop-upping)
+    if show_live:
+        plt.ion()
+    else:
+        plt.ioff()
+    # Plot data
+    ax = sns.heatmap(editDistance_DF, cmap=cmap)
+    if show_live:
+        plt.show()
+    # Save plot
+    if export:
+        export = os.path.normpath(export)
+        plt.savefig(export)
+    # close
+    if not show_live:
+        plt.close()
 
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -293,9 +348,11 @@ if __name__ == "__main__":
     # Check advancements in matrix_RandomBC_processingModule.buildExhaustiveDataFrame
     
     #### Test Functions in this module
-    #overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
-    #plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
-    #overall_distinctBC_DF = checkRandomBCfrequency(exhaustive_df)
-    #plotRandomBCfrequency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE FREQUENCY', show_top_ranked=10, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCfrequency.pdf"))
-    # Any df is accepted so the contents of each plot is the whole input DF.
-    # title and export kwargs allows you to put the proper label to your contents!
+#    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
+#    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
+#    overall_distinctBC_DF = checkRandomBCfrequency(exhaustive_df)
+#    plotRandomBCfrequency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE FREQUENCY', show_top_ranked=10, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCfrequency.pdf"))
+    editDistance_DF = checkEditDistance(exhaustive_df, all_combinations=True)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap=sns.diverging_palette(10, 133, n=12, center="dark", as_cmap=True), show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance.pdf"))
+#     Any df is accepted so the contents of each plot is the whole input DF.
+#     title and export kwargs allows you to put the proper label to your contents!

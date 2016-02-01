@@ -56,7 +56,7 @@ def buildExhaustiveDataFrame(POOL_alldata_dict):
     # flatten d and build exhaustive_df
     l=[]
     [l.append(list(k) + v) for k,v in flattenDict(d).items()]
-    columns = ['barcode', 'genomic_coordinates', 'header', 'length', 'r1_chr', 'r1_end', 'r1_quality', 'r1_start', 'r1_strand', 'r2_chr', 'r2_end', 'r2_quality', 'r2_start', 'r2_strand', 'randomBC']
+    columns = ['barcode', 'genomic_coordinates', 'header', 'shearsite', 'r1_chr', 'r1_end', 'r1_quality', 'r1_start', 'r1_strand', 'r2_chr', 'r2_end', 'r2_quality', 'r2_start', 'r2_strand', 'randomBC']
     exhaustive_df = pd.DataFrame(l, columns=columns)
     
     # DONE! Here the structure is actually exhaustive
