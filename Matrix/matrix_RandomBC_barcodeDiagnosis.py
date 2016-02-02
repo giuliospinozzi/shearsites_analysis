@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import editdistance  # e.g.: editdistance.eval('banana', 'bahama') >>> 2L
 import seaborn.apionly as sns  # this way mpl defaults are kept
-
+from math import ceil
 
 #++++++++++++++++++++++ Global Vars ++++++++++++++++++++++++++++++++++++++#
 verbose = matrix_RandomBC_globModule.verbose
@@ -178,8 +178,8 @@ def checkEditDistance(any_df, all_combinations=False):
     # Note: This function is DESIGNED TO BE USED ON DATA FROM A SINGLE INTEGRATION SITE, ALONG ITS SHEARSITES;
     #       This is because within an IS, for each shersite, randomBCs are supposed to be UNIQUE (they usually have a seq_count!).
     #       HOWEVER, THIS FUNCTION ALWAYS WORKS:
-    #          - if more than one IS is present, or 'genomic_coordinates' is just not available, data will be still processed as belonging to one unique IS (a warn is printed)
-    #          - if no shearsites are present, data will be processed as belonging to one unique shear site of nominal length '0' (a warn is printed)
+    #          - if more than one IS is present, or 'genomic_coordinates' is just not available, data will be still processed as belonging to one unique IS (a warn is printed if verbose)
+    #          - if no shearsites are present, data will be processed as belonging to one unique shear site of nominal length '0' (a warn is printed if verbose)
     #          - when any (or all) among above cases happen, uniqueness of randomBCs will be forced, due to groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
         
     def editDistanceMatrix (seqList1, seqList2, groupLabel1="", groupLabel2=""):
@@ -223,18 +223,18 @@ def checkEditDistance(any_df, all_combinations=False):
     l = []
     # try to take required columns -> l
     required_columns = ['randomBC']
-    #try:
-    [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
-    #except:
-        #print "\n[ERROR] checkEditDistance wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
-        #sys.exit("\n[QUIT]\n")
+    try:
+        [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
+    except:
+        print "\n[ERROR] checkEditDistance wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+        sys.exit("\n[QUIT]\n")
     # try to take other required columns, and fix if absent -> l
     try:
         l.append(any_df.loc[:,'shearsite'].to_frame())
     except:
         verbosePrint("\n[WARNING] checkEditDistance can't find 'shearsite' data. All the data will be processed as belonging to one unique shear site of nominal length '0'.")
         l.append(pd.DataFrame(data={'shearsite':['0']*len(any_df.loc[:,'randomBC'])}, index=any_df.loc[:,'randomBC'].index))
-        # Note: here the index of 'fake shearsite data' must be forced to be the same of 'randomBC' due to the join in concat!!
+        # Note: here the index of 'fake shearsite data' must be forced to be the same of 'randomBC' due to the join in the following concat!!
         
     # Prepare DF: concat(l) --> DF
     DF = pd.concat(l, axis=1, join='inner')
@@ -252,9 +252,9 @@ def checkEditDistance(any_df, all_combinations=False):
     if not (a == b).all().all():
         verbosePrint("\n[WARNING] Duplicate randomBCs found (within shearsite groups, if given). Uniqueness will be forced through pandas.DataFrame.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))!")
     
-    # Group (append!) randomBCs by shearsite on DF
+    # Group randomBCs in lists, by shearsite, on DF
     DF = DF.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
-    # Here DF is returned as Series with Name=randomBC, Index=shearsite and values are lists of unique randomBC (nb: within the same list)
+    # Here DF is returned as Series with Name=randomBC, Index=shearsite and values are lists of unique* randomBC (*nb: within the same list)
     # (np.unique is redundant in the use case for which this function was designed. Otherwise is forced (warnings if verbose!). See notes at the top
     
     # Collect edit distance matrix dataframes in l
@@ -280,17 +280,49 @@ def checkEditDistance(any_df, all_combinations=False):
     editDistance_DF = pd.DataFrame().join(l, how='outer')
     return editDistance_DF
 
-def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap=sns.diverging_palette(10, 133, l=60, n=12, center="dark", as_cmap=True), show_live=True, export=""):
+def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap=sns.diverging_palette(10, 133, l=60, n=12, center="dark", as_cmap=True), annot=False, show_live=True, export=""):
     # Note: cmap = "RdYlBu" is simple and still fine
     # Note: with sns.palplot(sns.diverging_palette(10, 133, l=60, n=12, center="dark")) you can test and visualize palettes
     
+    # get matrix dimension
+    n = len(editDistance_DF.index)
     # Set up interactive mode (plot pop-upping)
     if show_live:
         plt.ion()
     else:
         plt.ioff()
+    # Prepare plot environment
+    min_size = 20
+    max_size = 70
+    x = int(ceil(min(max((n/2.0), min_size), max_size)))
+    plt.figure(figsize=(x,x))
+    plt.title(title)
+    ax = plt.axes()
+    # Control over annot kwarg
+    annot_value = False
+    annot_lim = 200
+    if annot:
+        if n>annot_lim:
+            annot_value = False
+            verbosePrint("\n[WARNING] editDistanceHeatmap cannot annotate matrixes with n>{annot_lim}.".format(annot_lim=str(annot_lim)))
+        else:
+            annot_value = True
+    # Control for labels
+    ticklabels = True
+    alltick_lim = 400
+    tick_lim = 800
+    if n<tick_lim:
+        if n>alltick_lim:
+            ticklabels = int(ceil(n/100.0))
+            verbosePrint("\n[WARNING] editDistanceHeatmap cannot write all labels of matrixes with n>{alltick_lim}. One each {ticklabels} will be reported instead.".format(alltick_lim=str(alltick_lim), ticklabels=str(ticklabels)))
+    else:
+        ticklabels = False
+        verbosePrint("\n[WARNING] editDistanceHeatmap cannot write labels of matrixes with n>{tick_lim}. ".format(tick_lim=str(tick_lim)))
+    # Set range for colors
+    vmin=0
+    vmax=12
     # Plot data
-    ax = sns.heatmap(editDistance_DF, cmap=cmap)
+    sns.heatmap(editDistance_DF, ax=ax, cmap=cmap, annot=annot_value, xticklabels=ticklabels, yticklabels=ticklabels, vmin=vmin, vmax=vmax)  # ax = sns.heatmap(editDistance_DF, cmap=cmap)
     if show_live:
         plt.show()
     # Save plot
@@ -347,12 +379,91 @@ if __name__ == "__main__":
     # Keep in mind that this structure is ongoing and more columns will may appear. Let them be implicitly supported!!
     # Check advancements in matrix_RandomBC_processingModule.buildExhaustiveDataFrame
     
-    #### Test Functions in this module
+#    #### Test Functions in this module
+#
+#    # Barcodes nucleotide balancing
 #    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
 #    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
+#
+#    ## Barcodes frequencies
 #    overall_distinctBC_DF = checkRandomBCfrequency(exhaustive_df)
 #    plotRandomBCfrequency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE FREQUENCY', show_top_ranked=10, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCfrequency.pdf"))
-    editDistance_DF = checkEditDistance(exhaustive_df, all_combinations=True)
-    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap=sns.diverging_palette(10, 133, n=12, center="dark", as_cmap=True), show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance.pdf"))
-#     Any df is accepted so the contents of each plot is the whole input DF.
-#     title and export kwargs allows you to put the proper label to your contents!
+#
+#    ## Edit distance matrixes
+#
+#    all_combinations=False
+#    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
+#    editDistance_DF = checkEditDistance(data.loc[:0,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_0.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:2,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_2.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:5,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_5.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:10,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_10.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:25,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_25.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:50,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_50.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:75,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_75.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:100,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_100.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:150,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_150.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:200,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_200.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:300,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_300.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:400,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_400.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:450,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_450.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:500,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_500.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:550,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_550.pdf"))
+#    editDistance_DF = checkEditDistance(data.loc[:600,:], all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_600.pdf"))
+#    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
+#    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_diagonal_othercolors_all.pdf"))
+
+    all_combinations=True
+    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
+    editDistance_DF = checkEditDistance(data.loc[:0,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_0.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:2,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_2.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:5,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_5.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:10,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_10.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:25,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_25.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:50,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_50.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:75,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_75.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:100,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_100.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:150,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_150.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:200,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_200.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:300,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_300.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:400,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_400.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:450,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_450.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:500,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_500.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:550,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_550.pdf"))
+    editDistance_DF = checkEditDistance(data.loc[:600,:], all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_600.pdf"))
+    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
+    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_all.pdf"))
+
+#    # Any df is accepted so the contents of each plot is the whole input DF.
+#    #title and export kwargs allows you to put the proper label to your contents!
