@@ -119,7 +119,7 @@ def checkRandomBCoccurrency(any_df):
     #######################################################################################
     return distinctBC_DF
 
-def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', show_top_ranked=10, show_live=True, export=""):
+def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', show_top_ranked=10, annot=True, show_live=True, export=""):
     # Note: distinctBC_DF from checkRandomBCoccurrency
     # Note: export is supposed to be a complete-and-valid path.
     #       False, None, empty-string mean "no export"
@@ -131,13 +131,13 @@ def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', s
     # Prepare text data if show_top_ranked
     top_represented_rBC = None
     if show_top_ranked:
-        N = show_top_ranked
-        top_represented_rBC = "TOP-{N} RANDOM-BARCODES:".format(N=str(N))
+        N = min(show_top_ranked, len(distinctBC_DF))
+        top_represented_rBC = "TOP-{N} RANDOM-BARCODES BY SEQ-COUNT:".format(N=str(N))
         for i in range(N):
-            top_represented_rBC += "\n {i}) {rBC}".format(i=str(i+1), rBC=str(list(distinctBC_DF.index.values)[i]))
-    # Prepare data to plot
+            top_represented_rBC += "\n {i}) {rBC} (seq_count={sc}, {p}%)".format(i=str(i+1), rBC=str(list(distinctBC_DF.index.values)[i]), sc=str(int(distinctBC_DF['seq_count'][i])), p=str(round(list(distinctBC_DF['seq_count'])[i]*100/distinctBC_DF.sum(),2)))
+    # Prepare data to plot as Series
     distinctBC_DF = distinctBC_DF.reset_index()  # distinctBC_DF is sorted so reset_index() yields the ranking as index!
-    distinctBC_DF = distinctBC_DF.loc[:,'seq_count']  # take only data to plot
+    distinctBC_DF = distinctBC_DF.loc[:,'seq_count']  # take only data to plot: distinctBC_DF is a Series from now on
     # Set up interactive mode (plot pop-upping)
     if show_live:
         plt.ion()
@@ -150,8 +150,7 @@ def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', s
     ax2 = ax.twinx() # Create another axes that shares the same x-axis as ax
     # Prepare axis
     y2_lim = 100 * float(distinctBC_DF.max()) / float(distinctBC_DF.sum())
-    ax.set_xlabel('distinct barcodes ranked by count (N={N})'.format(N=str(len(list(distinctBC_DF)))))
-    ax.set_ylabel('count (max={M}, min={m}, #classes={n})'.format(M=str(distinctBC_DF.max()), m=str(distinctBC_DF.min()), n=str(len(distinctBC_DF.unique()))))
+    ax.set_ylabel('occurrencies (max={M}, min={m}, total={n})'.format(M=str(distinctBC_DF.max()), m=str(distinctBC_DF.min()), n=str(distinctBC_DF.sum())))
     ax.set_ylim([0, distinctBC_DF.max()])
     ax2.set_ylabel('%')
     ax2.set_ylim([0,y2_lim])
@@ -160,6 +159,32 @@ def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', s
         ax.text(1.0/2.0*len(list(distinctBC_DF)), 1.0/2.0*distinctBC_DF.max(), top_represented_rBC, bbox={'facecolor':'blue', 'alpha':0.3, 'pad':10})
     # Plot data
     distinctBC_DF.plot(kind='area', ax=ax)
+    # Optional: annotate x axis with counts and percentages
+    if annot:
+        # Label the raw counts and the percentages below the x-axis
+        cumulative_count = 0
+        cumulative_percent = 0
+        control = 0
+        for x, count in distinctBC_DF.iteritems():
+            cumulative_count += count
+            rule = round((float(cumulative_count) / distinctBC_DF.sum())/2,1)
+            if  rule != control:
+                control = rule
+                # Label with cumulative count
+                cumulative_count_label = str(int(cumulative_count))
+                ax.annotate(cumulative_count_label, xy=(x, 0), xycoords=('data', 'axes fraction'), xytext=(0, -18), textcoords='offset points', va='top', ha='center')
+                # Label with cumulative percentages
+                cumulative_percent = "{:.1f}".format(100 * float(cumulative_count) / distinctBC_DF.sum()) + "%"
+                ax.annotate(cumulative_percent, xy=(x, 0), xycoords=('data', 'axes fraction'), xytext=(0, -32), textcoords='offset points', va='top', ha='center')
+        # Refine axis
+        ax.set_xlabel("distinct barcodes ranked by count (N={N})\ncumulative counts\ncumulative percentages".format(N=str(len(list(distinctBC_DF)))))
+        ax.xaxis.set_label_coords(0.8, -0.03)
+        # Give more room at the bottom of the plot
+        plt.subplots_adjust(bottom=0.2)
+    else:
+        # standard X axis label
+        ax.set_xlabel('distinct barcodes ranked by count (N={N})'.format(N=str(len(list(distinctBC_DF)))))
+    # Show live
     if show_live:
         plt.show()
     # Save plot
@@ -223,7 +248,6 @@ def checkEditDistance(any_df, all_combinations=False):
                 return sep.join([prefix,str(shearsite),""])
             else:
                 return sep.join([prefix,str(shearsite),suffix,""])
-    
     # data collector
     l = []
     # try to take required columns -> l
@@ -285,7 +309,7 @@ def checkEditDistance(any_df, all_combinations=False):
     editDistance_DF = pd.DataFrame().join(l, how='outer')
     return editDistance_DF
 
-def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=False, show_live=True, export=""):
+def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=True, export=""):
     # Note: cmap = sns.diverging_palette(10, 133, l=60, n=12, center="dark", as_cmap=True) # red - dark - green
     # Note: with sns.palplot(sns.diverging_palette(10, 133, l=60, n=12, center="dark")) you can test and visualize palettes
     
@@ -340,6 +364,7 @@ def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MA
 
 def plotEditDistanceOccurrency(editDistance_DF, title="EDIT DISTANCE OCCURRENCIES", vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=True, export=""):
     # Note: e.g. percentile_colors=[25, 75]
+    # Note: vmin, vmax are the 'a-priori' min and max edit distances in editDistance_DF
     
     # Prepare data - NOTE: here data are DOUBLED because of the all-VS-all structure of editDistance_DF
     editDistance_array = np.array(editDistance_DF.values.tolist()).astype(float)
@@ -360,7 +385,7 @@ def plotEditDistanceOccurrency(editDistance_DF, title="EDIT DISTANCE OCCURRENCIE
     # Plot data
     counts, bins, patches = ax.hist(editDistance_array, facecolor='blue', edgecolor='black', bins=np.arange(start=vmin-0.5, stop=vmax+1.5, step=1))
     # Refine axis
-    ax.set_ylabel("count (min={omin}, max={omax}, N={N})".format(omin=str(int(min(counts))), omax=str(int(max(counts))), N=str(int(sum(counts)))))
+    ax.set_ylabel("occurrencies (min={omin}, max={omax}, total={N})".format(omin=str(int(min(counts))), omax=str(int(max(counts))), N=str(int(sum(counts)))))
     ax.set_xlim([vmin-0.5,vmax+1.5])
     ax.set_xticks(range(vmin, vmax+1))
     # Optional: color bars according to percentiles
@@ -374,7 +399,7 @@ def plotEditDistanceOccurrency(editDistance_DF, title="EDIT DISTANCE OCCURRENCIE
                 patch.set_facecolor('green')
     # Optional: annotate x axis with counts and percentages
     if annot:
-        # Label the raw counts and the percentages below the x-axis...
+        # Label the raw counts and the percentages below the x-axis
         bin_centers = range(vmin, vmax+1)
         for count, x in zip(counts, bin_centers):
             # Label the raw counts
@@ -383,10 +408,11 @@ def plotEditDistanceOccurrency(editDistance_DF, title="EDIT DISTANCE OCCURRENCIE
             # Label the percentages
             percent = "{:.1f}".format(100 * float(count) / counts.sum()) + "%"
             ax.annotate(percent, xy=(x, 0), xycoords=('data', 'axes fraction'), xytext=(0, -32), textcoords='offset points', va='top', ha='center')
-            # Refine axis
-            #ax.set_xlabel("edit distances")  # Find a way to put at the very bottom
-            # Give more room at the bottom of the plot
-            plt.subplots_adjust(bottom=0.2)
+        # Refine axis
+        ax.set_xlabel("edit distances\ncounts\npercentages")
+        ax.xaxis.set_label_coords(1, -0.005)
+        # Give more room at the bottom of the plot
+        plt.subplots_adjust(bottom=0.2)
     else:
         # standard X axis label
         ax.set_xlabel("edit distances")
@@ -400,6 +426,29 @@ def plotEditDistanceOccurrency(editDistance_DF, title="EDIT DISTANCE OCCURRENCIE
     # close
     if not show_live:
         plt.close()
+
+
+
+def checkShearSitesOccurrency(any_df):
+    # by SC and/or disctinctBCcount, according to data availability
+    ShearSitesOccurrency_DF = None
+    return ShearSitesOccurrency_DF
+    
+def plotShearSitesOccurrency(ShearSitesOccurrency_DF):
+    # one and/or two hist (like the one produced by plotEditDistanceOccurrency) according to data availability
+    pass
+    
+    
+    
+    
+def checkShearSitesDistance(any_df):
+    ShearSitesDistance_DF = None  # a matrix like the edit distance one
+    return ShearSitesDistance_DF
+    
+def plotShearSitesDistanceOccurrency(ShearSitesDistance_DF):
+    # plot an hist like the one produced by plotEditDistanceOccurrency
+    pass
+
 
 
 
@@ -457,14 +506,13 @@ if __name__ == "__main__":
 
     ## Barcodes occurrencies
     overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df)
-    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_top_ranked=10, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency.pdf"))
+    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_top_ranked=10, annot=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency.pdf"))
 
     ## Edit distance occurrencies
-    all_combinations=False
     #data = exhaustive_df.loc[:,'randomBC'].to_frame()
     #data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
     data = exhaustive_df
-    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
+    editDistance_DF = checkEditDistance(data, all_combinations=False)
     plotEditDistanceOccurrency(editDistance_DF, title='[DEBUG] EDIT DISTANCE OCCURRENCIES', vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_plotEditDistanceOccurrency.pdf"))
     
     ## Edit distance matrixes
