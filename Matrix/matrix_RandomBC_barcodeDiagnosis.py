@@ -430,25 +430,183 @@ def plotEditDistanceOccurrency(editDistance_DF, title="EDIT DISTANCE OCCURRENCIE
 
 
 def checkShearSitesOccurrency(any_df):
-    # by SC and/or disctinctBCcount, according to data availability
-    ShearSitesOccurrency_DF = None
+    # Note: here DISTINCT shearsites are counted through seq_count sum and/or by distinct randomBC count
+    # data collector
+    l = []
+    # try to take required columns -> l
+    required_columns = ['shearsite']
+    try:
+        l.append(any_df.loc[:,required_columns[0]].to_frame())
+    except:
+        print "\n[ERROR] checkShearSitesOccurrency wrong input! Column {required_column} is required. Given dataframe has {columns_found}.".format(required_column=str(required_columns[0]), columns_found=str(list(any_df)))
+        sys.exit("\n[QUIT]\n")
+    # try to take at least one 'quantification column'
+    other_columns = ['seq_count', 'randomBC']
+    columns_found = ['seq_count', 'randomBC']
+    for c in other_columns:
+        try:
+            l.append(any_df.loc[:,c].to_frame())
+        except:
+            columns_found.remove(c)
+    # Quit if input data are not sufficient
+    if len(columns_found)<1:
+        print "\n[ERROR] checkShearSitesOccurrency wrong input! At least one column among {other_columns} is required. Given dataframe has {columns_found}.".format(other_columns=str(other_columns), columns_found=str(list(any_df)))
+        sys.exit("\n[QUIT]\n")
+    # New DF with data to process
+    DF = pd.concat(l, axis=1, join='inner')
+    # results collector
+    l = []
+    if 'seq_count' in columns_found:
+        l.append(pd.pivot_table(DF, columns='shearsite', values='seq_count', aggfunc=sum).to_frame())
+    if 'randomBC' in columns_found:
+        tmp_df = pd.pivot_table(DF, columns='shearsite', values='randomBC', aggfunc=lambda x: len(np.unique(x))).to_frame()
+        tmp_df.rename(columns={'randomBC':'randomBC_count_distinct'}, inplace=True)
+        l.append(tmp_df)
+    # Build final data: dataframe with distinct shearsites as row index, seq_count and/or randomBC_count_distinct as columns, according to data availability
+    ShearSitesOccurrency_DF = pd.concat(l, axis=1, join='inner')
     return ShearSitesOccurrency_DF
+
+def plotShearSitesOccurrency(ShearSitesOccurrency_DF, title="SHEAR SITE OCCURRENCIES", normalize=100, show_live=True, export=""):
+    # prepare data if required
+    data = ShearSitesOccurrency_DF
+    if normalize:
+        data = ShearSitesOccurrency_DF.apply(lambda x: normalize*x/x.sum())
+    # Set up interactive mode (plot pop-upping)
+    if show_live:
+        plt.ion()
+    else:
+        plt.ioff()
+    # Prepare plot environment
+    x = min(max(13, 13*len(ShearSitesOccurrency_DF)/50.0), 100)
+    plt.figure(figsize=(x,13)) # Create matplotlib figure
+    plt.title(title)
+    ax = plt.axes() # Create matplotlib axes
+    # Refine y axis
+    # Refine axis
+    tot_info = []
+    if 'seq_count' in list(ShearSitesOccurrency_DF):
+        tot_info.append("by SC={totBySC}".format(totBySC=str(ShearSitesOccurrency_DF['seq_count'].sum())))
+    if 'randomBC_count_distinct' in list(ShearSitesOccurrency_DF):
+        tot_info.append("by RBC countDistinct={totByRBCcd}".format(totByRBCcd=str(ShearSitesOccurrency_DF['randomBC_count_distinct'].sum())))
+    tot_info = "[total: " + ", ".join(tot_info) + "]"
+    if normalize:
+        ax.set_ylabel("frequency (normalized to {normalize}) {tot_info}".format(normalize=str(normalize), tot_info=tot_info))
+    else:
+        ax.set_ylabel("occurrencies {tot_info}".format(tot_info=tot_info))
+    # Plot data
+    data.plot(ax=ax, kind='bar')
+    # Show plot
+    if show_live:
+        plt.show()
+    # Save plot
+    if export:
+        export = os.path.normpath(export)
+        plt.savefig(export)
+    # close
+    if not show_live:
+        plt.close()
+
+
+
+def checkFragmentLengthDistribution(any_df):
+    # Note: this function is designed to take in input data of many integration sites from a-sample/a-sonication-pool.
+    #       HOWEVER, THIS FUNCTION ALWAYS WORKS, so be careful while choosing the input.
+    # Note: this function compute the number of times distinct shearsites recur in in any_df, ignoring any other
+    #       column/hierarchy inside any_df
     
-def plotShearSitesOccurrency(ShearSitesOccurrency_DF):
-    # one and/or two hist (like the one produced by plotEditDistanceOccurrency) according to data availability
-    pass
+    # data collector
+    l = []
+    # try to take required columns -> l
+    required_columns = ['shearsite']
+    try:
+        l.append(any_df.loc[:,required_columns[0]].to_frame())
+    except:
+        print "\n[ERROR] checkFragmentLengthDistribution wrong input! Column {required_column} is required. Given dataframe has {columns_found}.".format(required_column=str(required_columns[0]), columns_found=str(list(any_df)))
+        sys.exit("\n[QUIT]\n")
+    # New DF with data to process
+    DF = pd.concat(l, axis=1, join='inner')
+    # compute recurrencies of elements in 'shearsite'
+    FragmentLengthDistribution_DF = DF['shearsite'].value_counts().to_frame()
+    FragmentLengthDistribution_DF.sort_index(inplace=True)
+    FragmentLengthDistribution_DF.rename(columns={0:'n_of_fragment'}, inplace=True)
+    FragmentLengthDistribution_DF.index.name = required_columns[0]
+    # FragmentLengthDistribution_DF.plot(kind='bar') might be ok!
+    # However, plotFragmentLengthDistribution is better!
+    return FragmentLengthDistribution_DF
+    
+def plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title= "FRAGMENT LENGTH DISTRIBUTION", binning='Freedman-Diaconis', normalize=True, rug=False, kde=True, sonicLengthEstimation=True, show_live=True, export=""):
+    # Note about binning: None/False means 'bar plot' (no binning)
+    #                     'Freedman-Diaconis' means 'autobinning'
+    #                     Else, an int is expected
+    # Note: some kwargs implies normalize=True overriding
+    
+    # override user input
+    if kde is True:
+        normalize = True
+    if sonicLengthEstimation:
+        normalize = True
+    # reminpulate data
+    exploded_data = []
+    for ShS, n_of_fragment in FragmentLengthDistribution_DF.iterrows():
+        exploded_data += [int(ShS)]*int(n_of_fragment)
+    # Set up interactive mode (plot pop-upping)
+    if show_live:
+        plt.ion()
+    else:
+        plt.ioff()
+    # Prepare plot environment
+    plt.figure(figsize=(13,13)) # Create matplotlib figure
+    plt.title(title)
+    ax = plt.axes() # Create matplotlib axes
+    # Add optional estimation of real distribution: sonicLengthEstimation
+    # put here beacuse of legend issue
+    if sonicLengthEstimation and (normalize or kde):
+        import rpy2.robjects as robjects
+        from rpy2.robjects.packages import importr
+        sonicLength = importr("sonicLength")
+        length_list = FragmentLengthDistribution_DF.index.values.astype(int)
+        locations_list = range(len(length_list))
+        results = sonicLength.estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
+        phi = results.rx2("phi")
+        freq_phi = list(phi)
+        length_phi = [float(l) for l in list(phi.names)]
+        ax.plot(length_phi, freq_phi, 'r', lw=2, label="sonicLength\nestimated distribution")
+    # Plot data
+    bins=None
+    if binning != 'Freedman-Diaconis':
+        if (binning is False) or (binning is None):
+            bins = len(FragmentLengthDistribution_DF)
+        else:
+            bins=binning
+    ax = sns.distplot(exploded_data, bins=bins, norm_hist=normalize, rug=rug, kde=kde, kde_kws={'label': 'KDE - Gaussian kernel', "lw": 2}, hist_kws={'label': 'Observed Distribution', "color": "g"})
+    # Refine axis
+    if normalize:
+        ax.set_ylabel("fragment length frequencies (total fragments={N}, occMin={omin}, occMax={omax})".format(omin=str(FragmentLengthDistribution_DF['n_of_fragment'].min()), omax=str(FragmentLengthDistribution_DF['n_of_fragment'].max()), N=str(FragmentLengthDistribution_DF['n_of_fragment'].sum())))
+    else:
+        ax.set_ylabel("fragment length occurrencies (min={omin}, max={omax}, total={N})".format(omin=str(FragmentLengthDistribution_DF['n_of_fragment'].min()), omax=str(FragmentLengthDistribution_DF['n_of_fragment'].max()), N=str(FragmentLengthDistribution_DF['n_of_fragment'].sum())))
+    ax.set_xlabel("fragment lengths (ShearSites)")
+    # Show plot
+    if show_live:
+        plt.show()
+    # Save plot
+    if export:
+        export = os.path.normpath(export)
+        plt.savefig(export)
+    # close
+    if not show_live:
+        plt.close()
     
     
-    
-    
+
+### IN DEVELOPMENT (?) #####################################################################
 def checkShearSitesDistance(any_df):
-    ShearSitesDistance_DF = None  # a matrix like the edit distance one
+    ShearSitesDistance_DF = None  # a matrix like the edit distance one, within a single is
     return ShearSitesDistance_DF
     
 def plotShearSitesDistanceOccurrency(ShearSitesDistance_DF):
     # plot an hist like the one produced by plotEditDistanceOccurrency
     pass
-
+############################################################################################
 
 
 
@@ -499,22 +657,35 @@ if __name__ == "__main__":
 
     
     #### Test Functions in this module ####
-
+    show_live = False
+    
     ## Barcodes nucleotide balancing
     overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
-    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', stacked_bar=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
+    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
 
     ## Barcodes occurrencies
     overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df)
-    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_top_ranked=10, annot=True, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency.pdf"))
+    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency.pdf"))
 
     ## Edit distance occurrencies
     #data = exhaustive_df.loc[:,'randomBC'].to_frame()
     #data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
     data = exhaustive_df
     editDistance_DF = checkEditDistance(data, all_combinations=False)
-    plotEditDistanceOccurrency(editDistance_DF, title='[DEBUG] EDIT DISTANCE OCCURRENCIES', vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=True, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_plotEditDistanceOccurrency.pdf"))
+    plotEditDistanceOccurrency(editDistance_DF, title='[DEBUG] EDIT DISTANCE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_plotEditDistanceOccurrency.pdf"))
     
+    ## ShearSite occurrencies
+    #data = exhaustive_df.loc[:50,['randomBC', 'shearsite']]
+    #data = exhaustive_df.loc[:,['seq_count', 'shearsite']]
+    data = exhaustive_df.loc[:50,:]
+    ShearSitesOccurrency_DF = checkShearSitesOccurrency(data)
+    plotShearSitesOccurrency(ShearSitesOccurrency_DF, title='[DEBUG] SHEARSITE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkShearSitesOccurrency.pdf"))
+
+    ## Fragment Length distribution plot
+    data = exhaustive_df
+    FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
+    plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title='[DEBUG] FRAGMENT LENGTH DISTRIBUTION', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_FragmentLengthDistribution.pdf"))
+
     ## Edit distance matrixes
 #
 #    all_combinations=False
