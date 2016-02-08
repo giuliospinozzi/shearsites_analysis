@@ -58,8 +58,6 @@ def buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder):
 def relabelling(df, asso_dict, use_fields=use_fields, concat=concat, inplace=False):
     # NOTE: - df col names must be the keys of asso_dict!
     #       - use_fields can be an int or a sequence of ints
-    #       - relabelling is exploited also in export_CEM module!
-    #         However, kwargs are passed explicitly there.
     
     def buildRelabellingDict(asso_dict, use_fields, concat):
         relabellingDict = {}

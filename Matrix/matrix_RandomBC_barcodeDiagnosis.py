@@ -115,7 +115,7 @@ def checkRandomBCoccurrency(any_df):
     #######################################################################################
     # eg of output usage: PLOT ----> distinctBC_DF.plot(kind='bar')                       #
     # however this is not usually feasible due to the large amount of distinct BC         #
-    # for typical usage please call plotRandomBCoccurrency(distinctBC_DF)                  #
+    # for typical usage please call plotRandomBCoccurrency(distinctBC_DF)                 #
     #######################################################################################
     return distinctBC_DF
 
@@ -261,7 +261,7 @@ def checkEditDistance(any_df, all_combinations=False):
     try:
         l.append(any_df.loc[:,'shearsite'].to_frame())
     except:
-        verbosePrint("\n[WARNING] checkEditDistance can't find 'shearsite' data. All the data will be processed as belonging to one unique shear site of nominal length '0'.")
+        verbosePrint("[WARNING] checkEditDistance can't find 'shearsite' data. All the data will be processed as belonging to one unique shear site of nominal length '0'.")
         l.append(pd.DataFrame(data={'shearsite':['0']*len(any_df.loc[:,'randomBC'])}, index=any_df.loc[:,'randomBC'].index))
         # Note: here the index of 'fake shearsite data' must be forced to be the same of 'randomBC' due to the join in the following concat!!
         
@@ -272,14 +272,14 @@ def checkEditDistance(any_df, all_combinations=False):
     try:
         IS_set = set(any_df.loc[:,'genomic_coordinates'].tolist())
         if len(IS_set) != 1:
-            verbosePrint("\n[WARNING] checkEditDistance found data from more than one IS found: {IS_list}. However, all the data will be processed as belonging to one unique IS!".format(IS_list=str(humanSorted(list(IS_set)))))
+            verbosePrint("[WARNING] checkEditDistance found data from more than one IS found: {IS_list}. However, all the data will be processed as belonging to one unique IS!".format(IS_list=str(humanSorted(list(IS_set)))))
     except:
-        verbosePrint("\n[WARNING] checkEditDistance cannot perform IS control on input data ('genomic_coordinates' not found). Thus, all the data will be processed as belonging to one unique IS!")
+        verbosePrint("[WARNING] checkEditDistance cannot perform IS control on input data ('genomic_coordinates' not found). Thus, all the data will be processed as belonging to one unique IS!")
     # check for correct usage - Duplicate BCs (in shearsite groups, if given, or in general)
     a = DF.groupby('shearsite')['randomBC'].apply(lambda x: sorted(np.unique(x.tolist())))
     b = DF.groupby('shearsite')['randomBC'].apply(lambda x: sorted(x.tolist()))
     if not (a == b).all().all():
-        verbosePrint("\n[WARNING] Duplicate randomBCs found (within shearsite groups, if given). Uniqueness will be forced through pandas.DataFrame.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))!")
+        verbosePrint("[WARNING] Duplicate randomBCs found (within shearsite groups, if given). Uniqueness will be forced through pandas.DataFrame.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))!")
     
     # Group randomBCs in lists, by shearsite, on DF
     DF = DF.groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
@@ -333,7 +333,7 @@ def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MA
     if annot:
         if n>annot_lim:
             annot_value = False
-            verbosePrint("\n[WARNING] editDistanceHeatmap cannot annotate matrixes with n>{annot_lim}.".format(annot_lim=str(annot_lim)))
+            verbosePrint("[WARNING] editDistanceHeatmap cannot annotate matrixes with n>{annot_lim}.".format(annot_lim=str(annot_lim)))
         else:
             annot_value = True
     # Control for labels
@@ -343,10 +343,10 @@ def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MA
     if n<tick_lim:
         if n>alltick_lim:
             ticklabels = int(ceil(n/100.0))
-            verbosePrint("\n[WARNING] editDistanceHeatmap cannot write all labels of matrixes with n>{alltick_lim}. One each {ticklabels} will be reported instead.".format(alltick_lim=str(alltick_lim), ticklabels=str(ticklabels)))
+            verbosePrint("[WARNING] editDistanceHeatmap cannot write all labels of matrixes with n>{alltick_lim}. One each {ticklabels} will be reported instead.".format(alltick_lim=str(alltick_lim), ticklabels=str(ticklabels)))
     else:
         ticklabels = False
-        verbosePrint("\n[WARNING] editDistanceHeatmap cannot write labels of matrixes with n>{tick_lim}. ".format(tick_lim=str(tick_lim)))
+        verbosePrint("[WARNING] editDistanceHeatmap cannot write labels of matrixes with n>{tick_lim}. ".format(tick_lim=str(tick_lim)))
     # Set range for colors
     vmin=0
     vmax=12

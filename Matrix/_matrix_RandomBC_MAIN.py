@@ -44,9 +44,6 @@ outfolder = matrix_RandomBC_globModule.outfolder
 out_files_delimiter = matrix_RandomBC_globModule.out_files_delimiter
 relabelling = matrix_RandomBC_globModule.relabelling
 
-# Export CEM
-export_cem = matrix_RandomBC_globModule.export_cem
-
 
 #++++++++++++++++++++++++ CODE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -84,19 +81,13 @@ matrix_RandomBC_outputModule.writeMatrix(cellCount_matrix, cellCount_matrix_outP
 fragmentEstimate_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "fragmentEstimate_matrix.tsv"))
 matrix_RandomBC_outputModule.writeMatrix(fragmentEstimate_matrix, fragmentEstimate_matrix_outPath, out_files_delimiter, metadata=metadata)
 
-if export_cem:
-    # Normalize matrixes
-    seqCount_matrix_norm = seqCount_matrix.apply(lambda x: x/x.sum())
-    ShsCount_matrix_norm = ShsCount_matrix.apply(lambda x: x/x.sum())
-    barcodeCount_matrix_norm = barcodeCount_matrix.apply(lambda x: x/x.sum())
-    cellCount_matrix_norm = cellCount_matrix.apply(lambda x: x/x.sum())
-    fragmentEstimate_matrix_norm = fragmentEstimate_matrix.apply(lambda x: x/x.sum())
-    # Prepare: more matrixes can be added!
-    df_dict = {'sequence_count': seqCount_matrix, 'shearsite_count': ShsCount_matrix, 'TAG_count': barcodeCount_matrix, 'shearsite&TAG_count': cellCount_matrix, 'fragmentEstimate_count': fragmentEstimate_matrix,
-               'sequence_count_quantification': seqCount_matrix_norm, 'shearsite_count_quantification': ShsCount_matrix_norm, 'TAG_count_quantification': barcodeCount_matrix_norm, 'shearsite&TAG_count_quantification': cellCount_matrix_norm, 'fragmentEstimate_count_quantification': fragmentEstimate_matrix_norm}
-    # Export
-    from matrix_RandomBC_exportCEM import exportCEM
-    outpath = exportCEM(df_dict, asso_dict) # kwargs: should filename, sep, eol be set here explicitly through matrix_RandomBC_globModule?
+# Note for normalization
+#seqCount_matrix_norm = seqCount_matrix.apply(lambda x: x/x.sum())
+#ShsCount_matrix_norm = ShsCount_matrix.apply(lambda x: x/x.sum())
+#barcodeCount_matrix_norm = barcodeCount_matrix.apply(lambda x: x/x.sum())
+#cellCount_matrix_norm = cellCount_matrix.apply(lambda x: x/x.sum())
+#fragmentEstimate_matrix_norm = fragmentEstimate_matrix.apply(lambda x: x/x.sum())
+
 #############################################################################################################################################################
 
 ##++++++++++++++++++++++++ LOCAL TEST ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -170,10 +161,6 @@ if export_cem:
 #fragmentEstimate_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "fragmentEstimate_matrix.tsv"))
 #matrix_RandomBC_outputModule.writeMatrix(fragmentEstimate_matrix, fragmentEstimate_matrix_outPath, out_files_delimiter, metadata=metadata)
 #
-#if export_cem:
-#    print "\nCannot run exportCEM in Local!\n"
-#
-
 
 
 

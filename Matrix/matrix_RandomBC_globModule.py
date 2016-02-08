@@ -6,7 +6,9 @@ Created on Mon Jan 18 09:49:24 2016
 """
 
 
-#++++++++++++++++++++++++++++++++++ Global Vars +++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++ Global Vars ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+### SHARED VARS ################################################################
 
 # Screen print
 verbose = True
@@ -32,16 +34,30 @@ relabelling = True
 use_fields = 6  # can be an int or a sequence of ints
 concat = "_"  # char to concatenate fields
 
-### Export CEM
+################################################################################
+
+
+### DIAGNOSTIC VARS ############################################################
+
+# Export MATRIXES
+export_matrixes = False
+
+# Export CEM data
 # config
-export_cem = True
+export_cem_data = False
 data_id = ""  # something related to data_files_name_filter
 # build out file name structure
 out_filename = "CEMdata" + "_" + DISEASE + "_" + POOL
 if data_id: out_filename += "_" + data_id 
 out_filename += ".tsv"
 
-#++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++#
+# Export DIAGNOSTICS
+export_diagnostics = True
+
+################################################################################
+
+
+#++++++++++++++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 def verbosePrint(x, verbose=verbose):
     if verbose:
@@ -75,7 +91,8 @@ def flattenDict(d, parent_key='', sep='@@'):
             items.append((tuple(new_key.split(sep)), v))
     return dict(items)
 
-#++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
+
+#++++++++++++++++++++++++++++++++++++++ MAIN and TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 if __name__ == "__main__":
     pass
