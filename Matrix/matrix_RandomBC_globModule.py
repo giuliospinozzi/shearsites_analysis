@@ -40,19 +40,32 @@ concat = "_"  # char to concatenate fields
 ### DIAGNOSTIC VARS ############################################################
 
 # Export MATRIXES
+# DO
 export_matrixes = False
 
 # Export CEM data
-# config
+# DO
 export_cem_data = False
+# build out file name
 data_id = ""  # something related to data_files_name_filter
-# build out file name structure
 out_filename = "CEMdata" + "_" + DISEASE + "_" + POOL
 if data_id: out_filename += "_" + data_id 
 out_filename += ".tsv"
 
 # Export DIAGNOSTICS
+# DO
 export_diagnostics = True
+# Data selection
+specific_samples = True  # 'True' here requires explicit lists below
+dilution_to_process = ['L', 'M', 'N']  # Whatever, if specific_samples is False
+condition_to_process = ['LMv2-II']  # Whatever, if specific_samples is False
+# Task to perform
+checkNucleotidesBalancing = True
+FragmentLengthDistribution = True
+checkShearSitesOccurrency = True
+checkRandomBCoccurrency = True
+checkEditDistance_diagonal = False
+checkEditDistance_extensive = False
 
 ################################################################################
 

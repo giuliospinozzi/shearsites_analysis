@@ -29,7 +29,7 @@ humanSorted = matrix_RandomBC_globModule.humanSorted
 
 
 
-def checkNucleotideBalancing(any_df):
+def checkNucleotideBalancing(any_df, N_warn=False):
     # try to take required columns -> new DF
     required_columns = ['randomBC', 'seq_count']
     l = []
@@ -38,6 +38,13 @@ def checkNucleotideBalancing(any_df):
     except:
         print "\n[ERROR] checkNucleotideBalancing wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
         sys.exit("\n[QUIT]\n")
+    # add column 'header' if N_warn is requested
+    if N_warn:
+        header_list = True
+        try:
+           l.append(any_df.loc[:,'header'].to_frame())
+        except:
+            header_list = False
     DF = pd.concat(l, axis=1, join='inner')
     # operate on DF to create BC_DF: rows are RandomBC exploded by seq_count, splitted in columns on each nucleotide
     BC_DF_rowlist = []
@@ -56,6 +63,26 @@ def checkNucleotideBalancing(any_df):
     # eg of output usage: PLOT ----> nucleotidesCount_DF.T.plot(kind='bar', stacked=True) #
     # for better graphics please call plotNucleotideBalancing(nucleotidesCount_DF)        #
     #######################################################################################
+    
+    if N_warn:
+        nBC_list = []
+        nBC_index_list = []
+        nucleotides_found = list(nucleotidesCount_DF.index.values)
+        if (('N' in nucleotides_found) or ('n' in nucleotides_found)):
+            verbosePrint('''[WARNING] checkNucleotideBalancing found "N's" in sequences!''')
+            for i, r in any_df.loc[:,'randomBC'].to_frame().iterrows():
+                if (('N' in r['randomBC']) or ('n' in r['randomBC'])):
+                    nBC_list.append(r['randomBC'])
+                    nBC_index_list.append(i)
+            verbosePrint('''          * randomBC with N's: {nBC_list}'''.format(nBC_list=str(nBC_list)))
+            if header_list:
+                header_list = []
+                for i, r in any_df.loc[nBC_index_list,'header'].to_frame().iterrows():
+                    header_list.append(r['header'])
+                verbosePrint('''          * header list: {header_list}'''.format(header_list=str(header_list)))
+            else:
+                verbosePrint('''          * Header list is not available.''')
+    
     return nucleotidesCount_DF
     
 def plotNucleotideBalancing(nucleotidesCount_DF, title='PILED-UP RANDOM-BARCODES', stacked_bar=True, show_live=True, export=""):
@@ -134,7 +161,7 @@ def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', s
         N = min(show_top_ranked, len(distinctBC_DF))
         top_represented_rBC = "TOP-{N} RANDOM-BARCODES BY SEQ-COUNT:".format(N=str(N))
         for i in range(N):
-            top_represented_rBC += "\n {i}) {rBC} (seq_count={sc}, {p}%)".format(i=str(i+1), rBC=str(list(distinctBC_DF.index.values)[i]), sc=str(int(distinctBC_DF['seq_count'][i])), p=str(round(list(distinctBC_DF['seq_count'])[i]*100/distinctBC_DF.sum(),2)))
+            top_represented_rBC += "\n {i}) {rBC} (seq_count={sc}, {p}%)".format(i=str(i+1), rBC=str(list(distinctBC_DF.index.values)[i]), sc=str(int(distinctBC_DF['seq_count'][i])), p=str(round(list(distinctBC_DF['seq_count'])[i]*100.0/distinctBC_DF.sum(),2)))
     # Prepare data to plot as Series
     distinctBC_DF = distinctBC_DF.reset_index()  # distinctBC_DF is sorted so reset_index() yields the ranking as index!
     distinctBC_DF = distinctBC_DF.loc[:,'seq_count']  # take only data to plot: distinctBC_DF is a Series from now on
@@ -564,7 +591,8 @@ def plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title= "FRAGME
         import rpy2.robjects as robjects
         from rpy2.robjects.packages import importr
         sonicLength = importr("sonicLength")
-        length_list = FragmentLengthDistribution_DF.index.values.astype(int)
+        # length_list = FragmentLengthDistribution_DF.index.values.astype(int)  #error?
+        length_list = exploded_data  #try to correct!
         locations_list = range(len(length_list))
         results = sonicLength.estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
         phi = results.rx2("phi")
@@ -575,7 +603,10 @@ def plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title= "FRAGME
     bins=None
     if binning != 'Freedman-Diaconis':
         if (binning is False) or (binning is None):
-            bins = len(FragmentLengthDistribution_DF)
+            #bins = len(FragmentLengthDistribution_DF)
+            lmin = min(FragmentLengthDistribution_DF.index.values.astype(int))
+            lmax = max(FragmentLengthDistribution_DF.index.values.astype(int))
+            bins = range(lmin, lmax+1)
         else:
             bins=binning
     ax = sns.distplot(exploded_data, bins=bins, norm_hist=normalize, rug=rug, kde=kde, kde_kws={'label': 'KDE - Gaussian kernel', "lw": 2}, hist_kws={'label': 'Observed Distribution', "color": "g"})

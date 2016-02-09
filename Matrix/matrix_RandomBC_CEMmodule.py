@@ -53,12 +53,19 @@ def buildIndexes(cem_locations_tuple, strand):
         indexes.append('_'.join([chrom, str(locus), strand]))
     return indexes
     
-def extractCEM(df, cem_locations=cem_locations, cem_strands=cem_strands):
+def extractCEM_fromMatrix(matrix_df, cem_locations=cem_locations, cem_strands=cem_strands):
     indexes = []
     for i in range(len(cem_locations)):
         indexes += buildIndexes(cem_locations[i], cem_strands[i])
-    cem_df = df.loc[indexes]
-    cem_df.dropna(axis=0, how='all', inplace=True)
+    cem_matrix_df = matrix_df.loc[indexes]
+    cem_matrix_df.dropna(axis=0, how='all', inplace=True)
+    return cem_matrix_df
+    
+def extractCEM_fromDF(any_df, cem_locations=cem_locations, cem_strands=cem_strands):
+    coordinates = []
+    for i in range(len(cem_locations)):
+        coordinates += buildIndexes(cem_locations[i], cem_strands[i])
+    cem_df = any_df[any_df['genomic_coordinates'].isin(coordinates)]
     return cem_df
 
 def CEM_info(integration_id, cem_locations=cem_locations, cem_strands=cem_strands, cem_coordinates=cem_coordinates_list, cem_symbols = cem_symbols_list):
@@ -121,7 +128,7 @@ def exportCEM(df_dict, asso_dict, filename=out_filename, sep=sep, eol=eol):
         export_dict = {}
         for name in humanSorted(df_dict.keys()):
             df = df_dict[name]
-            df = extractCEM(df)
+            df = extractCEM_fromMatrix(df)
             df = relabelling(df, asso_dict)
             df = df.unstack()
             for index, value in df.iteritems():
