@@ -15,6 +15,7 @@ import os
 # Print
 verbose = matrix_RandomBC_globModule.verbose
 # Output
+cem_data_outfolder = matrix_RandomBC_globModule.cem_data_outfolder
 out_filename = matrix_RandomBC_globModule.out_filename
 # path is build by matrix_RandomBC_outputModule.buildOutputPath
 # with parameters, again, from matrix_RandomBC_globModule
@@ -107,6 +108,7 @@ def relabelling(df, asso_dict, concat=relabelling_sep, inplace=False):
 
 
 def exportCEM(df_dict, asso_dict, filename=out_filename, sep=sep, eol=eol):
+    
     # e.g. df_dict = {'sequence_count': df_seqCount_matrix,
     #                 'shearsite_count': df_ShsCount_matrix,
     #                 'shearsite&TAG_count': df_cellCount_matrix,
@@ -114,8 +116,6 @@ def exportCEM(df_dict, asso_dict, filename=out_filename, sep=sep, eol=eol):
     #                }
     # NOTE: matrixes in df_dict can be any, but for a proper comparison with
     # th_abundance they are expected to be normalized!
-    
-    ### ad-hoc functions
     
     def arrangeData(df_dict, asso_dict, relabelling_sep=relabelling_sep):
         # e.g. df_dict = {'sequence_count': df_seqCount_matrix,
@@ -148,7 +148,7 @@ def exportCEM(df_dict, asso_dict, filename=out_filename, sep=sep, eol=eol):
         # e.g. export_dict = {('column field concatenation with relabelling_sep', 'integration id / index'): another_dict}    
         #                                       another_dict = {df_dict key1: value, df_dict key2: value, ..., 'coordinate': string, 'symbol': string, 'expected quantification': value}
         return export_dict
-    
+        
     def formatData(export_dict, df_dict, relabelling_sep=relabelling_sep, header=True):
         # e.g. export_dict = {('column field concatenation with relabelling_sep', 'integration id / index'): another_dict}    
         #                                       another_dict = {df_dict key1: value, df_dict key2: value, ..., 'coordinate': string, 'symbol': string, 'expected quantification': value}
@@ -182,15 +182,15 @@ def exportCEM(df_dict, asso_dict, filename=out_filename, sep=sep, eol=eol):
             # lines = file lines as nested list
         return lines
     
-    #### Code
-    
+    # Code
     verbosePrint("\nExport CEM data ...")
     export_dict = arrangeData(df_dict, asso_dict)
     lines = formatData(export_dict, df_dict)
-    OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(matrix_RandomBC_globModule.ground_dir, matrix_RandomBC_globModule.DISEASE, matrix_RandomBC_globModule.PATIENT, matrix_RandomBC_globModule.POOL, matrix_RandomBC_globModule.outfolder)
+    OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(matrix_RandomBC_globModule.ground_dir, matrix_RandomBC_globModule.DISEASE, matrix_RandomBC_globModule.PATIENT, matrix_RandomBC_globModule.POOL, cem_data_outfolder)
     outpath = os.path.normpath(os.path.join(OUTDIR, filename))
     with open(outpath, 'w') as out_stream:
         rows = [sep.join(l) for l in lines]
         out_stream.write(eol.join(rows)+eol)
     verbosePrint(">>> Created file '{outpath}'".format(outpath=str(outpath)))
+    
     return outpath

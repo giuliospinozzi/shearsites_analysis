@@ -29,24 +29,48 @@ humanSorted = matrix_RandomBC_globModule.humanSorted
 
 
 
-def checkNucleotideBalancing(any_df, N_warn=False):
-    # try to take required columns -> new DF
-    required_columns = ['randomBC', 'seq_count']
-    l = []
-    try:
-        [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
-    except:
-        print "\n[ERROR] checkNucleotideBalancing wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+def checkNucleotideBalancing(any_df, how='by_seq_count', N_warn=False):
+    # Check 'how' kwarg (it change the logics!):
+    #    how='by_seq_count' explodes 'randomBC' by their 'seq_count'
+    #    how='simple' can be thought as 'by_seq_count' where, for each cell of 'randomBC' column, the seq_count is imposed to be ONE
+    #    how='distinct' takes all the distinct randomBCs ONCE.
+    # N_warn = True produces warnings (if verbose) if randomBCs show 'N'/'n' nucleotides in their sequences
+    supported_how = ['by_seq_count', 'simple', 'distinct']
+    if how not in supported_how:
+        print "\n[ERROR] checkNucleotideBalancing wrong input! Supported value for 'how' kwarg are: {supported_how}. Your input: {how}.".format(supported_how=str(supported_how), how=str(how))
         sys.exit("\n[QUIT]\n")
-    # add column 'header' if N_warn is requested
+    # prepare l with selected columns to build a new DF
+    l = []
+    if how == 'by_seq_count':
+        # try to take required columns -> append to l -> new DF
+        required_columns = ['randomBC', 'seq_count']
+        try:
+            [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
+        except:
+            print "\n[ERROR] checkNucleotideBalancing wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+            sys.exit("\n[QUIT]\n")
+    elif (how == 'simple' or  how == 'distinct'):
+        # try to take required columns + fake seq_count column filled with one's -> append to l -> new DF
+        required_columns = ['randomBC']
+        try:
+            [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
+        except:
+            print "\n[ERROR] checkNucleotideBalancing wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+            sys.exit("\n[QUIT]\n")
+        # append to l a fake seq_count column filled with one's
+        l.append(pd.DataFrame(data=[1]*len(any_df.loc[:,'randomBC']), index=any_df.index, columns=['seq_count']))
+    # add column 'header_list' if N_warn is requested
     if N_warn:
         header_list = True
         try:
-           l.append(any_df.loc[:,'header'].to_frame())
+           l.append(any_df.loc[:,'header_list'].to_frame())
         except:
             header_list = False
+    # Create DF concatenating df's in l
     DF = pd.concat(l, axis=1, join='inner')
-    # operate on DF to create BC_DF: rows are RandomBC exploded by seq_count, splitted in columns on each nucleotide
+    if how == 'distinct':
+        DF.drop_duplicates(subset='randomBC', inplace=True)
+    # operate on DF to create BC_DF: rows are RandomBC (distinct if how == 'distinct') exploded by seq_count (1's if how == 'simple' or 'distinct'), splitted in columns on each nucleotide
     BC_DF_rowlist = []
     BC_DF_rowlist_append = BC_DF_rowlist.append
     for index, columns in DF.iterrows():
@@ -63,7 +87,6 @@ def checkNucleotideBalancing(any_df, N_warn=False):
     # eg of output usage: PLOT ----> nucleotidesCount_DF.T.plot(kind='bar', stacked=True) #
     # for better graphics please call plotNucleotideBalancing(nucleotidesCount_DF)        #
     #######################################################################################
-    
     if N_warn:
         nBC_list = []
         nBC_index_list = []
@@ -77,12 +100,14 @@ def checkNucleotideBalancing(any_df, N_warn=False):
             verbosePrint('''          * randomBC with N's: {nBC_list}'''.format(nBC_list=str(nBC_list)))
             if header_list:
                 header_list = []
-                for i, r in any_df.loc[nBC_index_list,'header'].to_frame().iterrows():
-                    header_list.append(r['header'])
-                verbosePrint('''          * header list: {header_list}'''.format(header_list=str(header_list)))
+                for i, r in any_df.loc[nBC_index_list,'header_list'].to_frame().iterrows():
+                    header_list.append(r['header_list'])
+                if how == 'distinct':
+                    verbosePrint('''          * example headers (not exhaustive!): {header_list}'''.format(header_list=str(header_list)))
+                else:
+                    verbosePrint('''          * header list: {header_list}'''.format(header_list=str(header_list)))
             else:
                 verbosePrint('''          * Header list is not available.''')
-    
     return nucleotidesCount_DF
     
 def plotNucleotideBalancing(nucleotidesCount_DF, title='PILED-UP RANDOM-BARCODES', stacked_bar=True, show_live=True, export=""):
@@ -237,7 +262,7 @@ def checkEditDistance(any_df, all_combinations=False):
     #       HOWEVER, THIS FUNCTION ALWAYS WORKS:
     #          - even if more than one IS is present, or 'genomic_coordinates' is just not available, data will be still processed as belonging to one unique IS (a warn is printed if verbose)
     #          - if no shearsites are present, data will be processed as belonging to one unique shear site of nominal length '0' (a warn is printed if verbose)
-    #          - when any (or all) among above cases happen, uniqueness of randomBCs will be forced, due to groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
+    #          - IMPORTANT: when any (or all) among above cases happen, uniqueness of randomBCs will be forced, due to groupby('shearsite')['randomBC'].apply(lambda x: np.unique(x.tolist()))
         
     def editDistanceMatrix (seqList1, seqList2, groupLabel1="", groupLabel2=""):
         # return a matrix with col from seqList1 and row from seqList2
@@ -538,27 +563,26 @@ def plotShearSitesOccurrency(ShearSitesOccurrency_DF, title="SHEAR SITE OCCURREN
 def checkFragmentLengthDistribution(any_df):
     # Note: this function is designed to take in input data of many integration sites from a-sample/a-sonication-pool.
     #       HOWEVER, THIS FUNCTION ALWAYS WORKS, so be careful while choosing the input.
-    # Note: this function compute the number of times distinct shearsites recur in in any_df, ignoring any other
+    # Note: this function compute the number of fragments in any_df (n of distinct couples [genomic_coordinates, shearsite]), ignoring any other
     #       column/hierarchy inside any_df
     
     # data collector
     l = []
     # try to take required columns -> l
-    required_columns = ['shearsite']
+    required_columns = ['shearsite', 'genomic_coordinates']
     try:
-        l.append(any_df.loc[:,required_columns[0]].to_frame())
+        [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
     except:
-        print "\n[ERROR] checkFragmentLengthDistribution wrong input! Column {required_column} is required. Given dataframe has {columns_found}.".format(required_column=str(required_columns[0]), columns_found=str(list(any_df)))
+        print "\n[ERROR] checkFragmentLengthDistribution wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
         sys.exit("\n[QUIT]\n")
     # New DF with data to process
     DF = pd.concat(l, axis=1, join='inner')
-    # compute recurrencies of elements in 'shearsite'
-    FragmentLengthDistribution_DF = DF['shearsite'].value_counts().to_frame()
-    FragmentLengthDistribution_DF.sort_index(inplace=True)
-    FragmentLengthDistribution_DF.rename(columns={0:'n_of_fragment'}, inplace=True)
+    DF = DF.drop_duplicates()  #unique! -> locations_list, length_list = list(DF.genomic_coordinates), list(DF.shearsite)
+    FragmentLengthDistribution_DF = pd.pivot_table(DF, columns='shearsite', values='genomic_coordinates', aggfunc=lambda x: len(x.unique())).to_frame()
     FragmentLengthDistribution_DF.index.name = required_columns[0]
-    # FragmentLengthDistribution_DF.plot(kind='bar') might be ok!
-    # However, plotFragmentLengthDistribution is better!
+    FragmentLengthDistribution_DF.rename(columns={required_columns[1]:'n_of_fragment'}, inplace=True)
+    #FragmentLengthDistribution_DF.plot(kind='bar') # might be ok!
+    #However, plotFragmentLengthDistribution is better!
     return FragmentLengthDistribution_DF
     
 def plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title= "FRAGMENT LENGTH DISTRIBUTION", binning='Freedman-Diaconis', normalize=True, rug=False, kde=True, sonicLengthEstimation=True, show_live=True, export=""):
@@ -591,9 +615,8 @@ def plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title= "FRAGME
         import rpy2.robjects as robjects
         from rpy2.robjects.packages import importr
         sonicLength = importr("sonicLength")
-        # length_list = FragmentLengthDistribution_DF.index.values.astype(int)  #error?
-        length_list = exploded_data  #try to correct!
-        locations_list = range(len(length_list))
+        length_list = exploded_data  # shearsites exploded by count, i.e. the number of distinct genomic_coordinates
+        locations_list = range(len(length_list))  # fake distinct genomic_coordinates
         results = sonicLength.estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
         phi = results.rx2("phi")
         freq_phi = list(phi)
@@ -682,43 +705,45 @@ if __name__ == "__main__":
     import matrix_RandomBC_processingModule
     df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
     exhaustive_df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
-    # Up to now exhaustive_df is just like df with 'header' column added (header list).
+    # Up to now exhaustive_df is just like df with 'header_list' column added.
     # Keep in mind that this structure is ongoing and more columns will may appear. Let them be implicitly supported!!
     # Check advancements in matrix_RandomBC_processingModule.buildExhaustiveDataFrame
 
     
     #### Test Functions in this module ####
-    show_live = False
+    show_live = True
     
     ## Barcodes nucleotide balancing
-    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df)  # or = checkNucleotideBalancing(df)
-    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
-
-    ## Barcodes occurrencies
-    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df)
-    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency.pdf"))
-
-    ## Edit distance occurrencies
-    #data = exhaustive_df.loc[:,'randomBC'].to_frame()
-    #data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
-    data = exhaustive_df
-    editDistance_DF = checkEditDistance(data, all_combinations=False)
-    plotEditDistanceOccurrency(editDistance_DF, title='[DEBUG] EDIT DISTANCE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_plotEditDistanceOccurrency.pdf"))
-    
-    ## ShearSite occurrencies
-    #data = exhaustive_df.loc[:50,['randomBC', 'shearsite']]
-    #data = exhaustive_df.loc[:,['seq_count', 'shearsite']]
-    data = exhaustive_df.loc[:50,:]
-    ShearSitesOccurrency_DF = checkShearSitesOccurrency(data)
-    plotShearSitesOccurrency(ShearSitesOccurrency_DF, title='[DEBUG] SHEARSITE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkShearSitesOccurrency.pdf"))
-
-    ## Fragment Length distribution plot
-    data = exhaustive_df
-    FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
-    plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title='[DEBUG] FRAGMENT LENGTH DISTRIBUTION', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_FragmentLengthDistribution.pdf"))
-
-    ## Edit distance matrixes
+    how='distinct'
+    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df, how=how, N_warn=True)  # or = checkNucleotideBalancing(df, ...)
+    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES'+" - "+how, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
 #
+#    ## Barcodes occurrencies
+#    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df)
+#    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency.pdf"))
+#
+#    ## Edit distance occurrencies
+#    data = exhaustive_df.loc[:,'randomBC'].to_frame()
+#    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
+#    data = exhaustive_df
+#    editDistance_DF = checkEditDistance(data, all_combinations=False)
+#    plotEditDistanceOccurrency(editDistance_DF, title='[DEBUG] EDIT DISTANCE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_plotEditDistanceOccurrency.pdf"))
+#    
+#    ## ShearSite occurrencies
+#    data = exhaustive_df.loc[:50,['randomBC', 'shearsite']]
+#    data = exhaustive_df.loc[:,['seq_count', 'shearsite']]
+#    data = exhaustive_df.loc[:50,:]
+#    ShearSitesOccurrency_DF = checkShearSitesOccurrency(data)
+#    plotShearSitesOccurrency(ShearSitesOccurrency_DF, title='[DEBUG] SHEARSITE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkShearSitesOccurrency.pdf"))
+#
+#    ## Fragment Length distribution plot
+#    for barcode in exhaustive_df['barcode'].unique():
+#        data = exhaustive_df[exhaustive_df['barcode'] == barcode]
+#        FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
+#        plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title='[DEBUG] FRAGMENT LENGTH DISTRIBUTION', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_{barcode}_FragmentLengthDistribution.pdf".format(barcode=barcode)))
+#
+    ## Edit distance matrixes
+
 #    all_combinations=False
 #    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
 #    editDistance_DF = checkEditDistance(data.loc[:0,:], all_combinations=all_combinations)

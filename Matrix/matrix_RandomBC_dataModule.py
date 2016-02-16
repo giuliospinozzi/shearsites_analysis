@@ -22,6 +22,14 @@ humanSorted = matrix_RandomBC_globModule.humanSorted
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
 
 def buildInputPath(ground_dir, DISEASE, PATIENT, POOL):
+    '''
+    Purpose:
+    Build and return the standard input path (thought as containing all the input file<->sample<->barcode of interest),
+    starting from ground_dir
+    IN:
+    ground_dir (abs valid path), DISEASE, PATIENT, POOL (strings)
+    OUT: INDIR = $ground_dir/$DISEASE/$PATIENT/'quantification'/$POOL/'RandomBC' (checked)
+    '''
     # Check ground_dir
     try:
         ground_dir = os.path.normpath(ground_dir)
@@ -29,8 +37,25 @@ def buildInputPath(ground_dir, DISEASE, PATIENT, POOL):
         print "\n[ERROR] ground_dir='{ground_dir}' is not formatted as valid path!".format(ground_dir=str(ground_dir))
         print "os.path.normpath returned: ", err_message
         sys.exit("\n[QUIT]\n")
+    if os.path.isfile(ground_dir):
+        print "\n[ERROR] ground_dir must be a folder path, not a file! Your input: ground_dir='{ground_dir}'".format(ground_dir=str(ground_dir))
+        sys.exit("\n[QUIT]\n")
+    if not os.path.exists(ground_dir):
+        print "\n[ERROR] ground_dir='{ground_dir}' does not exist!".format(ground_dir=str(ground_dir))
+        sys.exit("\n[QUIT]\n")
+    if not os.access(ground_dir, os.R_OK):
+        print "\n[ERROR] You have not read permission in ground_dir='{ground_dir}'".format(ground_dir=str(ground_dir))
+        sys.exit("\n[QUIT]\n")
+    # Build INDIR
     BASEDIR = os.path.normpath(os.path.join(ground_dir, DISEASE, PATIENT))
     INDIR = os.path.normpath(os.path.join(BASEDIR, "quantification", POOL, "RandomBC"))
+    # Check INDIR
+    if not os.path.exists(INDIR):
+        print "\n[ERROR] INDIR='{INDIR}' just build does not exist!".format(INDIR=str(INDIR))
+        sys.exit("\n[QUIT]\n")
+    if not os.access(INDIR, os.R_OK):
+        print "\n[ERROR] You have not read permission in INDIR='{INDIR}'".format(INDIR=str(INDIR))
+        sys.exit("\n[QUIT]\n")
     return INDIR
 
 
@@ -43,7 +68,7 @@ def listDir(folder, name_filter=None):
     folder - ... complete path (e.g. starting with '/') are checked and taken as they are.
                  words or partial path ('foldername' or 'foldername/subfolder') will be
                  taken as cwd/...
-    name_filter - substring for exact pattern matching
+    name_filter - substring for exact pattern matching / None for no filtering
     OUT:
     dir_content or filtered_dir_content
     """
@@ -61,7 +86,7 @@ def listDir(folder, name_filter=None):
         print "\n[ERROR] folder='{folder}' does not exist!".format(folder=str(folder))
         sys.exit("\n[QUIT]\n")
     if not os.access(folder, os.R_OK):
-        print "\n[ERROR] You have not read privileges in folder='{folder}'".format(folder=str(folder))
+        print "\n[ERROR] You have not read permission in folder='{folder}'".format(folder=str(folder))
         sys.exit("\n[QUIT]\n")
     # Get folder contents
     dir_content = []
@@ -96,6 +121,11 @@ def loadFile (path, delimiter):
     
 def arrangeData(data_file_nested_list):
     """
+    Purpose: take in input data as nested-list from loadFile function and return two dict as shown below;
+             Data in nested-list are supposed to come from a single/specific file<->sample<->barcode!
+    IN:
+    data_file_nested_list (as returned by loadFile, for a single/specific file<->sample<->barcode)
+    OUT:
     alldata_dict = {'IS_key': line_dict, ...}
                               line_dict = {'header': line_data, ...}
                                                      line_data = {'r1_chr': line[1].replace("chr", ""),
@@ -115,7 +145,10 @@ def arrangeData(data_file_nested_list):
     IS_dict = {'IS_key': shearsite_dict, ...}
                          shearsite_dict = {'shearsite_key': randomBC_dict, ...}
                                                             randomBC_dict = {'randomBC_key': barcode_count, ...}
-    
+    NOTE: - alldata_dict structure is designed to provide the input for matrix_RandomBC_processingModule.buildExhaustiveDataFrame({'barcode': alldata_dict, ...})
+            in order to create exhaustive_df
+          - IS_dict structure is designed to provide the input for matrix_RandomBC_processingModule.buildDataFrame({'barcode': IS_dict, ...})
+            in order to create df 
     """
     def generateISkey(stuff_list, join_char='_'):
         stuff_list = [str(x) for x in stuff_list]
@@ -179,11 +212,10 @@ def arrangeData(data_file_nested_list):
 
 def loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter):
     """
-    Implement loadFile and arrangeData in a loop over all data files of the POOL.
-    Results are returned in two dict: POOL_alldata_dict, POOL_IS_dict; both have
-    barcodes as keys.
+    Purpose: Implement loadFile and arrangeData in a loop over all data files (all barcodes) of the POOL.
+             Results are returned in two dict: POOL_alldata_dict, POOL_IS_dict; both have barcodes as keys.
     """
-    verbosePrint("\n\n>>> Loading data ...")
+    verbosePrint("\n>>> Loading data ...")
     INDIR = buildInputPath(ground_dir, DISEASE, PATIENT, POOL)
     verbosePrint("> path: {path}".format(path=str(INDIR)))
     filtered_dir_content = listDir(INDIR, name_filter=data_files_name_filter)
@@ -197,12 +229,12 @@ def loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, da
         filename = str(os.path.basename(path))
         barcode = ".".join((filename.split("."))[:2])
         verbosePrint("> Processing {filename}, barcode={barcode} ...".format(filename=str(filename), barcode=str(barcode)))
-        data_file_nested_list = loadFile (path, data_files_delimiter)
+        data_file_nested_list = loadFile(path, data_files_delimiter)
         alldata_dict, IS_dict = arrangeData(data_file_nested_list)
         POOL_alldata_dict[barcode] = alldata_dict
         POOL_IS_dict[barcode] = IS_dict
         # If verbose, maybe some details about file content should be printed (new function deepVerbosePrint?)
-    verbosePrint("\n>>> Data Loaded!\n")
+    verbosePrint(">>> Data Loaded!")
     return POOL_alldata_dict, POOL_IS_dict
 
 
@@ -216,7 +248,7 @@ if __name__ == "__main__":
 #    PATIENT = "CEMJY"
 #    POOL = "LANE_1"
 #    data_files_delimiter = '\t'
-#    data_files_name_filter = ".randomBC.tsv"  # always valid despite corrections applied
+#    data_files_name_filter = ".randomBC.tsv"  # !!!
 #
 #    # Test code - Gemini
 #    # loadDataFiles calls buildInputPath and then loops over files returned by listDir
@@ -227,10 +259,10 @@ if __name__ == "__main__":
     # Test vars - Local
     delimiter = '\t'
     path = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/data"
-    data_files_name_filter = ".randomBC.tsv"
-    filtered_dir_content = listDir(path, name_filter=data_files_name_filter)  # always valid despite corrections applied
+    data_files_name_filter = ".randomBC.tsv"  # !!!
+    filtered_dir_content = listDir(path, name_filter=data_files_name_filter)
     # Test code - Local
-    verbosePrint("\n\n>>> Loading data ...")
+    verbosePrint("\n>>> Loading data ...")
     verbosePrint("> path: {path}".format(path=str(path)))
     verbosePrint("> exploited substring for data detection: '{data_files_name_filter}'".format(data_files_name_filter=str(data_files_name_filter)))
     verbosePrint("> n data files detected: {n_files}".format(n_files=str(len(filtered_dir_content))))
@@ -246,7 +278,7 @@ if __name__ == "__main__":
         alldata_dict, IS_dict = arrangeData(data_file_nested_list)
         POOL_IS_dict[barcode] = IS_dict
         POOL_alldata_dict[barcode] = alldata_dict
-    verbosePrint("\n>>> Data Loaded!\n")
+    verbosePrint(">>> Data Loaded!")
 
 
 

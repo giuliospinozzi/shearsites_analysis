@@ -22,7 +22,7 @@ verbosePrint = matrix_RandomBC_globModule.verbosePrint
 # humanSorted = matrix_RandomBC_globModule.humanSorted
 
 
-#+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
+#+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 def buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder):
     # Check ground_dir
@@ -83,7 +83,7 @@ def relabelling(df, asso_dict, use_fields=use_fields, concat=concat, inplace=Fal
 
 def writeMatrix(df, complete_path, out_files_delimiter, metadata=None, verbose=verbose):
     # metadata takes None or asso_dict for relabelling.
-    # relabelling function has use_fields fixed by default as global var
+    # relabelling function has use_fields and concat fixed as global vars!
     if metadata is None:
         df.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index_label= 'IS_genomicID', encoding='utf-8')
     else:
@@ -92,7 +92,7 @@ def writeMatrix(df, complete_path, out_files_delimiter, metadata=None, verbose=v
     verbosePrint(">>> Created file '{complete_path}'".format(complete_path=str(complete_path)))
     return complete_path
 
-#++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 if __name__ == "__main__":
     pass

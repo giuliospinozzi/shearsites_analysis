@@ -19,11 +19,11 @@ verbosePrint = matrix_RandomBC_globModule.verbosePrint
 humanSorted = matrix_RandomBC_globModule.humanSorted
 
 
-#+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++#
+#+++++++++++++++++++++++++++++++++++++++ FUNCTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 def getFilePath (filename, folder=os.getcwd()):
     """
-    Purpose: READ A FILE
+    Purpose: create and check a path to READ A FILE
     
     IN: 
     filename - ... (trying to crack with a path raise an error)
@@ -125,6 +125,17 @@ def arrangeAssoData(asso_file_nested_list):
     
 
 def loadAssoFile(asso_file_name, asso_folder, asso_delimiter):
+    '''
+    Purpose: Load data from Association File
+             (named asso_file_name, located in folder asso_folder, structured as asso_delimiter-delimited file)
+             as asso_dict = {'masterkey0': {linedict0}, 'masterkey1': {linedict1}, ...}
+                                            linedict = {'sub-key0': cell_of_field0, 'sub-key1': cell_of_field1, ...}
+    IN:
+    asso_file_name, asso_folder, asso_delimiter (strings)
+    OUT:
+    asso_dict (as returned by arrangeAssoData func)
+    '''
+    verbosePrint("\n>>> Loading Association File ...")
     # Load asso_file
     asso_file_complete_path = getFilePath (asso_file_name, folder=asso_folder)
     asso_file_nested_list = loadFile (asso_file_complete_path, delimiter=asso_delimiter)
@@ -153,7 +164,7 @@ def loadAssoFile(asso_file_name, asso_folder, asso_delimiter):
     # Arrange data
     asso_dict = arrangeAssoData(asso_file_nested_list)
     # Print a Summary if verbose
-    verbosePrint("\n\n>>> Association File loaded!")
+    verbosePrint(">>> Association File loaded!")
     verbosePrint("> path = {path}".format(path=str(asso_file_complete_path)))
     master_keys = humanSorted(asso_dict.keys())
     verbosePrint("> n lines = {n_lines}".format(n_lines=str(len(master_keys))))
@@ -163,12 +174,10 @@ def loadAssoFile(asso_file_name, asso_folder, asso_delimiter):
     verbosePrint(master_keys)
     verbosePrint("> sub-keys:")
     verbosePrint(sub_keys)
-    verbosePrint("")
-    # Return
     return asso_dict
 
 
-#++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++ MAIN and TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 if __name__ == "__main__":
     # Test vars
