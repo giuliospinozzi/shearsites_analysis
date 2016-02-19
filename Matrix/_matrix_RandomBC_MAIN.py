@@ -22,16 +22,19 @@ import matrix_RandomBC_outputModule
 
 #++++++++++++++++++++++ Global Vars from globModule +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-# Screen print
+### Import Functions
+humanSorted = matrix_RandomBC_globModule.humanSorted
+
+### Screen print configs 
 verbose = matrix_RandomBC_globModule.verbose
 verbosePrint = matrix_RandomBC_globModule.verbosePrint
 
-# Association File - assoModule
+### Association File Loading configs - assoModule
 asso_folder = matrix_RandomBC_globModule.asso_folder
 asso_file_name = matrix_RandomBC_globModule.asso_file_name
 asso_delimiter = matrix_RandomBC_globModule.asso_delimiter
 
-# Data - dataModule
+### Data Loading configs - dataModule
 ground_dir = matrix_RandomBC_globModule.ground_dir
 DISEASE = matrix_RandomBC_globModule.DISEASE
 PATIENT = matrix_RandomBC_globModule.PATIENT
@@ -39,10 +42,12 @@ POOL = matrix_RandomBC_globModule.POOL
 data_files_delimiter = matrix_RandomBC_globModule.data_files_delimiter
 data_files_name_filter = matrix_RandomBC_globModule.data_files_name_filter
 
-# Output - outputModule
-#ground_dir, DISEASE, PATIENT, POOL as for Data
-outfolder = matrix_RandomBC_globModule.outfolder
-out_files_delimiter = matrix_RandomBC_globModule.out_files_delimiter
+### COMMON OUTPUT GROUND DIR
+common_output_ground_dir = matrix_RandomBC_globModule.common_output_ground_dir
+
+### Matrix output configs - outputModule
+matrix_outfolder = matrix_RandomBC_globModule.matrix_outfolder
+matrix_files_delimiter = matrix_RandomBC_globModule.matrix_files_delimiter
 relabelling = matrix_RandomBC_globModule.relabelling
 
 
@@ -57,30 +62,47 @@ asso_dict = matrix_RandomBC_assoModule.loadAssoFile(asso_file_name, asso_folder,
 POOL_alldata_dict, POOL_IS_dict = matrix_RandomBC_dataModule.loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter)
 ##############################################################################################################################################################
 
-### Process Data #########################################################################
+### Process Data ##################################################################
+verbosePrint("\n>>> Shape data as DataFrame ...")
 df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
+#df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
+verbosePrint(">>> Dataframe built!")
+###################################################################################
+
+### Compute matrixes ############################################################################################################
+seqCount_matrix, ShsCount_matrix, barcodeCount_matrix, cellCount_matrix, fragmentEstimate_matrix = None, None, None, None, None
+verbosePrint("\n>>> Computing matrixes:")
+verbosePrint("> seqCount matrix ...")
 seqCount_matrix = matrix_RandomBC_processingModule.buildSeqCountMatrix(df)
+verbosePrint("> ShsCount matrix ...")
 ShsCount_matrix = matrix_RandomBC_processingModule.buildShsCountMatrix(df)
+verbosePrint("> barcodeCount matrix ...")
 barcodeCount_matrix = matrix_RandomBC_processingModule.buildBarcodeCountMatrix(df)
+verbosePrint("> cellCount matrix ...")
 cellCount_matrix = matrix_RandomBC_processingModule.buildCellCountMatrix(df)
+verbosePrint("> fragmentEstimate matrix ...")
 fragmentEstimate_matrix = matrix_RandomBC_processingModule.buildFragmentEstimateMatrix(df)
-##########################################################################################
+verbosePrint(">>> Done!")
+#################################################################################################################################
 
 ### Output ###################################################################################################################################################
 metadata = None  # No relabelling
 if relabelling:
-    metadata = asso_dict
-OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder)
+    metadata = asso_dict  # relabelling columns during output generation
+verbosePrint("\n>>> Export matrixes ...")
+# Export: make OUTDIR -> make outPath -> call writeMatrix
+OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(common_output_ground_dir, matrix_outfolder)
 seqCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "seqCount_matrix.tsv"))
-matrix_RandomBC_outputModule.writeMatrix(seqCount_matrix, seqCount_matrix_outPath, out_files_delimiter, metadata=metadata)
+matrix_RandomBC_outputModule.writeMatrix(seqCount_matrix, seqCount_matrix_outPath, matrix_files_delimiter, metadata=metadata)
 ShsCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "ShsCount_matrix.tsv"))
-matrix_RandomBC_outputModule.writeMatrix(ShsCount_matrix, ShsCount_matrix_outPath, out_files_delimiter, metadata=metadata)
+matrix_RandomBC_outputModule.writeMatrix(ShsCount_matrix, ShsCount_matrix_outPath, matrix_files_delimiter, metadata=metadata)
 barcodeCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "barcodeCount_matrix.tsv"))
-matrix_RandomBC_outputModule.writeMatrix(barcodeCount_matrix, barcodeCount_matrix_outPath, out_files_delimiter, metadata=metadata)
+matrix_RandomBC_outputModule.writeMatrix(barcodeCount_matrix, barcodeCount_matrix_outPath, matrix_files_delimiter, metadata=metadata)
 cellCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "cellCount_matrix.tsv"))
-matrix_RandomBC_outputModule.writeMatrix(cellCount_matrix, cellCount_matrix_outPath, out_files_delimiter, metadata=metadata)
+matrix_RandomBC_outputModule.writeMatrix(cellCount_matrix, cellCount_matrix_outPath, matrix_files_delimiter, metadata=metadata)
 fragmentEstimate_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "fragmentEstimate_matrix.tsv"))
-matrix_RandomBC_outputModule.writeMatrix(fragmentEstimate_matrix, fragmentEstimate_matrix_outPath, out_files_delimiter, metadata=metadata)
+matrix_RandomBC_outputModule.writeMatrix(fragmentEstimate_matrix, fragmentEstimate_matrix_outPath, matrix_files_delimiter, metadata=metadata)
+verbosePrint(">>> Matrix Files Created!")
 
 # Note for normalization
 #seqCount_matrix_norm = seqCount_matrix.apply(lambda x: x/x.sum())
@@ -91,23 +113,32 @@ matrix_RandomBC_outputModule.writeMatrix(fragmentEstimate_matrix, fragmentEstima
 
 #############################################################################################################################################################
 
-##++++++++++++++++++++++++ LOCAL TEST ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+#+++++++++++++++++++++++++ END CODE ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+
+
+
+
+
+##++++++++++++++++++++++++ LOCAL TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #
-#### Load Association File Data
+#
+#### Load Association File Data ##################################################################
 ## OVERRIDE ASSO VARS FOR LOCAL TEST
 #asso_folder = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/asso"
 #asso_file_name = "asso.assayvalidation.lane1.tsv"
 #asso_delimiter = '\t'
 ## load
 #asso_dict = matrix_RandomBC_assoModule.loadAssoFile(asso_file_name, asso_folder, asso_delimiter)
+##################################################################################################
 #
-#
-#### Load Data
+#### Load Data ###############################################################################################################################################################
 ## OVERRIDE DATA VARS FOR LOCAL TEST
 #data_files_delimiter = '\t'
 #data_files_name_filter = ".randomBC.tsv"
 #develop_input_data_path = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/data"
-## TMP CODE FOR LOCAL TEST
+#
 ## in place of POOL_alldata_dict, POOL_IS_dict = matrix_RandomBC_dataModule.loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter)
 #filtered_dir_content = matrix_RandomBC_dataModule.listDir(develop_input_data_path, name_filter=data_files_name_filter)
 #verbosePrint("\n\n>>> Loading data ...")
@@ -127,42 +158,32 @@ matrix_RandomBC_outputModule.writeMatrix(fragmentEstimate_matrix, fragmentEstima
 #    POOL_IS_dict[barcode] = IS_dict
 #    POOL_alldata_dict[barcode] = alldata_dict
 #verbosePrint("\n>>> Data Loaded!\n")
+##############################################################################################################################################################################
 #
-##++++++++++++++++++++++++ DEVEL ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-#
-#### Process Data
+#### Process Data ##################################################################
+#verbosePrint("\n>>> Shape data as DataFrame ...")
 #df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
-## df[['shearsite']] = df[['shearsite']].astype(int) # if cast is needed
-#seqCount_matrix = matrix_RandomBC_processingModule.buildSeqCountMatrix(df)
-#cellCount_matrix = matrix_RandomBC_processingModule.buildCellCountMatrix(df)
-#ShsCount_matrix = matrix_RandomBC_processingModule.buildShsCountMatrix(df)
-#barcodeCount_matrix = matrix_RandomBC_processingModule.buildBarcodeCountMatrix(df)
-#fragmentEstimate_matrix = matrix_RandomBC_processingModule.buildFragmentEstimateMatrix(df)
+##df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
+#verbosePrint(">>> Dataframe built!")
+####################################################################################
 #
-#### Output
-##OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(ground_dir, DISEASE, PATIENT, POOL, outfolder)
-#OUTDIR = "/home/stefano/Desktop/RandomBC_matrix_development/test_output"
 #
-#metadata = None  # No relabelling
-#if relabelling:
-#    metadata = asso_dict
 #
-#seqCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "seqCount_matrix.tsv"))
-#matrix_RandomBC_outputModule.writeMatrix(seqCount_matrix, seqCount_matrix_outPath, out_files_delimiter, metadata=metadata)
+##++++++++++++++++++++++++ DEVEL ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #
-#cellCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "cellCount_matrix.tsv"))
-#matrix_RandomBC_outputModule.writeMatrix(cellCount_matrix, cellCount_matrix_outPath, out_files_delimiter, metadata=metadata)
 #
-#ShsCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "ShsCount_matrix.tsv"))
-#matrix_RandomBC_outputModule.writeMatrix(ShsCount_matrix, ShsCount_matrix_outPath, out_files_delimiter, metadata=metadata)
 #
-#barcodeCount_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "barcodeCount_matrix.tsv"))
-#matrix_RandomBC_outputModule.writeMatrix(barcodeCount_matrix, barcodeCount_matrix_outPath, out_files_delimiter, metadata=metadata)
 #
-#fragmentEstimate_matrix_outPath = os.path.normpath(os.path.join(OUTDIR, "fragmentEstimate_matrix.tsv"))
-#matrix_RandomBC_outputModule.writeMatrix(fragmentEstimate_matrix, fragmentEstimate_matrix_outPath, out_files_delimiter, metadata=metadata)
 #
-
-
-
-
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
