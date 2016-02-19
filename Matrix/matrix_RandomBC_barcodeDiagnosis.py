@@ -361,6 +361,92 @@ def checkEditDistance(any_df, all_combinations=False):
     editDistance_DF = pd.DataFrame().join(l, how='outer')
     return editDistance_DF
 
+def chunkEditDistance_DF(editDistance_DF, ShS_chunk_size=3):
+    # This function can be called as intermediate step between editDistance_DF=checkEditDistance(..)
+    # and editDistanceHeatmap(...) (or even plotEditDistanceOccurrency(...)!).
+    # It takes in input editDistance_DF and returns a LIST of editDistance_DF's (EditDistance_DFchunks)
+    # which are sliding-slices of size ShS_chunk_size (n of ShS inside) of the input.
+    # The sliding-step (chunk_step) is computed automatically (chunk_step = (ShS_chunk_size - 1) / 2)).
+    # Sometimes ShS_chunk_size may be overrided for optimization purpose (a warn is verbosePrinted)
+    def getShSChunks(oredered_ShS, n_ShS, ShS_chunk_size, chunk_step):
+        # can be made more efficient with list comprehension
+        ShS_chunks = []
+        for n in np.arange(0, n_ShS-1, chunk_step):
+            index_list = []
+            for m in range(n, min(n+ShS_chunk_size, n_ShS)):
+                index_list.append(m)
+            if ((len(index_list) < ShS_chunk_size) and (oredered_ShS[index_list[-1]] == oredered_ShS[-1])):
+                break
+            chunck = []
+            for i in index_list:
+                chunck.append(oredered_ShS[i])
+            ShS_chunks.append(chunck)
+        return ShS_chunks
+        
+    def getLabelChunks(labels_dict, ShS_chunks):
+        # can be made more efficient with list comprehension
+        label_chunks = []
+        for ShS_list in ShS_chunks:
+            chunk = []
+            for ShS in ShS_list:
+                chunk += labels_dict[ShS]
+            label_chunks.append(chunk)
+        return label_chunks
+        
+    def getEditDistance_DFchunks(editDistance_DF, label_chunks):
+        # can be made more efficient with list comprehension
+        EditDistance_DFchunks = []
+        for label_list in label_chunks:
+            EditDistance_DFchunks.append(editDistance_DF.loc[label_list,label_list])
+        return EditDistance_DFchunks
+    # Check
+    # ShS_chunk_size type int
+    if type(ShS_chunk_size) is not int:
+        try:
+            ShS_chunk_size = int(ShS_chunk_size)
+        except:
+            print "\n[ERROR] chunkEditDistance_DF wrong input! ShS_chunk_size must be int or int-castable. Your input: {ShS_chunk_size}.".format(ShS_chunk_size=str(ShS_chunk_size))
+            sys.exit("\n[QUIT]\n")
+    # ShS_chunk_size >= 3
+    if ShS_chunk_size < 3:
+        verbosePrint("[WARNING] In chunkEditDistance_DF, ShS_chunk_size={ShS_chunk_size} will be replaced by ShS_chunk_size=3, the minimum number allowed".format(ShS_chunk_size=str(ShS_chunk_size)))
+        ShS_chunk_size = 3
+    # ShS_chunk_size must be odd
+    if ShS_chunk_size % 2 == 0:
+        verbosePrint("[WARNING] In chunkEditDistance_DF, ShS_chunk_size={ShS_chunk_size} will be replaced by the next odd number: ShS_chunk_size={ShS_chunk_size_odd}".format(ShS_chunk_size=str(ShS_chunk_size), ShS_chunk_size_odd=str(ShS_chunk_size+1)))
+        ShS_chunk_size += 1
+    # Fix chunk_step
+    chunk_step = (ShS_chunk_size - 1) / 2
+    # Get all labels of rows/columns
+    all_labels = humanSorted(editDistance_DF.index.values.tolist())
+    # Build labels_dict: Key->ShS, Item->list of labels (editDistance_DF indexes)
+    labels_dict = {}
+    for label in all_labels:
+        s = label.split("_")  # Here "_" beacuse of sep="_" in buildGroupLabel subfunc of checkEditDistance func
+        if len(s) != 2:
+            if len(s) == 1:
+                s = ['0'] + s  # adapt s with a fake shearsite '0'
+            else:
+                print "\n[ERROR] Unexpected error experienced by chunkEditDistance_DF function! Check the code!"
+                sys.exit("\n[QUIT]\n")
+        if s[0] not in labels_dict.keys():
+            labels_dict[s[0]] = [label]
+        else:
+            labels_dict[s[0]].append(label)
+    # Get ShS in editDistance_DF
+    oredered_ShS = humanSorted(labels_dict.keys())
+    n_ShS = len(oredered_ShS)
+    # List of labels chunk (list of lists)
+    label_chunks = None
+    if n_ShS <= ShS_chunk_size:
+        label_chunks = [all_labels]
+    else:
+        ShS_chunks = getShSChunks(oredered_ShS, n_ShS, ShS_chunk_size, chunk_step)
+        label_chunks = getLabelChunks(labels_dict, ShS_chunks)
+    # Get results
+    EditDistance_DFchunks = getEditDistance_DFchunks(editDistance_DF, label_chunks)
+    return EditDistance_DFchunks
+
 def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=True, export=""):
     # Note: cmap = sns.diverging_palette(10, 133, l=60, n=12, center="dark", as_cmap=True) # red - dark - green
     # Note: with sns.palplot(sns.diverging_palette(10, 133, l=60, n=12, center="dark")) you can test and visualize palettes
@@ -652,7 +738,7 @@ def plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title= "FRAGME
     
     
 
-### IN DEVELOPMENT (?) #####################################################################
+### DEVELOPMENT IDEAS (?) ##################################################################
 def checkShearSitesDistance(any_df):
     ShearSitesDistance_DF = None  # a matrix like the edit distance one, within a single is
     return ShearSitesDistance_DF
@@ -711,12 +797,12 @@ if __name__ == "__main__":
 
     
     #### Test Functions in this module ####
-    show_live = True
-    
-    ## Barcodes nucleotide balancing
-    how='distinct'
-    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df, how=how, N_warn=True)  # or = checkNucleotideBalancing(df, ...)
-    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES'+" - "+how, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
+#    show_live = True
+#    
+#    ## Barcodes nucleotide balancing
+#    how='distinct'
+#    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df, how=how, N_warn=True)  # or = checkNucleotideBalancing(df, ...)
+#    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES'+" - "+how, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
 #
 #    ## Barcodes occurrencies
 #    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df)
@@ -742,8 +828,8 @@ if __name__ == "__main__":
 #        FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
 #        plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title='[DEBUG] FRAGMENT LENGTH DISTRIBUTION', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_{barcode}_FragmentLengthDistribution.pdf".format(barcode=barcode)))
 #
-    ## Edit distance matrixes
-
+#    # Edit distance matrixes
+#
 #    all_combinations=False
 #    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
 #    editDistance_DF = checkEditDistance(data.loc[:0,:], all_combinations=all_combinations)
@@ -818,5 +904,17 @@ if __name__ == "__main__":
 #    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
 #    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_all.pdf"))
 #
+    # Edit Distance Matrixes chunk-by-chunk
+    show_live = True
+    all_combinations=True
+    ShS_chunk_size = 7
+    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
+    data = data.loc[:50,:]
+    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
+    EditDistance_DFchunks = chunkEditDistance_DF(editDistance_DF, ShS_chunk_size=ShS_chunk_size)
+    for n, ED_DF in list(enumerate(EditDistance_DFchunks, start=1)):
+        ID = "_chunk{n}".format(n=str(n))
+        editDistanceHeatmap(ED_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX'+ID, cmap="RdYlBu", annot=True, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_EditDistanceByChunk{ID}.pdf".format(ID=ID)))
+    
 #    # Any df is accepted so the contents of each plot is the whole input DF.
 #    #title and export kwargs allows you to put the proper label to your contents!

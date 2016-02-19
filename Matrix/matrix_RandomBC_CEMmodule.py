@@ -11,15 +11,14 @@ import matrix_RandomBC_globModule
 import os
 ##################################################################
 
-### IMPORT GLOBAL VARS ###########################################
+### IMPORT GLOBAL VARS ###########################################################
 # Print
 verbose = matrix_RandomBC_globModule.verbose
 # Output
+common_output_ground_dir = matrix_RandomBC_globModule.common_output_ground_dir
 cem_data_outfolder = matrix_RandomBC_globModule.cem_data_outfolder
-out_filename = matrix_RandomBC_globModule.out_filename
-# path is build by matrix_RandomBC_outputModule.buildOutputPath
-# with parameters, again, from matrix_RandomBC_globModule
-##################################################################
+cem_data_outfile_name = matrix_RandomBC_globModule.cem_data_outfile_name
+##################################################################################
 
 ### IMPORT GLOBAL FUNCS #########################################
 verbosePrint = matrix_RandomBC_globModule.verbosePrint
@@ -107,7 +106,7 @@ def relabelling(df, asso_dict, concat=relabelling_sep, inplace=False):
 
 
 
-def exportCEM(df_dict, asso_dict, filename=out_filename, sep=sep, eol=eol):
+def exportCEM(df_dict, asso_dict, filename=cem_data_outfile_name, sep=sep, eol=eol):
     
     # e.g. df_dict = {'sequence_count': df_seqCount_matrix,
     #                 'shearsite_count': df_ShsCount_matrix,
@@ -186,7 +185,7 @@ def exportCEM(df_dict, asso_dict, filename=out_filename, sep=sep, eol=eol):
     verbosePrint("\nExport CEM data ...")
     export_dict = arrangeData(df_dict, asso_dict)
     lines = formatData(export_dict, df_dict)
-    OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(matrix_RandomBC_globModule.ground_dir, matrix_RandomBC_globModule.DISEASE, matrix_RandomBC_globModule.PATIENT, matrix_RandomBC_globModule.POOL, cem_data_outfolder)
+    OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(common_output_ground_dir, cem_data_outfolder)
     outpath = os.path.normpath(os.path.join(OUTDIR, filename))
     with open(outpath, 'w') as out_stream:
         rows = [sep.join(l) for l in lines]

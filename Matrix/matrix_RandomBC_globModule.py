@@ -26,9 +26,12 @@ POOL = "LANE_2"
 data_files_delimiter = '\t'
 data_files_name_filter = ".ISfixed.LENGTHfixed.randomBC.tsv"  # BE CAREFUL HERE!
 
-## Output - outputModule ##
-outfolder = "Matrixes"  #ground_dir, DISEASE, PATIENT, POOL as for Data -> out path = in path + outfolder
-out_files_delimiter = '\t'
+## COMMON OUTPUT GROUND DIR ##
+common_output_ground_dir = "/storage/d3/tmp/stefano/test_RandomBCdiagnostics"  # PUT HERE AN ABS PATH
+
+## Matrix output Files - outputModule ##
+matrix_outfolder = "Matrixes"
+matrix_files_delimiter = '\t'
 # Relabel columns (BARCODES <-> master-keys of asso data dict in this implementation <-> sample column in any_df)
 # with a concatenation of related attributes (fields/columns of AssoFile <-> sub-keys of asso data dict sub-dicts)
 relabelling = True
@@ -42,36 +45,38 @@ concat = "_"  # char to concatenate fields in use_fields
 
 ## Export MATRIXES ##
 # DO
-export_matrixes = True
+export_matrixes = True  # path = common_output_ground_dir+matrix_outfolder
 
 ## Export CEM data ##
 # DO
 export_cem_data = True
-cem_data_outfolder = "CEMdata"  #ground_dir, DISEASE, PATIENT, POOL as for Data -> CEM data out path = in path + cem_data_outfolder
+cem_data_outfolder = "CEMdata"  # path = common_output_ground_dir+cem_data_outfolder (build in CEMmodule)
 # build out file name
 data_id = ""  # something related to data_files_name_filter
-out_filename = "CEMdata" + "_" + DISEASE + "_" + POOL
-if data_id: out_filename += "_" + data_id 
-out_filename += ".tsv"
+cem_data_outfile_name = "CEMdata" + "_" + DISEASE + "_" + POOL
+if data_id: cem_data_outfile_name += "_" + data_id 
+cem_data_outfile_name += ".tsv"
 
 ## Export DIAGNOSTICS ##
 # DO
-export_diagnostics = False
-diagnostic_outfolder = "Diagnostics"  #ground_dir, DISEASE, PATIENT, POOL as for Data -> diagnostic out path = in path + diagnostic_outfolder
+export_diagnostics = True
+diagnostic_outfolder = "Diagnostics"  # path = common_output_ground_dir+diagnostic_outfolder
 # Data selection
 specific_samples = True  # 'True' here requires explicit lists below
-dilution_to_process = ['L', 'M', 'N']  # Whatever, if specific_samples is False
+dilution_to_process = ['L']  # Whatever, if specific_samples is False  # ['L', 'M', 'N']
 condition_to_process = ['LMv2-II']  # Whatever, if specific_samples is False
 # Task to perform
 checkNucleotidesBalancing = True  # Stacked-bar plot 
 FragmentLengthDistribution = True  # Fragment length histogram, fitted with soncLength and KDE
 checkShearSitesOccurrency = True  # Occurrency bar plot
 checkRandomBCoccurrency = True  # Occurrency line plot
-checkEditDistance_diagonal = True   # Edit Distance occurrency histogram (within shearsites)
-checkEditDistance_extensive = False   # Edit Distance occurrency histogram  (all-VS-all)
-plot_heatmap = True  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
+checkEditDistance_diagonal = False   # Edit Distance occurrency histogram (within shearsites)
+checkEditDistance_extensive = True   # Edit Distance occurrency histogram  (all-VS-all)
+plot_heatmap = False  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
 limit_heatmap_plot = (True, 600)  # or (False, whatever); syntax: (Do?, max number of rows-cols allowed)
                                   # evaluated only if plot_heatmap is True
+plot_heatmap_byChunks = True  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
+ShS_chunk_size = 11  # evaluated only if plot_heatmap_byChunks is True; should be int>=3, odd.
 ####################################################################################################################################################
 
 
