@@ -73,8 +73,9 @@ checkEditDistance_diagonal = matrix_RandomBC_globModule.checkEditDistance_diagon
 checkEditDistance_extensive = matrix_RandomBC_globModule.checkEditDistance_extensive
 plot_heatmap = matrix_RandomBC_globModule.plot_heatmap
 limit_heatmap_plot = matrix_RandomBC_globModule.limit_heatmap_plot
-plot_heatmap_byChunks = matrix_RandomBC_globModule.plot_heatmap_byChunks  ## !!
-ShS_chunk_size = matrix_RandomBC_globModule.ShS_chunk_size  ## !!
+plot_heatmap_byChunks = matrix_RandomBC_globModule.plot_heatmap_byChunks
+ShS_chunk_size = matrix_RandomBC_globModule.ShS_chunk_size
+checkBCcountRatio = matrix_RandomBC_globModule.checkBCcountRatio
 
 #++++++++++++++++++++++++ CODE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -296,7 +297,7 @@ if export_diagnostics:
                 filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceDistribution.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                 export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
                 matrix_RandomBC_barcodeDiagnosis.plotEditDistanceOccurrency(IS_diagonal_editDistance_DF, title=title, vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=False, export=export)
-                ### IN DEVEL - TO TEST ###
+                # chunking
                 if plot_heatmap_byChunks:
                     verbosePrint("      > Trying to chunck Edit Distance Matrix (chunk size={ShS_chunk_size})...".format(ShS_chunk_size=str(ShS_chunk_size)))
                     IS_diagonal_EditDistance_DFchunks = matrix_RandomBC_barcodeDiagnosis.chunkEditDistance_DF(IS_diagonal_editDistance_DF, ShS_chunk_size=ShS_chunk_size)
@@ -310,7 +311,6 @@ if export_diagnostics:
                         filename = "{ID}_{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                         export = os.path.normpath(os.path.join(EDheatmap_byChunk_OUTDIR, filename))
                         matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(ED_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
-            
             # checkEditDistance - extensive
             if checkEditDistance_extensive:
                 verbosePrint("      > Check Edit Distances all-VS-all ...")
@@ -337,7 +337,7 @@ if export_diagnostics:
                 filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceDistribution_ALL.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                 export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
                 matrix_RandomBC_barcodeDiagnosis.plotEditDistanceOccurrency(IS_extensive_editDistance_DF, title=title, vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=False, export=export)
-                ### IN DEVEL - TO TEST ###
+                # chunking
                 if plot_heatmap_byChunks:
                     verbosePrint("      > Trying to chunck Edit Distance Matrix (chunk size={ShS_chunk_size})...".format(ShS_chunk_size=str(ShS_chunk_size)))
                     IS_extensive_EditDistance_DFchunks = matrix_RandomBC_barcodeDiagnosis.chunkEditDistance_DF(IS_extensive_editDistance_DF, ShS_chunk_size=ShS_chunk_size)
@@ -351,14 +351,29 @@ if export_diagnostics:
                         filename = "{ID}_{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap_ALL.pdf".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                         export = os.path.normpath(os.path.join(EDheatmap_ALL_byChunk_OUTDIR, filename))
                         matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(ED_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+            # checkBCcountRatio - 'diagonal'
+            if checkBCcountRatio:
+                verbosePrint("      > Check Random Barcodes seqCount ratios ...")
+                IS_BCcountRatio_DF = matrix_RandomBC_barcodeDiagnosis.checkBCcountRatio(IS_df)  # all_combinations=False by default
+                verbosePrint("      > Plot Random Barcodes seqCount ratios ...")
+                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE SEQ-COUNT RATIOS - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCseqCountRatios.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                matrix_RandomBC_barcodeDiagnosis.plotBCcountRatio(IS_BCcountRatio_DF, title=title, show_live=False, export=export)
 
+            ###################################
+            # HERE FURTHER DIAGNS AT IS-LEVEL #
+            ###################################
+            
             #shearsites = humanSorted(IS_df['shearsite'].unique())
             #for ShS in shearsites:
                 #ShS_df = IS_df[IS_df['shearsite']==ShS]
                 #randomBC_list = list(ShS_df['randomBC'])
                 #sc_list = list(ShS_df['seq_count'])
                 
-                #### HERE SOMETHING AT SAMPLE-CEM_IS-SHEARSITE LEVEL
+                ########################################################
+                # HERE FURTHER DIAGNS AT SAMPLE-CEM_IS-SHEARSITE LEVEL #
+                ########################################################
     
     verbosePrint("\n *** END DIAGNOSTICS ***\n")
 

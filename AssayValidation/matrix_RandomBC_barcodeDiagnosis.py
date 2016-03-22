@@ -447,7 +447,7 @@ def chunkEditDistance_DF(editDistance_DF, ShS_chunk_size=3):
     EditDistance_DFchunks = getEditDistance_DFchunks(editDistance_DF, label_chunks)
     return EditDistance_DFchunks
 
-def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=True, export=""):
+def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, vmin=0, vmax=12, show_live=True, export=""):
     # Note: cmap = sns.diverging_palette(10, 133, l=60, n=12, center="dark", as_cmap=True) # red - dark - green
     # Note: with sns.palplot(sns.diverging_palette(10, 133, l=60, n=12, center="dark")) you can test and visualize palettes
     
@@ -467,7 +467,7 @@ def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MA
     ax = plt.axes()
     # Control over annot kwarg
     annot_value = False
-    annot_lim = 200
+    annot_lim = 210
     if annot:
         if n>annot_lim:
             annot_value = False
@@ -486,8 +486,8 @@ def editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MA
         ticklabels = False
         verbosePrint("[WARNING] editDistanceHeatmap cannot write labels of matrixes with n>{tick_lim}. ".format(tick_lim=str(tick_lim)))
     # Set range for colors
-    vmin=0
-    vmax=12
+    #vmin=0
+    #vmax=12
     # Plot data
     sns.heatmap(editDistance_DF, ax=ax, cmap=cmap, annot=annot_value, xticklabels=ticklabels, yticklabels=ticklabels, vmin=vmin, vmax=vmax)  # ax = sns.heatmap(editDistance_DF, cmap=cmap)
     if show_live:
@@ -564,6 +564,97 @@ def plotEditDistanceOccurrency(editDistance_DF, title="EDIT DISTANCE OCCURRENCIE
     # close
     if not show_live:
         plt.close()
+
+
+
+
+def checkBCcountRatio(any_df, threshold=12, sort='ascending', all_combinations=False):
+    
+    def build_BCcountRatio_DF(any_df, threshold=threshold, sort=sort):
+        DF = any_df.loc[:,['randomBC', 'seq_count']]
+        if sort == 'ascending':
+            DF.sort(columns='seq_count', inplace=True, ascending=True)
+        elif sort == 'descending':
+            DF.sort(columns='seq_count', inplace=True, ascending=False)
+        else:
+            print "\n[ERROR] checkBCcountRatio wrong input! sort={sort} is not supported. Please choose 'ascending' or 'descending'.".format(sort=str(sort))
+            sys.exit("\n[QUIT]\n")
+        # Build BCcountRatio_DF for randomBC couples whose edit distance is <= threshold
+        BC_list = DF.loc[:,'randomBC'].tolist()
+        SC_list = DF.loc[:,'seq_count'].tolist()
+        r = 0
+        BCcountRatio_dict = {'source_BC':[], 'target_BC':[], 'source_SC':[], 'target_SC':[], 'editDistance':[], 'SC_ratio':[]}
+        for index, row in DF.iterrows():
+            r += 1
+            source_BC = row['randomBC']
+            source_SC = row['seq_count']
+            for target_BC, target_SC in zip(BC_list[r:], SC_list[r:]):
+                editDistance = int(editdistance.eval(source_BC, target_BC))
+                if editDistance <= threshold:
+                    BCcountRatio_dict['source_BC'].append(source_BC)
+                    BCcountRatio_dict['target_BC'].append(target_BC)
+                    BCcountRatio_dict['source_SC'].append(source_SC)
+                    BCcountRatio_dict['target_SC'].append(target_SC)
+                    BCcountRatio_dict['editDistance'].append(editDistance)
+                    BCcountRatio_dict['SC_ratio'].append(float(source_SC) / float(target_SC))
+                else:
+                    continue
+        BCcountRatio_DF = pd.DataFrame(BCcountRatio_dict)
+        return BCcountRatio_DF
+    
+    # try to take required columns -> new DF
+    required_columns = []
+    if all_combinations:
+        required_columns = ['randomBC', 'seq_count']
+    else:
+        required_columns = ['shearsite', 'randomBC', 'seq_count']
+    l = []
+    try:
+        [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
+    except:
+        print "\n[ERROR] checkBCcountRatio wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+        sys.exit("\n[QUIT]\n")
+    DF = pd.concat(l, axis=1, join='inner')
+    BCcountRatio_DF = None
+    if all_combinations:
+        BCcountRatio_DF = build_BCcountRatio_DF(DF)
+    else:
+        shearsites = humanSorted(DF['shearsite'].unique())
+        ShS_BCcountRatio_DF_list = []
+        for ShS in shearsites:
+            ShS_DF = DF[DF['shearsite']==ShS]
+            ShS_BCcountRatio_DF_list.append(build_BCcountRatio_DF(ShS_DF))
+        BCcountRatio_DF = pd.concat(ShS_BCcountRatio_DF_list)
+    return BCcountRatio_DF
+
+def plotBCcountRatio(BCcountRatio_DF, title='RANDOM-BARCODE SEQ-COUNT RATIOS', maxED=12, scale='area', show_live=True, export=""):
+    # Set up interactive mode (plot pop-upping)
+    if show_live:
+        plt.ion()
+    else:
+        plt.ioff()
+    ## Prepare plot environment
+    n_classes = len(set(BCcountRatio_DF.loc[:,'editDistance']))
+    w = max([10, 2*n_classes])
+    plt.figure(figsize=(w,10)) # Create matplotlib figure
+    plt.title(title)
+    ## Prepare axis
+    #ax.set_xlabel('stuff on x')
+    #ax.set_ylabel('stuff on y')
+    # Prepare color palette
+    palette = sns.color_palette("RdYlBu", maxED + 1)
+    # Plot data
+    sns.violinplot(x='editDistance', y='SC_ratio', data=BCcountRatio_DF, scale=scale, bw='scott', palette=palette)
+    if show_live:
+        plt.show()
+    # Save plot
+    if export:
+        export = os.path.normpath(export)
+        plt.savefig(export)
+    # close
+    if not show_live:
+        plt.close()
+
 
 
 
@@ -904,17 +995,17 @@ if __name__ == "__main__":
 #    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
 #    editDistanceHeatmap(editDistance_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX', cmap="RdYlBu", annot=True, show_live=False, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_othercolors_all.pdf"))
 #
-    # Edit Distance Matrixes chunk-by-chunk
-    show_live = True
-    all_combinations=True
-    ShS_chunk_size = 7
-    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
-    data = data.loc[:50,:]
-    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
-    EditDistance_DFchunks = chunkEditDistance_DF(editDistance_DF, ShS_chunk_size=ShS_chunk_size)
-    for n, ED_DF in list(enumerate(EditDistance_DFchunks, start=1)):
-        ID = "_chunk{n}".format(n=str(n))
-        editDistanceHeatmap(ED_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX'+ID, cmap="RdYlBu", annot=True, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_EditDistanceByChunk{ID}.pdf".format(ID=ID)))
-    
+#    # Edit Distance Matrixes chunk-by-chunk
+#    show_live = True
+#    all_combinations=True
+#    ShS_chunk_size = 7
+#    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
+#    data = data.loc[:50,:]
+#    editDistance_DF = checkEditDistance(data, all_combinations=all_combinations)
+#    EditDistance_DFchunks = chunkEditDistance_DF(editDistance_DF, ShS_chunk_size=ShS_chunk_size)
+#    for n, ED_DF in list(enumerate(EditDistance_DFchunks, start=1)):
+#        ID = "_chunk{n}".format(n=str(n))
+#        editDistanceHeatmap(ED_DF, title='RANDOM-BARCODES EDIT-DISTANCE MATRIX'+ID, cmap="RdYlBu", annot=True, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_EditDistanceByChunk{ID}.pdf".format(ID=ID)))
+#    
 #    # Any df is accepted so the contents of each plot is the whole input DF.
 #    #title and export kwargs allows you to put the proper label to your contents!
