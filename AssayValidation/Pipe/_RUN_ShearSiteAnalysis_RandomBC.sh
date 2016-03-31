@@ -221,36 +221,40 @@ python ShearSites_lengthCorrection.py;
 # out filename: .shearsites.ISfixed.LENGTHfixed.tsv (or set args)
 #=================================================================================#
 
-# # With fastq GZIP compression
-# echo "
-# +-----------------------------------------------------------------+"
-# echo "FASTX_TRIMMER: extract random barcodes from R2 fastq file"
-# ##### ========== FASTX_TRIMMER: extract random barcodes from R2 fastq file =========== #####
-# zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader all_headers.txt | gzip -c > R2_selected_reads.fastq.gz;
-# for k in $(ls *.headers.txt); do
-#   FILENAME=`basename $k`;
-#   BARCODE=${FILENAME:0:-12};
-#   echo -e -n "\t > processing ${BARCODE} ... ";
-#   zcat R2_selected_reads.fastq.gz | fqextract_pureheader $FILENAME | fastx_trimmer -l 12 -Q33 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
-#   echo "done.";
-# done
-# rm R2_selected_reads.fastq.gz;
-# #==========================================================================================#
-
-# Simple fastq
+# With fastq GZIP compression
 echo "
 +-----------------------------------------------------------------+"
 echo "FASTX_TRIMMER: extract random barcodes from R2 fastq file"
 ##### ========== FASTX_TRIMMER: extract random barcodes from R2 fastq file =========== #####
-zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader all_headers.txt > R2_selected_reads.fastq;
+zcat ${FASTQDIR}/${R2_FASTQ} | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" CROP:12 | fastq_quality_filter -q 28 -p 100 -Q 33 | fastq_to_fasta -Q 33 -n | fasta2csv | cut -d' ' -f1 | gzip > r2.quality.filtered.list.gz
+zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader <(zcat r2.quality.filtered.list.gz) | gzip -c > r2.qualityFiltered.fastq.gz
+zcat r2.qualityFiltered.fastq.gz | fqextract_pureheader all_headers.txt | gzip -c > R2_selected_reads.fastq.gz;
 for k in $(ls *.headers.txt); do
   FILENAME=`basename $k`;
   BARCODE=${FILENAME:0:-12};
   echo -e -n "\t > processing ${BARCODE} ... ";
-  cat R2_selected_reads.fastq | fqextract_pureheader $FILENAME | fastx_trimmer -l 12 -Q33 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
+  zcat R2_selected_reads.fastq.gz | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" HEADCROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
   echo "done.";
 done
-rm R2_selected_reads.fastq;
+rm R2_selected_reads.fastq.gz r2.qualityFiltered.fastq.gz;
+#==========================================================================================#
+
+# Simple fastq
+echo "
++-----------------------------------------------------------------+"
+#echo "FASTX_TRIMMER: extract random barcodes from R2 fastq file"
+##### ========== FASTX_TRIMMER: extract random barcodes from R2 fastq file =========== #####
+# zcat ${FASTQDIR}/${R2_FASTQ} | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" CROP:12 | fastq_quality_filter -q 28 -p 100 -Q 33 | fastq_to_fasta -Q 33 -n | fasta2csv | cut -d' ' -f1 | gzip > r2.quality.filtered.list.gz
+# zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader <(zcat r2.quality.filtered.list.gz) > r2.qualityFiltered.fastq
+#cat r2.qualityFiltered.fastq | fqextract_pureheader all_headers.txt > R2_selected_reads.fastq;
+#for k in $(ls *.headers.txt); do
+#  FILENAME=`basename $k`;
+#  BARCODE=${FILENAME:0:-12};
+#  echo -e -n "\t > processing ${BARCODE} ... ";
+#  cat R2_selected_reads.fastq | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" HEADCROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
+#  echo "done.";
+#done
+#rm R2_selected_reads.fastq r2.qualityFiltered.fastq;
 #==========================================================================================#
 
 echo "
