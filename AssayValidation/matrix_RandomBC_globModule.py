@@ -27,7 +27,7 @@ data_files_delimiter = '\t'
 data_files_name_filter = ".ISfixed.LENGTHfixed.randomBC.tsv"  # BE CAREFUL HERE!
 
 ## COMMON OUTPUT GROUND DIR ##
-common_output_ground_dir = "/storage/d3/tmp/stefano/test_RandomBCdiagnostics"  # PUT HERE AN ABS PATH
+common_output_ground_dir = "/storage/d3/tmp/stefano/randomBC_quantification_filterByHeaders/{POOL}".format(POOL=POOL)  # PUT HERE AN ABS PATH
 
 ## Matrix output Files - outputModule ##
 matrix_outfolder = "Matrixes"
@@ -41,15 +41,22 @@ concat = "_"  # char to concatenate fields in use_fields
 ####################################################################################################################################################
 
 
+### FILTERING CONFIG #################
+filter_data = True
+byHeaders = True
+bySC = False
+######################################
+
+
 ### DIAGNOSTIC VARS ################################################################################################################################
 
 ## Export MATRIXES ##
 # DO
-export_matrixes = False  # path = common_output_ground_dir+matrix_outfolder
+export_matrixes = True  # path = common_output_ground_dir+matrix_outfolder
 
 ## Export CEM data ##
 # DO
-export_cem_data = False
+export_cem_data = True
 cem_data_outfolder = "CEMdata"  # path = common_output_ground_dir+cem_data_outfolder (build in CEMmodule)
 # build out file name
 data_id = ""  # something related to data_files_name_filter
@@ -59,7 +66,7 @@ cem_data_outfile_name += ".tsv"
 
 ## Export DIAGNOSTICS ##
 # DO
-export_diagnostics = True
+export_diagnostics = False
 diagnostic_outfolder = "Diagnostics"  # path = common_output_ground_dir+diagnostic_outfolder
 # Data selection
 specific_samples = True  # 'True' here requires explicit lists below
@@ -77,7 +84,7 @@ limit_heatmap_plot = (True, 600)  # or (False, whatever); syntax: (Do?, max numb
                                   # evaluated only if plot_heatmap is True
 plot_heatmap_byChunks = False  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
 ShS_chunk_size = 11  # evaluated only if plot_heatmap_byChunks is True; should be int>=3, odd.
-checkBCcountRatio = True  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
+checkBCcountRatio = False  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
 ####################################################################################################################################################
 
 

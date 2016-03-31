@@ -17,6 +17,7 @@ import matrix_RandomBC_globModule
 import matrix_RandomBC_assoModule
 import matrix_RandomBC_dataModule
 import matrix_RandomBC_processingModule
+import matrix_RandomBC_filterModule
 import matrix_RandomBC_outputModule
 
 import matrix_RandomBC_CEMmodule
@@ -44,6 +45,11 @@ PATIENT = matrix_RandomBC_globModule.PATIENT
 POOL = matrix_RandomBC_globModule.POOL
 data_files_delimiter = matrix_RandomBC_globModule.data_files_delimiter
 data_files_name_filter = matrix_RandomBC_globModule.data_files_name_filter
+
+### Filter Data configs - filterModule
+filter_data = matrix_RandomBC_globModule.filter_data
+byHeaders = matrix_RandomBC_globModule.byHeaders
+bySC = matrix_RandomBC_globModule.bySC
 
 ### COMMON OUTPUT GROUND DIR
 common_output_ground_dir = matrix_RandomBC_globModule.common_output_ground_dir
@@ -88,10 +94,29 @@ asso_dict = matrix_RandomBC_assoModule.loadAssoFile(asso_file_name, asso_folder,
 POOL_alldata_dict, POOL_IS_dict = matrix_RandomBC_dataModule.loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter)
 ##############################################################################################################################################################
 
-### Process Data ################################################################################################################
+### Build Data ##################################################################
 verbosePrint("\n>>> Shape data as DataFrame ...")
-df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
+#df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
+df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
 verbosePrint(">>> Dataframe built!")
+#################################################################################
+
+### Filter Data #############################################################################################
+if filter_data:
+    verbosePrint("\n>>> Filtering DataFrame ...")
+    if byHeaders:
+        headers_file_dir = matrix_RandomBC_filterModule.buildInputPath(ground_dir, DISEASE, PATIENT)
+        lane_ID = "{POOL}".format(POOL=str(POOL)).lower().replace("_", "")
+        headers_file_name = "{lane_ID}.quality.r1r2-100rbc.toRemove.list.gz".format(lane_ID=str(lane_ID))
+        headers_file_path = os.path.normpath(os.path.join(headers_file_dir, headers_file_name))
+        headers_to_remove = matrix_RandomBC_filterModule.loadGzFile(headers_file_path)
+        df = matrix_RandomBC_filterModule.filterDF_byHeaders(df, headers_to_remove)
+    if bySC:
+        pass
+    verbosePrint(">>> Done!")
+#############################################################################################################
+
+### Process Data as Matrixes #####################################################################################################
 seqCount_matrix, ShsCount_matrix, barcodeCount_matrix, cellCount_matrix, fragmentEstimate_matrix = None, None, None, None, None
 if (export_cem_data or export_matrixes):
     verbosePrint("\n>>> Computing matrixes:")
