@@ -25,7 +25,7 @@ header = """
        from cwd (or as supplied by --folder)
     3. Couple shearsite data with random barcode sequences, through headers
     4. Write results in *.shearsites.ISfixed.LENGTHfixed.randomBC.tsv files
-       (or as suppliedby --outFile_nameEnd)
+       (or as supplied by --outFile_nameEnd)
 """ 
 
 description = """
