@@ -195,11 +195,11 @@ for k in $(ls *.shearsites.tsv); do
   cat $k | extract_header <(zcat r2.quality.filtered.list.gz) > $BARCODE.shearsites.qf${QF}.tsv
   if [ -s $BARCODE.shearsites.qf${QF}.tsv ]
     then 
-      rm $BARCODE.shearsites.qf${QF}.tsv;
-      echo -e -n "\t > $BARCODE.shearsites.qf${QF}.tsv removed beacuse empty after QF."
-    else
       awk '{print $1}' $BARCODE.shearsites.qf${QF}.tsv > $BARCODE.headers.txt;
       awk '{print $1}' $BARCODE.shearsites.qf${QF}.tsv >> all_headers.txt;
+    else
+      rm $BARCODE.shearsites.qf${QF}.tsv;
+      echo -e -n "\t > $BARCODE.shearsites.qf${QF}.tsv removed beacuse empty after QF."
   fi
 done
 #==============================================================================================================================#
