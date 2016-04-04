@@ -23,7 +23,7 @@ header = """
        from cwd (or as supplied by --folder)
     1. Load IScoordinate.bed (or as supplied through --IS_filename)
        from cwd (or as supplied by --folder)
-    2. Load *.shearsites.tsv files (or as supplied through --infiles_nameEnd)
+    2. Load *.shearsites.tsv files (or as supplied through --origFile_nameEnd)
        from cwd (or as supplied by --folder)
     3. Fix mapping coordinates: entries mapping inside ranges provided by ISrange.bed
        are shifted to the related IS positions provided by IScoordinate.bed
@@ -42,7 +42,7 @@ parser = argparse.ArgumentParser(usage = usage_example, epilog = "[ hSR-TIGET - 
 parser.add_argument('--folder', dest="folder", help="path of the folder to operate into", action="store", default=os.getcwd(), required=False)
 parser.add_argument('--range_filename', dest="range_filename", help="alternative name for ISrange.bed input file", action="store", default="ISrange.bed", required=False)
 parser.add_argument('--IS_filename', dest="IS_filename", help="alternative name for IScoordinate.bed input file", action="store", default="IScoordinate.bed", required=False)
-parser.add_argument('--inFiles_nameEnd', dest="inFiles_nameEnd", help="string composed by suffixes + extension, to identify input bed files", action="store", default=".shearsites.tsv", required=False)
+parser.add_argument('--origFile_nameEnd', dest="origFile_nameEnd", help="string composed by suffixes + extension, to identify input bed files", action="store", default=".shearsites.tsv", required=False)
 parser.add_argument('--outFile_nameEnd', dest="outFile_nameEnd", help="string to name out files, used as suffixes + extension", action="store", default=".shearsites.ISfixed.tsv", required=False)
 #parser.add_argument('--an_arg', dest="an_arg", help="some help", action="store", required=True)
 #parser.add_argument('--another_arg', dest="another_arg", help="some help again", action="store", default="default_value", required=False)
@@ -162,9 +162,9 @@ def main():
     # Select input files
     ISfile_path = pathList(args.folder, args.IS_filename)[0]
     rangeFile_path = pathList(args.folder, args.range_filename)[0]
-    in_file_absPaths = sorted(pathList(args.folder, args.inFiles_nameEnd))
+    in_file_absPaths = sorted(pathList(args.folder, args.origFile_nameEnd))
     # Prepare output paths
-    out_file_absPaths = [a.replace(args.inFiles_nameEnd, args.outFile_nameEnd) for a in in_file_absPaths]
+    out_file_absPaths = [a.replace(args.origFile_nameEnd, args.outFile_nameEnd) for a in in_file_absPaths]
     
     # Test print
     #print ISfile_path, " == ", ISfile_path[0]

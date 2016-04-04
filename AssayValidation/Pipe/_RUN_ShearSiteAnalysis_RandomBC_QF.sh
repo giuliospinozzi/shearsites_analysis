@@ -236,7 +236,7 @@ echo "
 echo "PYTHON: apply IS aggregation to ShearSite data"
 ##### ========= PYTHON: apply IS aggregation to ShearSite data ============= #####
 # input files: *.shearsites.tsv + ISrange.bed,IScoordinate.bed  (or set args)
-python ShearSites_ISaggregation.py --inFiles_nameEnd ".shearsites.qf${QF}.tsv" --outFile_nameEnd ".shearsites.ISfixed.qf${QF}.tsv";  
+python ShearSites_ISaggregation.py --origFile_nameEnd ".shearsites.qf${QF}.tsv" --outFile_nameEnd ".shearsites.ISfixed.qf${QF}.tsv";  
 # out filename: *.shearsites.ISfixed.tsv (or set args)
 #=================================================================================#
 
@@ -245,7 +245,7 @@ echo "
 echo "PYTHON: apply length correction to ShearSite data"
 ##### ========== PYTHON: apply length correction to ShearSite data =========== #####
 # input files: *.shearsites.tsv, *.shearsites.ISfixed.tsv (or set args)
-python ShearSites_lengthCorrection.py --inFiles_nameEnd ".shearsites.ISfixed.qf${QF}.tsv" --outFile_nameEnd ".shearsites.ISfixed.LENGTHfixed.qf${QF}.tsv";
+python ShearSites_lengthCorrection.py --origFile_nameEnd ".shearsites.qf${QF}.tsv" --ISfixedFile_nameEnd ".shearsites.ISfixed.qf${QF}.tsv" --outFile_nameEnd ".shearsites.ISfixed.LENGTHfixed.qf${QF}.tsv";
 # out filename: .shearsites.ISfixed.LENGTHfixed.tsv (or set args)
 #=================================================================================#
 
