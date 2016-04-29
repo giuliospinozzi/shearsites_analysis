@@ -137,8 +137,26 @@ def filterDF_byHeaders(any_df, headers_to_remove):
 
 
 
-def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, allow_IS_loss=False):
-    pass
+def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_IS_loss=False):
+    
+    # Basic check for columns: 'randomBC' and 'seq_count';
+    # if inside_ShS is True, check also for 'shearsite' column.
+    
+    # if allow_IS_loss is True, filtering doesn't need for further columns
+    if allow_IS_loss:
+        if inside_ShS:
+            pass  ### filter is trivial: filetred_DF = any_df[any_df['seq_count'] > int(SC_threshold)]
+        else:
+            pass  ### before 'trivial' filtering we need to merge duplicate randomBC for each 'barcode' and 'genomic_coordinates' couple (if present) and updating the seq_count
+            
+    # IS loss NOT ALLOWED!
+    else:
+        if inside_ShS:
+            pass  ### try trivial filtering then check for IS loss within 'barcode' and 'genomic_coordinates' couples (if present)
+        else:
+            pass ### before trying the 'trivial' filtering we need to merge duplicate randomBC for each 'barcode' and 'genomic_coordinates' couple (if present) and updating the seq_count
+    
+    return 0
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 

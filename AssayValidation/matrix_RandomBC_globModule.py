@@ -90,9 +90,11 @@ checkBCcountRatio = False  # Violin plot of randomBC seq-count ratios, divided i
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
+import sys
 def verbosePrint(x, verbose=verbose):
     if verbose:
         print x
+        sys.stdout.flush()
 
 import re
 def humanSorted(l):

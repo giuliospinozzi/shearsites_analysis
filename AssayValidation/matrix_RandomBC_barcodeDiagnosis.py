@@ -150,25 +150,44 @@ def plotNucleotideBalancing(nucleotidesCount_DF, title='PILED-UP RANDOM-BARCODES
 
 
 
-def checkRandomBCoccurrency(any_df):
+def checkRandomBCoccurrency(any_df, how='by_seq_count'):
+    # Check 'how' mode
+    supported_how = ['by_seq_count', 'by_simple_count']
+    if how not in supported_how:
+        print "\n[ERROR] checkRandomBCoccurrency wrong input! Supported value for 'how' kwarg are: {supported_how}. Your input: {how}.".format(supported_how=str(supported_how), how=str(how))
+        sys.exit("\n[QUIT]\n")
     # try to take required columns -> new DF
-    required_columns = ['randomBC', 'seq_count']
+    required_columns = ['randomBC']
+    if how == 'by_seq_count':
+        required_columns.append('seq_count')
     l = []
     try:
         [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
     except:
-        print "\n[ERROR] checkRandomBCoccurrency wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
+        print "\n[ERROR] checkRandomBCoccurrency wrong input! Columns {required_columns} are required if 'how' kwarg = {how}. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)), how=str(how))
         sys.exit("\n[QUIT]\n")
     DF = pd.concat(l, axis=1, join='inner')
-    # operate on DF to create distinctBC_DF
-    # create distinctBC_DF: distinct randomBC are row indexes,
-    # seq_count is the only column, values are randomBC counts.
-    distinctBC_DF = pd.pivot_table(DF, columns='randomBC', values='seq_count', aggfunc=sum).to_frame()
+    distinctBC_DF = None
+    if how == 'by_seq_count':
+        # operate on DF to create distinctBC_DF
+        # create distinctBC_DF: distinct randomBC are row indexes,
+        # seq_count is the only column, values are randomBC seq_count sum.
+        distinctBC_DF = pd.pivot_table(DF, columns='randomBC', values='seq_count', aggfunc=sum).to_frame()
+    elif how == 'by_simple_count':
+        s = pd.Series(DF.loc[:, 'randomBC'])
+        s = s.value_counts()
+        sf = s.to_frame()
+        distinctBC_DF = sf.rename(columns={sf.columns[0]:'simple_count'})
+        # operate on DF to create distinctBC_DF
+        # create distinctBC_DF: distinct randomBC are row indexes,
+        # simple_count is the only column, values are randomBC value_counts().
+    
     #######################################################################################
     # eg of output usage: PLOT ----> distinctBC_DF.plot(kind='bar')                       #
     # however this is not usually feasible due to the large amount of distinct BC         #
     # for typical usage please call plotRandomBCoccurrency(distinctBC_DF)                 #
     #######################################################################################
+    
     return distinctBC_DF
 
 def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', show_top_ranked=10, annot=True, show_live=True, export=""):
@@ -179,17 +198,18 @@ def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', s
     #       False, None, '0' mean "do not print top ranked barcodes"
     
     # Sort data
-    distinctBC_DF = pd.DataFrame.sort(distinctBC_DF, columns='seq_count', ascending=False)
+    data_col_name = str(distinctBC_DF.columns[0])
+    distinctBC_DF = pd.DataFrame.sort(distinctBC_DF, columns=data_col_name, ascending=False)
     # Prepare text data if show_top_ranked
     top_represented_rBC = None
     if show_top_ranked:
         N = min(show_top_ranked, len(distinctBC_DF))
-        top_represented_rBC = "TOP-{N} RANDOM-BARCODES BY SEQ-COUNT:".format(N=str(N))
+        top_represented_rBC = "TOP-{N} RANDOM-BARCODES BY {data_col_name}:".format(N=str(N), data_col_name=str(data_col_name).upper())
         for i in range(N):
-            top_represented_rBC += "\n {i}) {rBC} (seq_count={sc}, {p}%)".format(i=str(i+1), rBC=str(list(distinctBC_DF.index.values)[i]), sc=str(int(distinctBC_DF['seq_count'][i])), p=str(round(list(distinctBC_DF['seq_count'])[i]*100.0/distinctBC_DF.sum(),2)))
+            top_represented_rBC += "\n {i}) {rBC} ({data_col_name}={sc}, {p}%)".format(i=str(i+1), rBC=str(list(distinctBC_DF.index.values)[i]), sc=str(int(distinctBC_DF[data_col_name][i])), p=str(round(list(distinctBC_DF[data_col_name])[i]*100.0/distinctBC_DF.sum(),2)), data_col_name=str(data_col_name))
     # Prepare data to plot as Series
     distinctBC_DF = distinctBC_DF.reset_index()  # distinctBC_DF is sorted so reset_index() yields the ranking as index!
-    distinctBC_DF = distinctBC_DF.loc[:,'seq_count']  # take only data to plot: distinctBC_DF is a Series from now on
+    distinctBC_DF = distinctBC_DF.loc[:,data_col_name]  # take only data to plot: distinctBC_DF is a Series from now on
     # Set up interactive mode (plot pop-upping)
     if show_live:
         plt.ion()
@@ -229,13 +249,13 @@ def plotRandomBCoccurrency(distinctBC_DF, title='RANDOM-BARCODE OCCURRENCIES', s
                 cumulative_percent = "{:.1f}".format(100 * float(cumulative_count) / distinctBC_DF.sum()) + "%"
                 ax.annotate(cumulative_percent, xy=(x, 0), xycoords=('data', 'axes fraction'), xytext=(0, -32), textcoords='offset points', va='top', ha='center')
         # Refine axis
-        ax.set_xlabel("distinct barcodes ranked by count (N={N})\ncumulative counts\ncumulative percentages".format(N=str(len(list(distinctBC_DF)))))
-        ax.xaxis.set_label_coords(0.8, -0.03)
+        ax.set_xlabel("distinct barcodes (N={N}) ranked by count \ncumulative counts\ncumulative percentages".format(N=str(len(list(distinctBC_DF)))))
+        ax.xaxis.set_label_coords(0.8, -0.1)  # ax.xaxis.set_label_coords(0.8, -0.03) # before mod
         # Give more room at the bottom of the plot
         plt.subplots_adjust(bottom=0.2)
     else:
         # standard X axis label
-        ax.set_xlabel('distinct barcodes ranked by count (N={N})'.format(N=str(len(list(distinctBC_DF)))))
+        ax.set_xlabel('distinct barcodes (N={N}) ranked by count'.format(N=str(len(list(distinctBC_DF)))))
     # Show live
     if show_live:
         plt.show()
@@ -891,32 +911,38 @@ if __name__ == "__main__":
 #    show_live = True
 #    
 #    ## Barcodes nucleotide balancing
-#    how='distinct'
-#    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df, how=how, N_warn=True)  # or = checkNucleotideBalancing(df, ...)
+    how='by_seq_count'
+    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df, how=how, N_warn=True)  # or = checkNucleotideBalancing(df, ...)
 #    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES'+" - "+how, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
 #
 #    ## Barcodes occurrencies
-#    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df)
-#    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency.pdf"))
+    how='by_seq_count'
+    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df, how=how)
+#    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency_seqCount.pdf"))
+    how='by_simple_count'
+    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df, how=how)
+#    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency_simpleCount.pdf"))
 #
 #    ## Edit distance occurrencies
 #    data = exhaustive_df.loc[:,'randomBC'].to_frame()
 #    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
-#    data = exhaustive_df
-#    editDistance_DF = checkEditDistance(data, all_combinations=False)
+    data = exhaustive_df
+    editDistance_DF = checkEditDistance(data, all_combinations=False)
 #    plotEditDistanceOccurrency(editDistance_DF, title='[DEBUG] EDIT DISTANCE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_plotEditDistanceOccurrency.pdf"))
 #    
 #    ## ShearSite occurrencies
 #    data = exhaustive_df.loc[:50,['randomBC', 'shearsite']]
 #    data = exhaustive_df.loc[:,['seq_count', 'shearsite']]
 #    data = exhaustive_df.loc[:50,:]
-#    ShearSitesOccurrency_DF = checkShearSitesOccurrency(data)
+    ShearSitesOccurrency_DF = checkShearSitesOccurrency(data)
 #    plotShearSitesOccurrency(ShearSitesOccurrency_DF, title='[DEBUG] SHEARSITE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkShearSitesOccurrency.pdf"))
 #
 #    ## Fragment Length distribution plot
-#    for barcode in exhaustive_df['barcode'].unique():
-#        data = exhaustive_df[exhaustive_df['barcode'] == barcode]
-#        FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
+    l_FragLenDistr = []
+    for barcode in exhaustive_df['barcode'].unique():
+        data = exhaustive_df[exhaustive_df['barcode'] == barcode]
+        FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
+        l_FragLenDistr.append(FragmentLengthDistribution_DF)
 #        plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title='[DEBUG] FRAGMENT LENGTH DISTRIBUTION', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_{barcode}_FragmentLengthDistribution.pdf".format(barcode=barcode)))
 #
 #    # Edit distance matrixes

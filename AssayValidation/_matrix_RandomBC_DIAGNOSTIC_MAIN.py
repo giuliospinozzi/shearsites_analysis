@@ -232,6 +232,24 @@ if export_diagnostics:
             filename = "{barcode}_{label}_nucleotideBalancing_by-distinct-overall.pdf".format(barcode=barcode, label=sample_label)
             export = os.path.normpath(os.path.join(sample_OUTDIR, filename))
             matrix_RandomBC_barcodeDiagnosis.plotNucleotideBalancing(barcode_nucleotidesCount_DF, title=title, stacked_bar=True, show_live=False, export=export)
+        # checkRandomBCoccurrency
+        if checkRandomBCoccurrency:
+            # by_seq_count
+            verbosePrint("      > Check Random Barcodes Occurrency (by seq_count) ...")
+            barcode_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(barcode_df, how='by_seq_count')
+            verbosePrint("      > Plot Random Barcodes Occurrency (by seq_count) ...")
+            title = "RANDOM-BARCODE OCCURRENCIES (seq_count) - {barcode} {label}".format(barcode=barcode, label=sample_label)
+            filename = "{barcode}_{label}_RandomBCoccurrency_seqCount.pdf".format(barcode=barcode, label=sample_label)
+            export = os.path.normpath(os.path.join(sample_OUTDIR, filename))
+            matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(barcode_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
+            # by_simple_count
+            verbosePrint("      > Check Random Barcodes Occurrency (by simple_count) ...")
+            IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(barcode_df, how='by_simple_count')
+            verbosePrint("      > Plot Random Barcodes Occurrency (by simple_count) ...")
+            title = "RANDOM-BARCODE OCCURRENCIES (simple_count) - {barcode} {label}".format(barcode=barcode, label=sample_label)
+            filename = "{barcode}_{label}_RandomBCoccurrency_simpleCount.pdf".format(barcode=barcode, label=sample_label)
+            export = os.path.normpath(os.path.join(sample_OUTDIR, filename))
+            matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
         # FragmentLengthDistribution
         if FragmentLengthDistribution:
             verbosePrint("  > Check Fragment Length Distribution ...")
@@ -289,11 +307,20 @@ if export_diagnostics:
                 matrix_RandomBC_barcodeDiagnosis.plotNucleotideBalancing(IS_nucleotidesCount_DF, title=title, stacked_bar=True, show_live=False, export=export)
             # checkRandomBCoccurrency
             if checkRandomBCoccurrency:
-                verbosePrint("      > Check Random Barcodes Occurrency ...")
-                IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(IS_df)
-                verbosePrint("      > Plot Random Barcodes Occurrency ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE OCCURRENCIES - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCoccurrency.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                # by_seq_count
+                verbosePrint("      > Check Random Barcodes Occurrency (by seq_count) ...")
+                IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(IS_df, how='by_seq_count')
+                verbosePrint("      > Plot Random Barcodes Occurrency (by seq_count) ...")
+                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE OCCURRENCIES (seq_count) - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCoccurrency_seqCount.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
+                # by_simple_count
+                verbosePrint("      > Check Random Barcodes Occurrency (by simple_count) ...")
+                IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(IS_df, how='by_simple_count')
+                verbosePrint("      > Plot Random Barcodes Occurrency (by simple_count) ...")
+                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE OCCURRENCIES (simple_count) - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCoccurrency_simpleCount.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                 export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
                 matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
             # checkEditDistance - diagonal
