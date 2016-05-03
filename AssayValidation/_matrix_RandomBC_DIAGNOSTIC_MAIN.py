@@ -112,7 +112,9 @@ if filter_data:
         headers_to_remove = matrix_RandomBC_filterModule.loadGzFile(headers_file_path)
         df = matrix_RandomBC_filterModule.filterDF_byHeaders(df, headers_to_remove)
     if bySC:
-        pass
+        import sys
+        print "\n[NOT-IMPLEMENTED ERROR] filter bySC is not yet implemeted in MAIN()"
+        sys.exit("\n[QUIT]\n")
     verbosePrint(">>> Done!")
 #############################################################################################################
 

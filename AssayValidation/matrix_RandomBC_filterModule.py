@@ -137,26 +137,71 @@ def filterDF_byHeaders(any_df, headers_to_remove):
 
 
 
-def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_IS_loss=False):
+def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_IS_loss=True):
+    ### WARNING:
+    # it works in/out-side samples, use it according to what you want to do!
+    
+    ### NOTE ABOUT KWARGS:
+    # SC_threshold: save entries > SC_threshold (put 0 to save the whole data)
+    
+    ### NOTE ABOUT FUNC BEHAVIOUR:
+    # 1) select required_columns based on kwargs
+    # 2) groupby required_columns but seq_count
+    # 3) aggregate by summing up seq_count
+    # 4) identify row with seq_count > SC_threshold -> filtering_tuple_list
+    #   4') if allow_IS_loss is False, filtering_tuple_list is corrected-back to reintroduce stuff whose removal causes whole IS deletion 
+    # 5) compute filtered_any_df according to filtering_tuple_list
+    
     
     # Basic check for columns: 'randomBC' and 'seq_count';
     # if inside_ShS is True, check also for 'shearsite' column.
-    
-    # if allow_IS_loss is True, filtering doesn't need for further columns
-    if allow_IS_loss:
-        if inside_ShS:
-            pass  ### filter is trivial: filetred_DF = any_df[any_df['seq_count'] > int(SC_threshold)]
-        else:
-            pass  ### before 'trivial' filtering we need to merge duplicate randomBC for each 'barcode' and 'genomic_coordinates' couple (if present) and updating the seq_count
-            
-    # IS loss NOT ALLOWED!
+    # try to take required columns -> new DF
+    required_columns = []
+    if inside_ShS:
+        required_columns = ['genomic_coordinates', 'shearsite', 'randomBC', 'seq_count']  #the order must be this
     else:
-        if inside_ShS:
-            pass  ### try trivial filtering then check for IS loss within 'barcode' and 'genomic_coordinates' couples (if present)
-        else:
-            pass ### before trying the 'trivial' filtering we need to merge duplicate randomBC for each 'barcode' and 'genomic_coordinates' couple (if present) and updating the seq_count
+        required_columns = ['genomic_coordinates', 'randomBC', 'seq_count']  #the order must be this
+    l = []
+    try:
+        [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
+    except:
+        print "\n[ERROR] filterDF_byRandomBCseqCount wrong input! Columns {required_columns} are required when kwarg inside_ShS={inside_ShS}. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)), inside_ShS=str(inside_ShS))
+        sys.exit("\n[QUIT]\n")
+    DF = pd.concat(l, axis=1, join='inner')
     
-    return 0
+    # Groupby and aggregate -> grouped_DF
+    grouping_rule = required_columns[:-1]
+    grouped = DF.groupby(grouping_rule)
+    grouped_DF = grouped.sum()
+    # Here grouped_DF has grouping_rule tuple as multiindex (tuple) and seq_count (the sum) as the only column
+    
+    # compute filtering_tuple_list: each tuple has as many items as grouping_rule, same order
+    # filtering_tuple_list gives indications about which entries of any_df we have to keep
+    filtering_tuple_list = None
+    if allow_IS_loss:
+        filtered_grouped_DF = grouped_DF[grouped_DF['seq_count'] > SC_threshold]
+        filtering_tuple_list = filtered_grouped_DF.index.values.tolist()
+    else:
+        IS_orig = set(any_df['genomic_coordinates'])
+        tmp_filtered_grouped_DF = grouped_DF[grouped_DF['seq_count'] > SC_threshold]
+        tmp_filtered_grouped_DF.reset_index(inplace=False)
+        IS_kept = set(tmp_filtered_grouped_DF.reset_index(inplace=False)['genomic_coordinates'])
+        IS_lost = IS_orig.difference(IS_kept)
+        if IS_lost == set():
+            filtering_tuple_list = tmp_filtered_grouped_DF.index.values.tolist()
+        else:
+            filtering_tuple_list = tmp_filtered_grouped_DF.index.values.tolist()
+            for genomic_coordinates in IS_lost:
+                any_df_rows_to_restore = any_df[any_df['genomic_coordinates']==genomic_coordinates]
+                filtering_tuple_list += any_df_rows_to_restore[grouping_rule].apply(tuple, axis=1).tolist()
+                
+    # compute filtered_any_df according to filtering_tuple_list
+    filtered_any_df = any_df.copy()
+    filtered_any_df['filtering_tuple'] = filtered_any_df[grouping_rule].apply(tuple, axis=1)
+    filtered_any_df = filtered_any_df[filtered_any_df['filtering_tuple'].isin(filtering_tuple_list)]
+    filtered_any_df.drop('filtering_tuple', axis=1, inplace=True)
+    
+    return filtered_any_df
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
