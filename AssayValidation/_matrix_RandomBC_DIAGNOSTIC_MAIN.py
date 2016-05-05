@@ -171,9 +171,13 @@ if export_cem_data:
     # Prepare: more matrixes can be added!
     df_dict = {'sequence_count': seqCount_matrix, 'shearsite_count': ShsCount_matrix, 'TAG_count': barcodeCount_matrix, 'shearsite&TAG_count': cellCount_matrix, 'fragmentEstimate_count': fragmentEstimate_matrix,
                'sequence_count_quantification': seqCount_matrix_norm, 'shearsite_count_quantification': ShsCount_matrix_norm, 'TAG_count_quantification': barcodeCount_matrix_norm, 'shearsite&TAG_count_quantification': cellCount_matrix_norm, 'fragmentEstimate_count_quantification': fragmentEstimate_matrix_norm}
-    # Export
+    # Export cem data
     outpath = matrix_RandomBC_CEMmodule.exportCEM(df_dict, asso_dict)
     verbosePrint(">>> CEM data exported!")
+    # Plot cem data
+    verbosePrint("\n>>> Plot CEM data ...")
+    plot_dir = matrix_RandomBC_CEMmodule.plotCEM(outpath)
+    verbosePrint(">>> Done!")
     
 ### EXPORT DIAGNOSTICS
 

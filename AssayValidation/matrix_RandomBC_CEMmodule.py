@@ -8,7 +8,12 @@ Created on Tue Jan 19 16:39:41 2016
 ### PACKAGES IMPORT ##############################################
 import matrix_RandomBC_outputModule
 import matrix_RandomBC_globModule
+
 import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 ##################################################################
 
 ### IMPORT GLOBAL VARS ###########################################################
@@ -82,7 +87,6 @@ def CEM_info(integration_id, cem_locations=cem_locations, cem_strands=cem_strand
 def CEM_expected_quantification(quantification_id_tuple, cem_quantif_expect_dict=cem_quantif_expect_dict):
     return {'expected quantification': cem_quantif_expect_dict[quantification_id_tuple]}
     
-    
 def buildRelabellingDict(asso_dict, concat, use_fields=(3,2,4,7,8)):
     relabellingDict = {}
     for k, d in asso_dict.items():
@@ -102,7 +106,101 @@ def relabelling(df, asso_dict, concat=relabelling_sep, inplace=False):
         return df.rename(columns=buildRelabellingDict(asso_dict, concat), inplace=False)
 
 
-#+++++++++++++++++++++++++++++++++++++++ MAIN FUNCTION ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+
+
+
+def take_data_to_plot(cem_data, approach='', wet_method='', cem_region='', quantification=''):
+    # Filter by 'approach' and 'wet_method'
+    cem_data = cem_data[cem_data['approach'] == approach]
+    cem_data = cem_data[cem_data['wet_method'] == wet_method]
+    # Filter by cem_region
+    cem_data = cem_data[cem_data['cem_region'] == cem_region]
+    # Filter by quantification
+    col_to_keep = ['dilution', 'bio_replicate', 'tech_replicate'] + [quantification]
+    cem_data = cem_data.loc[:, col_to_keep]
+    # Remove 'UT' dilution
+    cem_data = cem_data[cem_data['dilution'] != 'UT']
+    # Build groups
+    cem_data_grouped = cem_data.groupby('dilution')
+    cem_data_mean_stdev = cem_data_grouped.agg([np.mean, np.std])
+    # Split data as series
+    cem_data_mean_serie = cem_data_mean_stdev.loc[:,(quantification, 'mean')]
+    if quantification != 'th_abundance':
+        cem_data_mean_serie.name = cem_region
+    else:
+        cem_data_mean_serie.name = cem_region[:4] + "_expected"
+    cem_data_std_serie = cem_data_mean_stdev.loc[:,(quantification, 'std')]
+    cem_data_std_serie.name = cem_region + "_std"
+    # Prepare data to return
+    data_dict = {'approach': approach,
+                 'wet_method': wet_method,
+                 'cem_region': cem_region,
+                 'quantification': quantification,
+                 'data': cem_data_mean_serie,
+                 'std': cem_data_std_serie
+                 }
+    return data_dict
+ 
+def plotCEMquantifications(cem_data, approach, wet_method, show_live=False, export_dir=""):
+    
+    # Set up interactive mode (plot pop-upping)
+    if show_live:
+        plt.ion()
+    else:
+        plt.ioff()
+    
+    # Get available quantifications and cem_regions
+    quantification_list = sorted([q for q in cem_data.columns.tolist() if 'quantification' in q])
+    cem_region_list = sorted(set(cem_data['cem_region'].tolist()))
+    # Loop over them and take all data
+    for quantification in quantification_list:
+        data_dict_list = []
+        data_dict_list.append(take_data_to_plot(cem_data, approach=approach, wet_method=wet_method, cem_region=cem_region_list[0], quantification='th_abundance'))
+        data_dict_list.append(take_data_to_plot(cem_data, approach=approach, wet_method=wet_method, cem_region=cem_region_list[1], quantification='th_abundance'))
+
+        for cem_region in cem_region_list:
+            data_dict_list.append(take_data_to_plot(cem_data, approach=approach, wet_method=wet_method, cem_region=cem_region, quantification=quantification))
+
+        # Prepare plot environment
+        plt.figure(figsize=(15,10)) # Create matplotlib figure
+        title = "{wet_method} - {approach} - {quantification}".format(wet_method=str(wet_method), approach=str(approach), quantification=str(quantification).replace("_quantification", ""))
+        plt.title(title)
+        ax = plt.axes() # Create matplotlib axes
+        ax.set_xlabel('dilutions')
+        ax.set_ylabel('abundance')
+        # Set font size
+        ax.title.set_fontsize(30)
+        ax.xaxis.label.set_fontsize(30)
+        ax.yaxis.label.set_fontsize(30)
+        for x,y in zip(ax.get_xticklabels(), ax.get_yticklabels()):
+            x.set_fontsize(20)
+            y.set_fontsize(20)
+        
+        # Plot CEM data
+        line_colors = ['red', 'turquoise', 'limegreen', 'pink', 'purple', 'orangered', 'mediumblue']
+        for data_dict, color in zip(data_dict_list[2:], line_colors):
+            data_dict['data'].plot(yerr=data_dict['std'], legend=True, ax=ax, linewidth=3, color=color, marker='o', markersize=8, grid=False)
+        # Plot reference data
+        data_dict_list[0]['data'].plot(legend=True, ax=ax, linewidth=2, linestyle='dashed', color='red', marker='o', markersize=8, grid=False)  # CEM_1 theor
+        data_dict_list[1]['data'].plot(legend=True, ax=ax, linewidth=2, linestyle='dashed', color='black', grid=False)  # CEM_6 theor
+
+        # Closing operations
+        if show_live:
+            plt.show()
+        # Save plot
+        if export_dir:
+            filename = "{wet_method}_{approach}_{quantification}.pdf".format(wet_method=str(wet_method), approach=str(approach), quantification=str(quantification).replace("_quantification", ""))
+            export_path = os.path.normpath(os.path.join(os.path.normpath(export_dir), filename))
+            plt.savefig(export_path)
+        # close
+        if not show_live:
+            plt.close()
+
+    return 0
+
+
+#+++++++++++++++++++++++++++++++++++++++ MAIN FUNCTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 
 
@@ -193,3 +291,25 @@ def exportCEM(df_dict, asso_dict, filename=cem_data_outfile_name, sep=sep, eol=e
     verbosePrint(">>> Created file '{outpath}'".format(outpath=str(outpath)))
     
     return outpath
+
+
+
+
+
+
+def plotCEM(cem_file_path):
+    # Prepare data
+    cem_data = pd.DataFrame.from_csv(os.path.normpath(cem_file_path), sep='\t')
+    col_to_drop = ['TAG_count', 'fragmentEstimate_count', 'sequence_count', 'shearsite&TAG_count', 'shearsite_count']
+    cem_data.drop(col_to_drop, axis=1, inplace=True)
+    # List to iterate
+    export_dir = str(matrix_RandomBC_outputModule.buildOutputPath(common_output_ground_dir, cem_data_outfolder, 'plot'))
+    for approach, wet_method in sorted(set(zip(cem_data['approach'], cem_data['wet_method']))):
+        plotCEMquantifications(cem_data, approach, wet_method, show_live=False, export_dir=export_dir)
+
+    return export_dir
+    
+    
+    
+    
+    
