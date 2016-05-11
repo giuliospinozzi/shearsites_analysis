@@ -12,6 +12,7 @@ Created on Mon Jan 18 09:49:24 2016
 
 ## Screen print ##
 verbose = True
+print_time = True # evaluated only if verbose is True
 
 ## Association File - assoModule ##
 asso_folder = "/opt/applications/scripts/isatk/elements/association"
@@ -41,11 +42,11 @@ concat = "_"  # char to concatenate fields in use_fields
 ####################################################################################################################################################
 
 
-### FILTERING CONFIG #################
-filter_data = True
-byHeaders = True
-bySC = False
-######################################
+### FILTERING CONFIG #############################################
+filter_data = False
+byHeaders = False  # evaluated only if filter_data is True
+bySC = False  # evaluated only if filter_data is True
+##################################################################
 
 
 ### DIAGNOSTIC VARS ################################################################################################################################
@@ -66,12 +67,13 @@ cem_data_outfile_name += ".tsv"
 
 ## Export DIAGNOSTICS ##
 # DO
-export_diagnostics = False
+export_diagnostics = True
 diagnostic_outfolder = "Diagnostics"  # path = common_output_ground_dir+diagnostic_outfolder
 # Data selection
 specific_samples = True  # 'True' here requires explicit lists below
-dilution_to_process = ['L']  # evaluated only if specific_samples is True  # ['L', 'M', 'N']
 condition_to_process = ['LMv2-II']  # evaluated only if specific_samples is True
+approach_to_process = ['Block']  # evaluated only if specific_samples is True
+dilution_to_process = ['L']  # evaluated only if specific_samples is True  # ['L', 'M', 'N']
 # Task to perform
 checkNucleotidesBalancing = False  # Stacked-bar plot 
 FragmentLengthDistribution = False  # Fragment length histogram, fitted with soncLength and KDE
@@ -79,21 +81,37 @@ checkShearSitesOccurrency = False  # Occurrency bar plot
 checkRandomBCoccurrency = False  # Occurrency line plot
 checkEditDistance_diagonal = False   # Edit Distance occurrency histogram (within shearsites)
 checkEditDistance_extensive = False   # Edit Distance occurrency histogram  (all-VS-all)
-plot_heatmap = False  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
-limit_heatmap_plot = (True, 600)  # or (False, whatever); syntax: (Do?, max number of rows-cols allowed)
+plot_heatmap = True  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
+limit_heatmap_plot = (True, 800)  # or (False, whatever); syntax: (Do?, max number of rows-cols allowed)
                                   # evaluated only if plot_heatmap is True
-plot_heatmap_byChunks = False  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
+plot_heatmap_byChunks = True  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
 ShS_chunk_size = 11  # evaluated only if plot_heatmap_byChunks is True; should be int>=3, odd.
-checkBCcountRatio = False  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
+checkBCcountRatio = True  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
 ####################################################################################################################################################
 
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
+#==============================================================================
+# import sys
+# def verbosePrint(x, verbose=verbose):
+#     if verbose:
+#         print x
+#         sys.stdout.flush()
+#==============================================================================
+
 import sys
-def verbosePrint(x, verbose=verbose):
+from time import gmtime, strftime
+def verbosePrint(x, verbose=verbose, print_time=print_time):
     if verbose:
-        print x
+        if print_time:
+            y = str(x)
+            nnl = y.count("\n", 0, len(x)/2+1)
+            y = y.replace("\n", "", nnl)
+            nl_str = "".join(['\n']*nnl)
+            print nl_str+"[{time}] ".format(time=strftime("%Y-%m-%d %H:%M:%S", gmtime())), y
+        else:
+            print x
         sys.stdout.flush()
 
 import re

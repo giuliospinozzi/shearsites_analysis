@@ -10,6 +10,14 @@ import sys, os
 import matrix_RandomBC_globModule
 import pandas as pd
 import numpy as np
+
+### Config matplotlib backend:
+# Note: this is required to plot without running Xserver / when $DISPLAY is
+#       not defined; however, this way the show_live kwarg is broken!
+import matplotlib
+matplotlib.use('Agg')
+# matplotlib.use('PDF') damage some configs in plots
+
 import matplotlib.pyplot as plt
 import editdistance  # e.g.: editdistance.eval('banana', 'bahama') >>> 2L
 import seaborn.apionly as sns  # this way mpl defaults are kept
@@ -911,38 +919,38 @@ if __name__ == "__main__":
 #    show_live = True
 #    
 #    ## Barcodes nucleotide balancing
-    how='by_seq_count'
-    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df, how=how, N_warn=True)  # or = checkNucleotideBalancing(df, ...)
+#    how='by_seq_count'
+#    overall_nucleotidesCount_DF = checkNucleotideBalancing(exhaustive_df, how=how, N_warn=True)  # or = checkNucleotideBalancing(df, ...)
 #    plotNucleotideBalancing(overall_nucleotidesCount_DF, title='[DEBUG] PILED-UP SEQUENCES'+" - "+how, show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkNucleotidesBalancing.pdf"))
 #
 #    ## Barcodes occurrencies
-    how='by_seq_count'
-    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df, how=how)
+#    how='by_seq_count'
+#    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df, how=how)
 #    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency_seqCount.pdf"))
-    how='by_simple_count'
-    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df, how=how)
+#    how='by_simple_count'
+#    overall_distinctBC_DF = checkRandomBCoccurrency(exhaustive_df, how=how)
 #    plotRandomBCoccurrency(overall_distinctBC_DF, title='[DEBUG] RANDOM-BARCODE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkRandomBCoccurrency_simpleCount.pdf"))
 #
 #    ## Edit distance occurrencies
 #    data = exhaustive_df.loc[:,'randomBC'].to_frame()
 #    data = exhaustive_df.loc[:,['randomBC', 'shearsite']]
-    data = exhaustive_df
-    editDistance_DF = checkEditDistance(data, all_combinations=False)
+#    data = exhaustive_df
+#    editDistance_DF = checkEditDistance(data, all_combinations=False)
 #    plotEditDistanceOccurrency(editDistance_DF, title='[DEBUG] EDIT DISTANCE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkEditDistance_plotEditDistanceOccurrency.pdf"))
 #    
 #    ## ShearSite occurrencies
 #    data = exhaustive_df.loc[:50,['randomBC', 'shearsite']]
 #    data = exhaustive_df.loc[:,['seq_count', 'shearsite']]
 #    data = exhaustive_df.loc[:50,:]
-    ShearSitesOccurrency_DF = checkShearSitesOccurrency(data)
+#    ShearSitesOccurrency_DF = checkShearSitesOccurrency(data)
 #    plotShearSitesOccurrency(ShearSitesOccurrency_DF, title='[DEBUG] SHEARSITE OCCURRENCIES', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_checkShearSitesOccurrency.pdf"))
 #
 #    ## Fragment Length distribution plot
-    l_FragLenDistr = []
-    for barcode in exhaustive_df['barcode'].unique():
-        data = exhaustive_df[exhaustive_df['barcode'] == barcode]
-        FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
-        l_FragLenDistr.append(FragmentLengthDistribution_DF)
+#    l_FragLenDistr = []
+#    for barcode in exhaustive_df['barcode'].unique():
+#        data = exhaustive_df[exhaustive_df['barcode'] == barcode]
+#        FragmentLengthDistribution_DF = checkFragmentLengthDistribution(data)
+#        l_FragLenDistr.append(FragmentLengthDistribution_DF)
 #        plotFragmentLengthDistribution(FragmentLengthDistribution_DF, title='[DEBUG] FRAGMENT LENGTH DISTRIBUTION', show_live=show_live, export=os.path.join(os.getcwd(), "test_output", "debug_{barcode}_FragmentLengthDistribution.pdf".format(barcode=barcode)))
 #
 #    # Edit distance matrixes

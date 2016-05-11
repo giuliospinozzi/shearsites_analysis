@@ -11,6 +11,14 @@ import matrix_RandomBC_globModule
 
 import os
 
+### Config matplotlib backend:
+# Note: this is required to plot without running Xserver / when $DISPLAY is
+#       not defined; however, this way the show_live kwarg is broken!
+import matplotlib
+matplotlib.use('Agg')
+# matplotlib.use('PDF') damage some configs in plots
+
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -280,7 +288,7 @@ def exportCEM(df_dict, asso_dict, filename=cem_data_outfile_name, sep=sep, eol=e
         return lines
     
     # Code
-    verbosePrint("\nExport CEM data ...")
+    #verbosePrint("\nExport CEM data ...")
     export_dict = arrangeData(df_dict, asso_dict)
     lines = formatData(export_dict, df_dict)
     OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(common_output_ground_dir, cem_data_outfolder)
@@ -288,7 +296,7 @@ def exportCEM(df_dict, asso_dict, filename=cem_data_outfile_name, sep=sep, eol=e
     with open(outpath, 'w') as out_stream:
         rows = [sep.join(l) for l in lines]
         out_stream.write(eol.join(rows)+eol)
-    verbosePrint(">>> Created file '{outpath}'".format(outpath=str(outpath)))
+    verbosePrint(">>> File created: '{outpath}'".format(outpath=str(outpath)))
     
     return outpath
 

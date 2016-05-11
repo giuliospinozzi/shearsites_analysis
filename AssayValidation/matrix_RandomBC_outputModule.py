@@ -59,9 +59,10 @@ def buildOutputPath(ground_dir, *subfolders):
             print "\n[ERROR] ground_dir='{OUTDIR}' is not a valid path or you don't have permissions to create it!".format(OUTDIR=str(OUTDIR))
             print "os.makedirs returned: ", err_message
             sys.exit("\n[QUIT]\n")
-        verbosePrint("> ground_dir created: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+        #verbosePrint("> ground_dir created: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
     else:
-        verbosePrint("> ground_dir found: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+        #verbosePrint("> ground_dir found: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+        pass
     # Check ground_dir: write permissions if required
     if not subfolders:
         if not os.access(OUTDIR, os.W_OK):
@@ -87,16 +88,17 @@ def buildOutputPath(ground_dir, *subfolders):
                 print "\n[ERROR] OUTDIR='{OUTDIR}' + SUBFOLDER='{SUBFOLDER}' is not a valid path or you don't have permissions to create it!".format(OUTDIR=str(OUTDIR), SUBFOLDER=str(sf))
                 print "os.makedirs returned: ", err_message
                 sys.exit("\n[QUIT]\n")
-            verbosePrint("> subfolder created: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+            #verbosePrint("> subfolder created: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
         else:
-            verbosePrint("> subfolder found: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+            #verbosePrint("> subfolder found: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+            pass
         # Check: write permissions
         if not os.access(OUTDIR, os.W_OK):
             print "\n[ERROR] You don't have write permissions in OUTDIR='{OUTDIR}'".format(OUTDIR=str(OUTDIR))
             sys.exit("\n[QUIT]\n")
     # Return OUTDIR
-    verbosePrint(">>> OUTDIR: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
-    verbosePrint(">>> OUTDIR WRITE PERMISSIONS: [OK]")
+    #verbosePrint(">>> OUTDIR: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+    #verbosePrint(">>> OUTDIR WRITE PERMISSIONS: [OK]")
     return OUTDIR
 
 

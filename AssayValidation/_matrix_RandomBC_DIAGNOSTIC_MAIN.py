@@ -23,7 +23,6 @@ import matrix_RandomBC_outputModule
 import matrix_RandomBC_CEMmodule
 import matrix_RandomBC_barcodeDiagnosis
 
-
 #++++++++++++++++++++++ Global Vars from globModule +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 ### Import Functions
@@ -68,8 +67,9 @@ export_diagnostics = matrix_RandomBC_globModule.export_diagnostics
 diagnostic_outfolder = matrix_RandomBC_globModule.diagnostic_outfolder
 # Data selection configs
 specific_samples = matrix_RandomBC_globModule.specific_samples
-dilution_to_process = matrix_RandomBC_globModule.dilution_to_process
 condition_to_process = matrix_RandomBC_globModule.condition_to_process
+approach_to_process = matrix_RandomBC_globModule.approach_to_process
+dilution_to_process = matrix_RandomBC_globModule.dilution_to_process
 # Task to perform configs
 checkNucleotidesBalancing = matrix_RandomBC_globModule.checkNucleotidesBalancing
 FragmentLengthDistribution = matrix_RandomBC_globModule.FragmentLengthDistribution
@@ -101,22 +101,27 @@ df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict
 verbosePrint(">>> Dataframe built!")
 #################################################################################
 
-### Filter Data #############################################################################################
+### Filter Data #######################################################################################################################################
 if filter_data:
-    verbosePrint("\n>>> Filtering DataFrame ...")
+    verbosePrint("\n>>> Filtering DataFrame [STILL EXPERIMENTAL AND BUGGY] ...")
     if byHeaders:
+        verbosePrint("       > Running filterDF_byHeaders ...")
         headers_file_dir = matrix_RandomBC_filterModule.buildInputPath(ground_dir, DISEASE, PATIENT)
         lane_ID = "{POOL}".format(POOL=str(POOL)).lower().replace("_", "")
         headers_file_name = "{lane_ID}.quality.r1r2-100rbc.toRemove.list.gz".format(lane_ID=str(lane_ID))
         headers_file_path = os.path.normpath(os.path.join(headers_file_dir, headers_file_name))
         headers_to_remove = matrix_RandomBC_filterModule.loadGzFile(headers_file_path)
         df = matrix_RandomBC_filterModule.filterDF_byHeaders(df, headers_to_remove)
+        verbosePrint("       Done!")
     if bySC:
-        import sys
-        print "\n[NOT-IMPLEMENTED ERROR] filter bySC is not yet implemeted in MAIN()"
-        sys.exit("\n[QUIT]\n")
+        verbosePrint("       > Running filterDF_byRandomBCseqCount ...")
+        SC_threshold=1
+        inside_ShS = True
+        allow_IS_loss = False
+        df = matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(df, SC_threshold=SC_threshold, inside_ShS=inside_ShS, allow_IS_loss=allow_IS_loss)
+        verbosePrint("       Done!")
     verbosePrint(">>> Done!")
-#############################################################################################################
+#######################################################################################################################################################
 
 ### Process Data as Matrixes #####################################################################################################
 seqCount_matrix, ShsCount_matrix, barcodeCount_matrix, cellCount_matrix, fragmentEstimate_matrix = None, None, None, None, None
@@ -203,6 +208,10 @@ if export_diagnostics:
             # only condition_to_process
             if asso_dict[barcode][2] not in condition_to_process:
                 verbosePrint("  ...SKIP! (not in condition_to_process={condition_to_process})".format(condition_to_process=str(condition_to_process)))
+                continue
+            # only approach_to_process
+            if asso_dict[barcode][3] not in approach_to_process:
+                verbosePrint("  ...SKIP! (not in approach_to_process={approach_to_process})".format(approach_to_process=str(approach_to_process)))
                 continue
             # only dilution_to_process
             if asso_dict[barcode][4] not in dilution_to_process:
