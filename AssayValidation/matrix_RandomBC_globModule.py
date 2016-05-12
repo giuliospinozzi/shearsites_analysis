@@ -74,19 +74,21 @@ specific_samples = True  # 'True' here requires explicit lists below
 condition_to_process = ['LMv2-II']  # evaluated only if specific_samples is True
 approach_to_process = ['Block']  # evaluated only if specific_samples is True
 dilution_to_process = ['L']  # evaluated only if specific_samples is True  # ['L', 'M', 'N']
+# Task granularity
+inside_ISs = False
 # Task to perform
 checkNucleotidesBalancing = False  # Stacked-bar plot 
 FragmentLengthDistribution = False  # Fragment length histogram, fitted with soncLength and KDE
 checkShearSitesOccurrency = False  # Occurrency bar plot
 checkRandomBCoccurrency = False  # Occurrency line plot
 checkEditDistance_diagonal = False   # Edit Distance occurrency histogram (within shearsites)
-checkEditDistance_extensive = False   # Edit Distance occurrency histogram  (all-VS-all)
-plot_heatmap = True  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
+checkEditDistance_extensive = True   # Edit Distance occurrency histogram  (all-VS-all)
+plot_heatmap = False  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
 limit_heatmap_plot = (True, 800)  # or (False, whatever); syntax: (Do?, max number of rows-cols allowed)
                                   # evaluated only if plot_heatmap is True
-plot_heatmap_byChunks = True  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
+plot_heatmap_byChunks = False  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
 ShS_chunk_size = 11  # evaluated only if plot_heatmap_byChunks is True; should be int>=3, odd.
-checkBCcountRatio = True  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
+checkBCcountRatio = False  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
 ####################################################################################################################################################
 
 

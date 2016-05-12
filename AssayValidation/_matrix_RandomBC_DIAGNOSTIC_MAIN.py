@@ -70,6 +70,8 @@ specific_samples = matrix_RandomBC_globModule.specific_samples
 condition_to_process = matrix_RandomBC_globModule.condition_to_process
 approach_to_process = matrix_RandomBC_globModule.approach_to_process
 dilution_to_process = matrix_RandomBC_globModule.dilution_to_process
+# Task granularity configs
+inside_ISs = matrix_RandomBC_globModule.inside_ISs
 # Task to perform configs
 checkNucleotidesBalancing = matrix_RandomBC_globModule.checkNucleotidesBalancing
 FragmentLengthDistribution = matrix_RandomBC_globModule.FragmentLengthDistribution
@@ -274,173 +276,201 @@ if export_diagnostics:
             filename = "{barcode}_{label}_fragmentLengthDistribution.pdf".format(barcode=barcode, label=sample_label)
             export = os.path.normpath(os.path.join(sample_OUTDIR, filename))
             matrix_RandomBC_barcodeDiagnosis.plotFragmentLengthDistribution(barcode_FragmentLengthDistribution_DF, title=title, binning='Freedman-Diaconis', normalize=True, rug=False, kde=True, sonicLengthEstimation=True, show_live=False, export=export)
-        # Get ISs in this sample to loop into!
-        IS_IDs = humanSorted(barcode_df['genomic_coordinates'].unique())
-        # Search for CEM data
-        verbosePrint("  > Search for CEM data inside this sample ...")
-        CEM_found = humanSorted(list(set(cem_IDs_extended).intersection(set(IS_IDs))))
-        if CEM_found == list():
-            verbosePrint("    Not Found, SKIP!")
-            continue
-        else:
-            verbosePrint("    Found! {IS_found}.".format(IS_found=str(CEM_found)))
-            # Restrict barcode_df/IS_IDs to CEM data: OVERRIDE
-            verbosePrint("    Extracting Data...")
-            N = len(barcode_df)
-            barcode_df = matrix_RandomBC_CEMmodule.extractCEM_fromDF(barcode_df)
-            verbosePrint("    Done! {n} rows taken over {N}.".format(n=str(len(barcode_df)), N=str(N)))
+        # checkEditDistance - extensive
+        if checkEditDistance_extensive:
+            verbosePrint("  > Check Edit Distances all-VS-all ...")
+            barcode_extensive_editDistance_DF = matrix_RandomBC_barcodeDiagnosis.checkEditDistance(barcode_df, all_combinations=True)
+            verbosePrint("  Done! Square matrix {dim}X{dim}.".format(dim=str(len(barcode_extensive_editDistance_DF))))
+            if plot_heatmap:
+                if limit_heatmap_plot[0]:
+                    if len(barcode_extensive_editDistance_DF) <= limit_heatmap_plot[1]:
+                        verbosePrint("  > Plot Edit Distance Heatmap all-VS-all...")
+                        title = "RANDOM-BARCODES EDIT-DISTANCE MATRIX all-VS-all - {barcode} {label}".format(barcode=barcode, label=sample_label)
+                        filename = "{barcode}_{label}_EditDistanceHeatmap_ALL.pdf".format(barcode=barcode, label=sample_label)
+                        export = os.path.normpath(os.path.join(sample_OUTDIR, filename))
+                        matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(barcode_extensive_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+                    else:
+                        verbosePrint("  [SKIP] Edit Distance Heatmap Plot! Limit {lim}X{lim}.".format(lim=str(limit_heatmap_plot[1])))
+                else:
+                    verbosePrint("  > Plot Edit Distance Heatmap all-VS-all...")
+                    title = "RANDOM-BARCODES EDIT-DISTANCE MATRIX all-VS-all - {barcode} {label}".format(barcode=barcode, label=sample_label)
+                    filename = "{barcode}_{label}_EditDistanceHeatmap_ALL.pdf".format(barcode=barcode, label=sample_label)
+                    export = os.path.normpath(os.path.join(sample_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(barcode_extensive_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+            verbosePrint("  > Plot Edit Distance Distribution all-VS-all ...")
+            title = "EDIT DISTANCE OCCURRENCIES all-VS-all - {barcode} {label}".format(barcode=barcode, label=sample_label)
+            filename = "{barcode}_{label}_EditDistanceDistribution_ALL.pdf".format(barcode=barcode, label=sample_label)
+            export = os.path.normpath(os.path.join(sample_OUTDIR, filename))
+            matrix_RandomBC_barcodeDiagnosis.plotEditDistanceOccurrency(barcode_extensive_editDistance_DF, title=title, vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=False, export=export)
+        # Next level of granularity: go inside (CEM) ISs
+        if inside_ISs:
+            # Get ISs in this sample to loop into!
             IS_IDs = humanSorted(barcode_df['genomic_coordinates'].unique())
-            verbosePrint("    Check CEM ISs found: {IS_IDs}.".format(IS_IDs=str(IS_IDs)))
-        for IS in IS_IDs:
-            # Get CEM info
-            CEM_info_dict = matrix_RandomBC_CEMmodule.CEM_info(IS)
-            CEM_real_coordinate = IS
-            CEM_nominal_coordinate = CEM_info_dict['coordinate']
-            CEM_name = CEM_info_dict['symbol']
-            verbosePrint("    > Processing {CEM_name}:{CEM_nominal_coordinate} (coordinate found:{CEM_real_coordinate})".format(CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate)))
-            # Slice barcode_df by IS -> IS_df
-            IS_df = barcode_df[barcode_df['genomic_coordinates']==IS]
-            # Prepare IS_OUTDIR
-            IS_OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(sample_OUTDIR, "{CEM_name}:{CEM_nominal_coordinate}".format(CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate)))
-            # checkShearSitesOccurrency
-            if checkShearSitesOccurrency:
-                verbosePrint("      > Check Shear Sites Occurrency ...")
-                IS_ShearSitesOccurrency_DF = matrix_RandomBC_barcodeDiagnosis.checkShearSitesOccurrency(IS_df)
-                verbosePrint("      > Plot Shear Sites Occurrency ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} SHEAR SITE OCCURRENCIES - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_shearSitesOccurrency.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                matrix_RandomBC_barcodeDiagnosis.plotShearSitesOccurrency(IS_ShearSitesOccurrency_DF, title=title, normalize=100, show_live=False, export=export)
-            # checkNucleotidesBalancing
-            if checkNucleotidesBalancing:
-                verbosePrint("      > Check Nucleotides Balancing ...")
-                IS_nucleotidesCount_DF = matrix_RandomBC_barcodeDiagnosis.checkNucleotideBalancing(IS_df, how='simple')
-                verbosePrint("      > Plot Nucleotides Balancing ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} PILED-UP RANDOM-BARCODES by-distinct-ShS - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_nucleotideBalancing_by-distinct-ShS.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                matrix_RandomBC_barcodeDiagnosis.plotNucleotideBalancing(IS_nucleotidesCount_DF, title=title, stacked_bar=True, show_live=False, export=export)
-            # checkRandomBCoccurrency
-            if checkRandomBCoccurrency:
-                # by_seq_count
-                verbosePrint("      > Check Random Barcodes Occurrency (by seq_count) ...")
-                IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(IS_df, how='by_seq_count')
-                verbosePrint("      > Plot Random Barcodes Occurrency (by seq_count) ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE OCCURRENCIES (seq_count) - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCoccurrency_seqCount.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
-                # by_simple_count
-                verbosePrint("      > Check Random Barcodes Occurrency (by simple_count) ...")
-                IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(IS_df, how='by_simple_count')
-                verbosePrint("      > Plot Random Barcodes Occurrency (by simple_count) ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE OCCURRENCIES (simple_count) - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCoccurrency_simpleCount.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
-            # checkEditDistance - diagonal
-            if checkEditDistance_diagonal:
-                verbosePrint("      > Check Edit Distances whitin Shear Sites ...")
-                IS_diagonal_editDistance_DF = matrix_RandomBC_barcodeDiagnosis.checkEditDistance(IS_df, all_combinations=False)
-                verbosePrint("        Done! Square matrix {dim}X{dim}.".format(dim=str(len(IS_diagonal_editDistance_DF))))
-                if plot_heatmap:
-                    if limit_heatmap_plot[0]:
-                        if len(IS_diagonal_editDistance_DF) <= limit_heatmap_plot[1]:
+            # Search for CEM data
+            verbosePrint("  > Search for CEM data inside this sample ...")
+            CEM_found = humanSorted(list(set(cem_IDs_extended).intersection(set(IS_IDs))))
+            if CEM_found == list():
+                verbosePrint("    Not Found, SKIP!")
+                continue
+            else:
+                verbosePrint("    Found! {IS_found}.".format(IS_found=str(CEM_found)))
+                # Restrict barcode_df/IS_IDs to CEM data: OVERRIDE
+                verbosePrint("    Extracting Data...")
+                N = len(barcode_df)
+                barcode_df = matrix_RandomBC_CEMmodule.extractCEM_fromDF(barcode_df)
+                verbosePrint("    Done! {n} rows taken over {N}.".format(n=str(len(barcode_df)), N=str(N)))
+                IS_IDs = humanSorted(barcode_df['genomic_coordinates'].unique())
+                verbosePrint("    Check CEM ISs found: {IS_IDs}.".format(IS_IDs=str(IS_IDs)))
+            for IS in IS_IDs:
+                # Get CEM info
+                CEM_info_dict = matrix_RandomBC_CEMmodule.CEM_info(IS)
+                CEM_real_coordinate = IS
+                CEM_nominal_coordinate = CEM_info_dict['coordinate']
+                CEM_name = CEM_info_dict['symbol']
+                verbosePrint("    > Processing {CEM_name}:{CEM_nominal_coordinate} (coordinate found:{CEM_real_coordinate})".format(CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate)))
+                # Slice barcode_df by IS -> IS_df
+                IS_df = barcode_df[barcode_df['genomic_coordinates']==IS]
+                # Prepare IS_OUTDIR
+                IS_OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(sample_OUTDIR, "{CEM_name}:{CEM_nominal_coordinate}".format(CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate)))
+                # checkShearSitesOccurrency
+                if checkShearSitesOccurrency:
+                    verbosePrint("      > Check Shear Sites Occurrency ...")
+                    IS_ShearSitesOccurrency_DF = matrix_RandomBC_barcodeDiagnosis.checkShearSitesOccurrency(IS_df)
+                    verbosePrint("      > Plot Shear Sites Occurrency ...")
+                    title = "{CEM_name}:{CEM_nominal_coordinate} SHEAR SITE OCCURRENCIES - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_shearSitesOccurrency.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.plotShearSitesOccurrency(IS_ShearSitesOccurrency_DF, title=title, normalize=100, show_live=False, export=export)
+                # checkNucleotidesBalancing
+                if checkNucleotidesBalancing:
+                    verbosePrint("      > Check Nucleotides Balancing ...")
+                    IS_nucleotidesCount_DF = matrix_RandomBC_barcodeDiagnosis.checkNucleotideBalancing(IS_df, how='simple')
+                    verbosePrint("      > Plot Nucleotides Balancing ...")
+                    title = "{CEM_name}:{CEM_nominal_coordinate} PILED-UP RANDOM-BARCODES by-distinct-ShS - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_nucleotideBalancing_by-distinct-ShS.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.plotNucleotideBalancing(IS_nucleotidesCount_DF, title=title, stacked_bar=True, show_live=False, export=export)
+                # checkRandomBCoccurrency
+                if checkRandomBCoccurrency:
+                    # by_seq_count
+                    verbosePrint("      > Check Random Barcodes Occurrency (by seq_count) ...")
+                    IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(IS_df, how='by_seq_count')
+                    verbosePrint("      > Plot Random Barcodes Occurrency (by seq_count) ...")
+                    title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE OCCURRENCIES (seq_count) - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCoccurrency_seqCount.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
+                    # by_simple_count
+                    verbosePrint("      > Check Random Barcodes Occurrency (by simple_count) ...")
+                    IS_distinctBC_DF = matrix_RandomBC_barcodeDiagnosis.checkRandomBCoccurrency(IS_df, how='by_simple_count')
+                    verbosePrint("      > Plot Random Barcodes Occurrency (by simple_count) ...")
+                    title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE OCCURRENCIES (simple_count) - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCoccurrency_simpleCount.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
+                # checkEditDistance - diagonal
+                if checkEditDistance_diagonal:
+                    verbosePrint("      > Check Edit Distances whitin Shear Sites ...")
+                    IS_diagonal_editDistance_DF = matrix_RandomBC_barcodeDiagnosis.checkEditDistance(IS_df, all_combinations=False)
+                    verbosePrint("        Done! Square matrix {dim}X{dim}.".format(dim=str(len(IS_diagonal_editDistance_DF))))
+                    if plot_heatmap:
+                        if limit_heatmap_plot[0]:
+                            if len(IS_diagonal_editDistance_DF) <= limit_heatmap_plot[1]:
+                                verbosePrint("      > Plot Edit Distance Heatmap whitin Shear Sites ...")
+                                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                                matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(IS_diagonal_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+                            else:
+                                verbosePrint("      [SKIP] Edit Distance Heatmap Plot! Limit {lim}X{lim}.".format(lim=str(limit_heatmap_plot[1])))
+                        else:
                             verbosePrint("      > Plot Edit Distance Heatmap whitin Shear Sites ...")
                             title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                             filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                             export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
                             matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(IS_diagonal_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+                    verbosePrint("      > Plot Edit Distance Distribution ...")
+                    title = "{CEM_name}:{CEM_nominal_coordinate} EDIT DISTANCE OCCURRENCIES - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceDistribution.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.plotEditDistanceOccurrency(IS_diagonal_editDistance_DF, title=title, vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=False, export=export)
+                    # chunking
+                    if plot_heatmap_byChunks:
+                        verbosePrint("      > Trying to chunk Edit Distance Matrix (chunk size={ShS_chunk_size})...".format(ShS_chunk_size=str(ShS_chunk_size)))
+                        IS_diagonal_EditDistance_DFchunks = matrix_RandomBC_barcodeDiagnosis.chunkEditDistance_DF(IS_diagonal_editDistance_DF, ShS_chunk_size=ShS_chunk_size)
+                        verbosePrint("        Done! {N} chunk(s).".format(N=str(len(IS_diagonal_EditDistance_DFchunks))))
+                        verbosePrint("      > Plot Edit Distance Heatmap chunk-by-chunk...")
+                        EDheatmap_byChunk_OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(IS_OUTDIR, "EDheatmap_byChunks")
+                        for n, ED_DF in list(enumerate(IS_diagonal_EditDistance_DFchunks, start=1)):
+                            ID = "CHUNK{n}".format(n=str(n))
+                            verbosePrint("        > {ID} ...".format(ID=ID))
+                            title = "{ID} - {CEM_name}:{CEM_nominal_coordinate} - {barcode} {label} {CEM_real_coordinate}".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                            filename = "{ID}_{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                            export = os.path.normpath(os.path.join(EDheatmap_byChunk_OUTDIR, filename))
+                            matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(ED_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+                # checkEditDistance - extensive
+                if checkEditDistance_extensive:
+                    verbosePrint("      > Check Edit Distances all-VS-all ...")
+                    IS_extensive_editDistance_DF = matrix_RandomBC_barcodeDiagnosis.checkEditDistance(IS_df, all_combinations=True)
+                    verbosePrint("        Done! Square matrix {dim}X{dim}.".format(dim=str(len(IS_extensive_editDistance_DF))))
+                    if plot_heatmap:
+                        if limit_heatmap_plot[0]:
+                            if len(IS_extensive_editDistance_DF) <= limit_heatmap_plot[1]:
+                                verbosePrint("      > Plot Edit Distance Heatmap all-VS-all...")
+                                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX all-VS-all - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap_ALL.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                                matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(IS_extensive_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+                            else:
+                                verbosePrint("      [SKIP] Edit Distance Heatmap Plot! Limit {lim}X{lim}.".format(lim=str(limit_heatmap_plot[1])))
                         else:
-                            verbosePrint("      [SKIP] Edit Distance Heatmap Plot! Limit {lim}X{lim}.".format(lim=str(limit_heatmap_plot[1])))
-                    else:
-                        verbosePrint("      > Plot Edit Distance Heatmap whitin Shear Sites ...")
-                        title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                        matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(IS_diagonal_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
-                verbosePrint("      > Plot Edit Distance Distribution ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} EDIT DISTANCE OCCURRENCIES - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceDistribution.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                matrix_RandomBC_barcodeDiagnosis.plotEditDistanceOccurrency(IS_diagonal_editDistance_DF, title=title, vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=False, export=export)
-                # chunking
-                if plot_heatmap_byChunks:
-                    verbosePrint("      > Trying to chunck Edit Distance Matrix (chunk size={ShS_chunk_size})...".format(ShS_chunk_size=str(ShS_chunk_size)))
-                    IS_diagonal_EditDistance_DFchunks = matrix_RandomBC_barcodeDiagnosis.chunkEditDistance_DF(IS_diagonal_editDistance_DF, ShS_chunk_size=ShS_chunk_size)
-                    verbosePrint("        Done! {N} chunk(s).".format(N=str(len(IS_diagonal_EditDistance_DFchunks))))
-                    verbosePrint("      > Plot Edit Distance Heatmap chunk-by-chunk...")
-                    EDheatmap_byChunk_OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(IS_OUTDIR, "EDheatmap_byChunks")
-                    for n, ED_DF in list(enumerate(IS_diagonal_EditDistance_DFchunks, start=1)):
-                        ID = "CHUNK{n}".format(n=str(n))
-                        verbosePrint("        > {ID} ...".format(ID=ID))
-                        title = "{ID} - {CEM_name}:{CEM_nominal_coordinate} - {barcode} {label} {CEM_real_coordinate}".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        filename = "{ID}_{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        export = os.path.normpath(os.path.join(EDheatmap_byChunk_OUTDIR, filename))
-                        matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(ED_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
-            # checkEditDistance - extensive
-            if checkEditDistance_extensive:
-                verbosePrint("      > Check Edit Distances all-VS-all ...")
-                IS_extensive_editDistance_DF = matrix_RandomBC_barcodeDiagnosis.checkEditDistance(IS_df, all_combinations=True)
-                verbosePrint("        Done! Square matrix {dim}X{dim}.".format(dim=str(len(IS_extensive_editDistance_DF))))
-                if plot_heatmap:
-                    if limit_heatmap_plot[0]:
-                        if len(IS_extensive_editDistance_DF) <= limit_heatmap_plot[1]:
                             verbosePrint("      > Plot Edit Distance Heatmap all-VS-all...")
                             title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX all-VS-all - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                             filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap_ALL.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                             export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
                             matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(IS_extensive_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
-                        else:
-                            verbosePrint("      [SKIP] Edit Distance Heatmap Plot! Limit {lim}X{lim}.".format(lim=str(limit_heatmap_plot[1])))
-                    else:
-                        verbosePrint("      > Plot Edit Distance Heatmap all-VS-all...")
-                        title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX all-VS-all - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap_ALL.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                        matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(IS_extensive_editDistance_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
-                verbosePrint("      > Plot Edit Distance Distribution all-VS-all ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} EDIT DISTANCE OCCURRENCIES all-VS-all - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceDistribution_ALL.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                matrix_RandomBC_barcodeDiagnosis.plotEditDistanceOccurrency(IS_extensive_editDistance_DF, title=title, vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=False, export=export)
-                # chunking
-                if plot_heatmap_byChunks:
-                    verbosePrint("      > Trying to chunck Edit Distance Matrix (chunk size={ShS_chunk_size})...".format(ShS_chunk_size=str(ShS_chunk_size)))
-                    IS_extensive_EditDistance_DFchunks = matrix_RandomBC_barcodeDiagnosis.chunkEditDistance_DF(IS_extensive_editDistance_DF, ShS_chunk_size=ShS_chunk_size)
-                    verbosePrint("        Done! {N} chunk(s).".format(N=str(len(IS_extensive_EditDistance_DFchunks))))
-                    verbosePrint("      > Plot Edit Distance Heatmap chunk-by-chunk...")
-                    EDheatmap_ALL_byChunk_OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(IS_OUTDIR, "EDheatmap_ALL_byChunks")
-                    for n, ED_DF in list(enumerate(IS_extensive_EditDistance_DFchunks, start=1)):
-                        ID = "CHUNK{n}".format(n=str(n))
-                        verbosePrint("        > {ID} ...".format(ID=ID))
-                        title = "{ID} - {CEM_name}:{CEM_nominal_coordinate} - {barcode} {label} {CEM_real_coordinate}".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        filename = "{ID}_{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap_ALL.pdf".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                        export = os.path.normpath(os.path.join(EDheatmap_ALL_byChunk_OUTDIR, filename))
-                        matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(ED_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
-            # checkBCcountRatio - 'diagonal'
-            if checkBCcountRatio:
-                verbosePrint("      > Check Random Barcodes seqCount ratios ...")
-                IS_BCcountRatio_DF = matrix_RandomBC_barcodeDiagnosis.checkBCcountRatio(IS_df)  # all_combinations=False by default
-                verbosePrint("      > Plot Random Barcodes seqCount ratios ...")
-                title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE SEQ-COUNT RATIOS - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCseqCountRatios.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
-                export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
-                matrix_RandomBC_barcodeDiagnosis.plotBCcountRatio(IS_BCcountRatio_DF, title=title, show_live=False, export=export)
-
-            ###################################
-            # HERE FURTHER DIAGNS AT IS-LEVEL #
-            ###################################
-            
-            #shearsites = humanSorted(IS_df['shearsite'].unique())
-            #for ShS in shearsites:
-                #ShS_df = IS_df[IS_df['shearsite']==ShS]
-                #randomBC_list = list(ShS_df['randomBC'])
-                #sc_list = list(ShS_df['seq_count'])
+                    verbosePrint("      > Plot Edit Distance Distribution all-VS-all ...")
+                    title = "{CEM_name}:{CEM_nominal_coordinate} EDIT DISTANCE OCCURRENCIES all-VS-all - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceDistribution_ALL.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.plotEditDistanceOccurrency(IS_extensive_editDistance_DF, title=title, vmin=0, vmax=12, annot=True, percentile_colors=False, show_live=False, export=export)
+                    # chunking
+                    if plot_heatmap_byChunks:
+                        verbosePrint("      > Trying to chunk Edit Distance Matrix (chunk size={ShS_chunk_size})...".format(ShS_chunk_size=str(ShS_chunk_size)))
+                        IS_extensive_EditDistance_DFchunks = matrix_RandomBC_barcodeDiagnosis.chunkEditDistance_DF(IS_extensive_editDistance_DF, ShS_chunk_size=ShS_chunk_size)
+                        verbosePrint("        Done! {N} chunk(s).".format(N=str(len(IS_extensive_EditDistance_DFchunks))))
+                        verbosePrint("      > Plot Edit Distance Heatmap chunk-by-chunk...")
+                        EDheatmap_ALL_byChunk_OUTDIR = matrix_RandomBC_outputModule.buildOutputPath(IS_OUTDIR, "EDheatmap_ALL_byChunks")
+                        for n, ED_DF in list(enumerate(IS_extensive_EditDistance_DFchunks, start=1)):
+                            ID = "CHUNK{n}".format(n=str(n))
+                            verbosePrint("        > {ID} ...".format(ID=ID))
+                            title = "{ID} - {CEM_name}:{CEM_nominal_coordinate} - {barcode} {label} {CEM_real_coordinate}".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                            filename = "{ID}_{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap_ALL.pdf".format(ID=ID, barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                            export = os.path.normpath(os.path.join(EDheatmap_ALL_byChunk_OUTDIR, filename))
+                            matrix_RandomBC_barcodeDiagnosis.editDistanceHeatmap(ED_DF, title=title, cmap="RdYlBu", annot=True, show_live=False, export=export)
+                # checkBCcountRatio - 'diagonal'
+                if checkBCcountRatio:
+                    verbosePrint("      > Check Random Barcodes seqCount ratios ...")
+                    IS_BCcountRatio_DF = matrix_RandomBC_barcodeDiagnosis.checkBCcountRatio(IS_df)  # all_combinations=False by default
+                    verbosePrint("      > Plot Random Barcodes seqCount ratios ...")
+                    title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODE SEQ-COUNT RATIOS - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_RandomBCseqCountRatios.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
+                    export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
+                    matrix_RandomBC_barcodeDiagnosis.plotBCcountRatio(IS_BCcountRatio_DF, title=title, show_live=False, export=export)
+    
+                ###################################
+                # HERE FURTHER DIAGNS AT IS-LEVEL #
+                ###################################
                 
-                ########################################################
-                # HERE FURTHER DIAGNS AT SAMPLE-CEM_IS-SHEARSITE LEVEL #
-                ########################################################
+                #shearsites = humanSorted(IS_df['shearsite'].unique())
+                #for ShS in shearsites:
+                    #ShS_df = IS_df[IS_df['shearsite']==ShS]
+                    #randomBC_list = list(ShS_df['randomBC'])
+                    #sc_list = list(ShS_df['seq_count'])
+                    
+                    ########################################################
+                    # HERE FURTHER DIAGNS AT SAMPLE-CEM_IS-SHEARSITE LEVEL #
+                    ########################################################
     
     verbosePrint("\n *** END DIAGNOSTICS ***\n")
 
