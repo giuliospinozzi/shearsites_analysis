@@ -257,7 +257,7 @@ for k in $(ls *.headers.txt); do
   FILENAME=`basename $k`;
   BARCODE=${FILENAME:0:-12};
   echo -e -n "\t > processing ${BARCODE} ... ";
-  zcat R2_selected_reads.fastq.gz | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" HEADCROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.qf${QF}.fasta;
+  zcat R2_selected_reads.fastq.gz | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" CROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.qf${QF}.fasta;
   echo "done.";
 done
 echo "
@@ -288,7 +288,7 @@ cp *.pdf *.tsv *.xlsx *.log ${OUTDIR}/RandomBC
 echo "...done!"
 echo "
 Cleaning-up temp files left..."
-rm *.pdf *.tsv *.bed *.xlsx *.txt *.randomBC.qf${QF}.fasta
+rm *.pdf *.tsv *.bed *.xlsx *.txt # *.randomBC.qf${QF}.fasta
 echo "...Finished!
 **********************************************************"
 
