@@ -80,34 +80,34 @@ def loadGzFile (path, eol='\n'):
 
 
 def filterDF_byHeaders(any_df, headers_to_remove):
-    verbosePrint("\n> Running filterDF_byHeaders ...")
+    verbosePrint("       > Running filterDF_byHeaders ...")
     # Check any_df
     if 'header_list' not in any_df.columns:
         print "\n[ERROR] filterDF_byHeaders wrong input! 'header_list' column is required. Given dataframe has {columns_found}.".format(columns_found=str(list(any_df)))
         sys.exit("\n[QUIT]\n")
     # Create headers_to_remove_set
-    verbosePrint("> creating the set of discarded headers ...")
+    verbosePrint("         * creating the set of discarded headers ...")
     headers_to_remove_set = set(headers_to_remove)
     # Check headers_to_remove
-    verbosePrint("> checking the set of discarded headers ...")
+    verbosePrint("         * checking the set of discarded headers ...")
     if len(headers_to_remove) != len(headers_to_remove_set):
-        verbosePrint('''[WARNING] filterDF_byHeaders has found duplicate headers!''')  # add here some debug stuff if useful
+        verbosePrint('''         [WARNING] filterDF_byHeaders has found duplicate headers!''')  # add here some debug stuff if useful
     # create df_header_set
-    verbosePrint("> creating the set of headers in DF ...")
+    verbosePrint("         * creating the set of headers in DF ...")
     import itertools
     df_header_set = set(itertools.chain.from_iterable(any_df['header_list'].tolist()))
     # check df_header_set
-    verbosePrint("> checking the set of headers in DF ...")
+    verbosePrint("         * checking the set of headers in DF ...")
     if len(df_header_set) != sum(any_df.seq_count):
         print "\n[ERROR] filterDF_byHeaders found inconsistency in DF! {n_distinct_headers} distinct headers found but the total seq_count is {tot_SC}!".format(n_distinct_headers=str(len(df_header_set)), tot_SC=str(sum(any_df.seq_count)))
         sys.exit("\n[QUIT]\n")
     # create actual_headers_to_remove_set
-    verbosePrint("> intersecting sets to get headers to remove ...")
+    verbosePrint("         * intersecting sets to get headers to remove ...")
     actual_headers_to_remove_set = headers_to_remove_set.intersection(df_header_set)
     # create filtered_DF
     filtered_DF = pd.DataFrame(columns=any_df.columns)
     # Loop over any_df and store UPDATED DATA in filtered_DF
-    verbosePrint("> Looping over DF and cleaning ...")
+    verbosePrint("         * Looping over DF and cleaning ...")
     n_rows = len(any_df)
     step = n_rows / 100.0
     counter = 0
@@ -115,7 +115,7 @@ def filterDF_byHeaders(any_df, headers_to_remove):
         counter += 1
         if counter%int(step) == 0:
             perc = counter/step
-            verbosePrint("  > {perc}% ...".format(perc=str(int(perc))))
+            verbosePrint("           {perc}% ...".format(perc=str(int(perc))))
         i_header_set = set(r['header_list'])
         # case 1: all headers survived - assign row and no update
         if i_header_set.intersection(actual_headers_to_remove_set) == set():
@@ -132,7 +132,7 @@ def filterDF_byHeaders(any_df, headers_to_remove):
             updated_r = r.set_value('seq_count', len(headers_to_keep))
             # Assign
             filtered_DF.loc[len(filtered_DF)] = updated_r
-    verbosePrint("> filtered_DF built!")
+    verbosePrint("       > Done!")
     return filtered_DF
 
 
@@ -152,7 +152,10 @@ def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_I
     #   4') if allow_IS_loss is False, filtering_tuple_list is corrected-back to reintroduce stuff whose removal causes whole IS deletion 
     # 5) compute filtered_any_df according to filtering_tuple_list
     
-    
+    verbosePrint("       > Running filterDF_byRandomBCseqCount ...")
+    verbosePrint("         SC_threshold: {SC_threshold}".format(SC_threshold=str(SC_threshold)))
+    verbosePrint("         inside_ShS: {inside_ShS}".format(inside_ShS=str(inside_ShS)))
+    verbosePrint("         allow_IS_loss: {allow_IS_loss}".format(allow_IS_loss=str(allow_IS_loss)))
     # Basic check for columns: 'randomBC' and 'seq_count';
     # if inside_ShS is True, check also for 'shearsite' column.
     # try to take required columns -> new DF
@@ -161,22 +164,26 @@ def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_I
         required_columns = ['genomic_coordinates', 'shearsite', 'randomBC', 'seq_count']  #the order must be this
     else:
         required_columns = ['genomic_coordinates', 'randomBC', 'seq_count']  #the order must be this
+    verbosePrint("         * Extracting required data: {required_columns} ...".format(required_columns=str(required_columns)))
     l = []
     try:
         [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
     except:
         print "\n[ERROR] filterDF_byRandomBCseqCount wrong input! Columns {required_columns} are required when kwarg inside_ShS={inside_ShS}. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)), inside_ShS=str(inside_ShS))
         sys.exit("\n[QUIT]\n")
+    verbosePrint("         * Building extracted data ...")
     DF = pd.concat(l, axis=1, join='inner')
     
     # Groupby and aggregate -> grouped_DF
     grouping_rule = required_columns[:-1]
+    verbosePrint("         * Grouping data by {grouping_rule} and get global SC for each IS ...".format(grouping_rule=str(grouping_rule)))
     grouped = DF.groupby(grouping_rule)
     grouped_DF = grouped.sum()
     # Here grouped_DF has grouping_rule tuple as multiindex (tuple) and seq_count (the sum) as the only column
     
     # compute filtering_tuple_list: each tuple has as many items as grouping_rule, same order
     # filtering_tuple_list gives indications about which entries of any_df we have to keep
+    verbosePrint("         * Flagging DF's entries to keep ...")
     filtering_tuple_list = None
     if allow_IS_loss:
         filtered_grouped_DF = grouped_DF[grouped_DF['seq_count'] > SC_threshold]
@@ -191,18 +198,60 @@ def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_I
             filtering_tuple_list = tmp_filtered_grouped_DF.index.values.tolist()
         else:
             filtering_tuple_list = tmp_filtered_grouped_DF.index.values.tolist()
+            verbosePrint("         * Flagging entries whose removal would imply ISs deletion ...")
             for genomic_coordinates in IS_lost:
                 any_df_rows_to_restore = any_df[any_df['genomic_coordinates']==genomic_coordinates]
                 filtering_tuple_list += any_df_rows_to_restore[grouping_rule].apply(tuple, axis=1).tolist()
                 
     # compute filtered_any_df according to filtering_tuple_list
+    verbosePrint("         * Looping over DF and cleaning ...")
     filtered_any_df = any_df.copy()
     filtered_any_df['filtering_tuple'] = filtered_any_df[grouping_rule].apply(tuple, axis=1)
     filtered_any_df = filtered_any_df[filtered_any_df['filtering_tuple'].isin(filtering_tuple_list)]
     filtered_any_df.drop('filtering_tuple', axis=1, inplace=True)
+
+    verbosePrint("       > Done!")
     
     return filtered_any_df
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-
+if __name__ == "__main__":
+    
+    ### Load Association File Data
+    asso_folder = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/asso"
+    asso_file_name = "asso.assayvalidation.lane1.tsv"
+    asso_delimiter = '\t'
+    # load
+    import matrix_RandomBC_assoModule
+    asso_dict = matrix_RandomBC_assoModule.loadAssoFile(asso_file_name, asso_folder, asso_delimiter)
+    
+    ### Load Data
+    data_files_delimiter = '\t'
+    data_files_name_filter = ".randomBC.tsv"
+    develop_input_data_path = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/data"
+    # load
+    import matrix_RandomBC_dataModule
+    filtered_dir_content = matrix_RandomBC_dataModule.listDir(develop_input_data_path, name_filter=data_files_name_filter)
+    verbosePrint("\n\n>>> Loading data ...\n")
+    verbosePrint("> develop_input_data_path: {develop_input_data_path}".format(develop_input_data_path=str(develop_input_data_path)))
+    verbosePrint("> exploited substring for data detection: '{data_files_name_filter}'".format(data_files_name_filter=str(data_files_name_filter)))
+    verbosePrint("> n data files detected: {n_files}".format(n_files=str(len(filtered_dir_content))))
+    verbosePrint("> data file list: {filtered_dir_content}".format(filtered_dir_content=str(filtered_dir_content)))
+    verbosePrint("")
+    POOL_IS_dict = {}
+    POOL_alldata_dict = {}
+    for path in filtered_dir_content:
+        filename = str(os.path.basename(path))
+        barcode = ".".join((filename.split("."))[:2])
+        verbosePrint("> Processing {filename}, barcode={barcode} ...".format(filename=str(filename), barcode=str(barcode)))
+        data_file_nested_list = matrix_RandomBC_dataModule.loadFile (path, data_files_delimiter)
+        alldata_dict, IS_dict = matrix_RandomBC_dataModule.arrangeData(data_file_nested_list)
+        POOL_IS_dict[barcode] = IS_dict
+        POOL_alldata_dict[barcode] = alldata_dict
+    verbosePrint("\n>>> Data Loaded!\n")
+    
+    #### Process Data
+    import matrix_RandomBC_processingModule
+    df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
+    exhaustive_df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)

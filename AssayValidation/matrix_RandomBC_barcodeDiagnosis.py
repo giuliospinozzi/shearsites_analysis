@@ -352,7 +352,7 @@ def checkEditDistance(any_df, all_combinations=False):
     try:
         IS_set = set(any_df.loc[:,'genomic_coordinates'].tolist())
         if len(IS_set) != 1:
-            verbosePrint("[WARNING] checkEditDistance found data from more than one IS found: {IS_list}. However, all the data will be processed as belonging to one unique IS!".format(IS_list=str(humanSorted(list(IS_set)))))
+            verbosePrint("[WARNING] checkEditDistance found data from more than one IS: {IS_list}. However, all the data will be processed as belonging to one unique IS!".format(IS_list=str(humanSorted(list(IS_set)))))
     except:
         verbosePrint("[WARNING] checkEditDistance cannot perform IS control on input data ('genomic_coordinates' not found). Thus, all the data will be processed as belonging to one unique IS!")
     # check for correct usage - Duplicate BCs (in shearsite groups, if given, or in general)
@@ -405,10 +405,10 @@ def chunkEditDistance_DF(editDistance_DF, ShS_chunk_size=3):
                 index_list.append(m)
             if ((len(index_list) < ShS_chunk_size) and (oredered_ShS[index_list[-1]] == oredered_ShS[-1])):
                 break
-            chunck = []
+            chunk = []
             for i in index_list:
-                chunck.append(oredered_ShS[i])
-            ShS_chunks.append(chunck)
+                chunk.append(oredered_ShS[i])
+            ShS_chunks.append(chunk)
         return ShS_chunks
         
     def getLabelChunks(labels_dict, ShS_chunks):

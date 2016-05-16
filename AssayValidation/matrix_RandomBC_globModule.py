@@ -103,7 +103,7 @@ checkBCcountRatio = False  # Violin plot of randomBC seq-count ratios, divided i
 #==============================================================================
 
 import sys
-from time import gmtime, strftime
+from time import localtime, strftime
 def verbosePrint(x, verbose=verbose, print_time=print_time):
     if verbose:
         if print_time:
@@ -111,7 +111,7 @@ def verbosePrint(x, verbose=verbose, print_time=print_time):
             nnl = y.count("\n", 0, len(x)/2+1)
             y = y.replace("\n", "", nnl)
             nl_str = "".join(['\n']*nnl)
-            print nl_str+"[{time}] ".format(time=strftime("%Y-%m-%d %H:%M:%S", gmtime())), y
+            print nl_str+"[{time}] ".format(time=strftime("%Y-%m-%d %H:%M:%S", localtime())), y
         else:
             print x
         sys.stdout.flush()

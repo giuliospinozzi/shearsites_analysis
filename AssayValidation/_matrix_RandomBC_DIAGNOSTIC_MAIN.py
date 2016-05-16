@@ -107,21 +107,17 @@ verbosePrint(">>> Dataframe built!")
 if filter_data:
     verbosePrint("\n>>> Filtering DataFrame [STILL EXPERIMENTAL AND BUGGY] ...")
     if byHeaders:
-        verbosePrint("       > Running filterDF_byHeaders ...")
         headers_file_dir = matrix_RandomBC_filterModule.buildInputPath(ground_dir, DISEASE, PATIENT)
         lane_ID = "{POOL}".format(POOL=str(POOL)).lower().replace("_", "")
         headers_file_name = "{lane_ID}.quality.r1r2-100rbc.toRemove.list.gz".format(lane_ID=str(lane_ID))
         headers_file_path = os.path.normpath(os.path.join(headers_file_dir, headers_file_name))
         headers_to_remove = matrix_RandomBC_filterModule.loadGzFile(headers_file_path)
         df = matrix_RandomBC_filterModule.filterDF_byHeaders(df, headers_to_remove)
-        verbosePrint("       Done!")
     if bySC:
-        verbosePrint("       > Running filterDF_byRandomBCseqCount ...")
         SC_threshold=1
         inside_ShS = True
         allow_IS_loss = False
         df = matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(df, SC_threshold=SC_threshold, inside_ShS=inside_ShS, allow_IS_loss=allow_IS_loss)
-        verbosePrint("       Done!")
     verbosePrint(">>> Done!")
 #######################################################################################################################################################
 
