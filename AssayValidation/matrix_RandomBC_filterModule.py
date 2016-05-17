@@ -173,6 +173,7 @@ def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_I
         sys.exit("\n[QUIT]\n")
     verbosePrint("         * Building extracted data ...")
     DF = pd.concat(l, axis=1, join='inner')
+    verbosePrint("           Done. {n} total entries to anayze.".format(n=str(len(DF))))
     
     # Groupby and aggregate -> grouped_DF
     grouping_rule = required_columns[:-1]
@@ -199,16 +200,19 @@ def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_I
         else:
             filtering_tuple_list = tmp_filtered_grouped_DF.index.values.tolist()
             verbosePrint("         * Flagging entries whose removal would imply ISs deletion ...")
-            for genomic_coordinates in IS_lost:
-                any_df_rows_to_restore = any_df[any_df['genomic_coordinates']==genomic_coordinates]
-                filtering_tuple_list += any_df_rows_to_restore[grouping_rule].apply(tuple, axis=1).tolist()
-                
+            #for genomic_coordinates in IS_lost:
+            #    any_df_rows_to_restore = any_df[any_df['genomic_coordinates']==genomic_coordinates]
+            #    filtering_tuple_list += any_df_rows_to_restore[grouping_rule].apply(tuple, axis=1).tolist()
+            any_df_rows_to_restore = any_df[any_df['genomic_coordinates'].isin(IS_lost)]
+            filtering_tuple_list += any_df_rows_to_restore[grouping_rule].apply(tuple, axis=1).tolist()
+            
     # compute filtered_any_df according to filtering_tuple_list
     verbosePrint("         * Looping over DF and cleaning ...")
     filtered_any_df = any_df.copy()
     filtered_any_df['filtering_tuple'] = filtered_any_df[grouping_rule].apply(tuple, axis=1)
     filtered_any_df = filtered_any_df[filtered_any_df['filtering_tuple'].isin(filtering_tuple_list)]
     filtered_any_df.drop('filtering_tuple', axis=1, inplace=True)
+    verbosePrint("           Done. {n} entries kept ({p}% discarded)".format(n=str(len(filtered_any_df)), p=str((float(len(DF)) - float(len(filtered_any_df))) / float(len(DF)) * 100)[:5]))
 
     verbosePrint("       > Done!")
     
