@@ -47,8 +47,15 @@ data_files_name_filter = matrix_RandomBC_globModule.data_files_name_filter
 
 ### Filter Data configs - filterModule
 filter_data = matrix_RandomBC_globModule.filter_data
+
 byHeaders = matrix_RandomBC_globModule.byHeaders
+headers_file_path = matrix_RandomBC_globModule.headers_file_path
+
 bySC = matrix_RandomBC_globModule.bySC
+inside_samples = matrix_RandomBC_globModule.inside_samples
+SC_threshold = matrix_RandomBC_globModule.SC_threshold
+inside_ShS = matrix_RandomBC_globModule.inside_ShS
+allow_IS_loss = matrix_RandomBC_globModule.allow_IS_loss
 
 ### COMMON OUTPUT GROUND DIR
 common_output_ground_dir = matrix_RandomBC_globModule.common_output_ground_dir
@@ -105,19 +112,30 @@ verbosePrint(">>> Dataframe built!")
 
 ### Filter Data #######################################################################################################################################
 if filter_data:
-    verbosePrint("\n>>> Filtering DataFrame [STILL EXPERIMENTAL AND BUGGY] ...")
+    verbosePrint("\n>>> Filtering DataFrame ...")
     if byHeaders:
-        headers_file_dir = matrix_RandomBC_filterModule.buildInputPath(ground_dir, DISEASE, PATIENT)
-        lane_ID = "{POOL}".format(POOL=str(POOL)).lower().replace("_", "")
-        headers_file_name = "{lane_ID}.quality.r1r2-100rbc.toRemove.list.gz".format(lane_ID=str(lane_ID))
-        headers_file_path = os.path.normpath(os.path.join(headers_file_dir, headers_file_name))
         headers_to_remove = matrix_RandomBC_filterModule.loadGzFile(headers_file_path)
         df = matrix_RandomBC_filterModule.filterDF_byHeaders(df, headers_to_remove)
     if bySC:
-        SC_threshold=1
-        inside_ShS = True
-        allow_IS_loss = False
-        df = matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(df, SC_threshold=SC_threshold, inside_ShS=inside_ShS, allow_IS_loss=allow_IS_loss)
+        if inside_samples:
+            verbosePrint("    > Apply filterDF_byRandomBCseqCount per sample ...")
+            orig_df_len = len(df)
+            import pandas as pd
+            sample_list = df['barcode'].unique()
+            verbosePrint("      Samples found: {sample_list}.".format(sample_list=str(sample_list)))
+            verbosePrint("      Total entries to analyze: {orig_df_len}.".format(orig_df_len=str(orig_df_len)))
+            verbosePrint("      Slicing DataFrame ...")
+            l = [ df[df['barcode']==barcode] for barcode in sample_list ]
+            verbosePrint("      Done!")
+            verbosePrint("      Looping over slices ...")
+            l_filt = [ matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(x, SC_threshold=SC_threshold, inside_ShS=inside_ShS, allow_IS_loss=allow_IS_loss) for x in l ]
+            verbosePrint("      Done!")
+            verbosePrint("      Building final data ...")
+            df = pd.concat(l_filt)
+            df.sort_index(inplace=True)
+            verbosePrint("    > Done. {n} entries kept ({p}% discarded)".format(n=str(len(df)), p=str((float(orig_df_len) - float(len(df))) / float(orig_df_len) * 100)[:5]))
+        else:
+            df = matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(df, SC_threshold=SC_threshold, inside_ShS=inside_ShS, allow_IS_loss=allow_IS_loss)
     verbosePrint(">>> Done!")
 #######################################################################################################################################################
 

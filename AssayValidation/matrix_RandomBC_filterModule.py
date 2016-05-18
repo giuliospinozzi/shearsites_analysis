@@ -22,42 +22,6 @@ verbosePrint = matrix_RandomBC_globModule.verbosePrint
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-def buildInputPath(ground_dir, DISEASE, PATIENT):
-    '''
-    Purpose:
-    Build and return the standard input path (thought as containing all the input data for filtering operations),
-    starting from ground_dir
-    IN:
-    ground_dir (abs valid path), DISEASE, PATIENT (strings)
-    OUT: INDIR = $ground_dir/$DISEASE/$PATIENT/'quality' (checked)
-    '''
-    # Check ground_dir
-    try:
-        ground_dir = os.path.normpath(ground_dir)
-    except Exception, err_message:
-        print "\n[ERROR] ground_dir='{ground_dir}' is not formatted as valid path!".format(ground_dir=str(ground_dir))
-        print "os.path.normpath returned: ", err_message
-        sys.exit("\n[QUIT]\n")
-    if os.path.isfile(ground_dir):
-        print "\n[ERROR] ground_dir must be a folder path, not a file! Your input: ground_dir='{ground_dir}'".format(ground_dir=str(ground_dir))
-        sys.exit("\n[QUIT]\n")
-    if not os.path.exists(ground_dir):
-        print "\n[ERROR] ground_dir='{ground_dir}' does not exist!".format(ground_dir=str(ground_dir))
-        sys.exit("\n[QUIT]\n")
-    if not os.access(ground_dir, os.R_OK):
-        print "\n[ERROR] You have not read permission in ground_dir='{ground_dir}'".format(ground_dir=str(ground_dir))
-        sys.exit("\n[QUIT]\n")
-    # Build INDIR
-    BASEDIR = os.path.normpath(os.path.join(ground_dir, DISEASE, PATIENT))
-    INDIR = os.path.normpath(os.path.join(BASEDIR, "quality"))
-    # Check INDIR
-    if not os.path.exists(INDIR):
-        print "\n[ERROR] INDIR='{INDIR}' just build does not exist!".format(INDIR=str(INDIR))
-        sys.exit("\n[QUIT]\n")
-    if not os.access(INDIR, os.R_OK):
-        print "\n[ERROR] You have not read permission in INDIR='{INDIR}'".format(INDIR=str(INDIR))
-        sys.exit("\n[QUIT]\n")
-    return INDIR
 
 def loadGzFile (path, eol='\n'):
     """
@@ -137,7 +101,7 @@ def filterDF_byHeaders(any_df, headers_to_remove):
 
 
 
-def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_IS_loss=True):
+def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_IS_loss=False):
     ### WARNING:
     # it works in/out-side samples, use it according to what you want to do!
     
@@ -173,7 +137,7 @@ def filterDF_byRandomBCseqCount(any_df, SC_threshold=1, inside_ShS=True, allow_I
         sys.exit("\n[QUIT]\n")
     verbosePrint("         * Building extracted data ...")
     DF = pd.concat(l, axis=1, join='inner')
-    verbosePrint("           Done. {n} total entries to anayze.".format(n=str(len(DF))))
+    verbosePrint("           Done. {n} total entries to analyze.".format(n=str(len(DF))))
     
     # Groupby and aggregate -> grouped_DF
     grouping_rule = required_columns[:-1]

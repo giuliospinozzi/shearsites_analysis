@@ -25,10 +25,10 @@ DISEASE = "AssayValidation"
 PATIENT = "CEMJY"
 POOL = "LANE_2"
 data_files_delimiter = '\t'
-data_files_name_filter = ".ISfixed.LENGTHfixed.randomBC.tsv"  # BE CAREFUL HERE!
+data_files_name_filter = ".ISfixed.LENGTHfixed.randomBC.qf100.tsv"  # BE CAREFUL HERE!
 
 ## COMMON OUTPUT GROUND DIR ##
-common_output_ground_dir = "/storage/d3/tmp/stefano/randomBC_quantification_filterByHeaders/{POOL}".format(POOL=POOL)  # PUT HERE AN ABS PATH
+common_output_ground_dir = "/storage/d3/tmp/stefano/AssayValidation/output/ISfixed_LENGTHfixed_QF100_SCf1_inSamples_inShS_noLoss/{POOL}".format(POOL=POOL)  # PUT HERE AN ABS PATH
 
 ## Matrix output Files - outputModule ##
 matrix_outfolder = "Matrixes"
@@ -43,9 +43,16 @@ concat = "_"  # char to concatenate fields in use_fields
 
 
 ### FILTERING CONFIG #############################################
-filter_data = False
+filter_data = True
+
 byHeaders = False  # evaluated only if filter_data is True
-bySC = False  # evaluated only if filter_data is True
+headers_file_path = ""  # abs path of *.gz header list file
+
+bySC = True  # evaluated only if filter_data is True
+inside_samples = True
+SC_threshold = 1
+inside_ShS = True
+allow_IS_loss = False
 ##################################################################
 
 
@@ -60,7 +67,7 @@ export_matrixes = True  # path = common_output_ground_dir+matrix_outfolder
 export_cem_data = True
 cem_data_outfolder = "CEMdata"  # path = common_output_ground_dir+cem_data_outfolder (build in CEMmodule)
 # build out file name
-data_id = ""  # something related to data_files_name_filter
+data_id = "ISfixed_LENGTHfixed_QF100_SCf1_inSamples_inShS_noLoss"  # something related to data_files_name_filter
 cem_data_outfile_name = "CEMdata" + "_" + DISEASE + "_" + POOL
 if data_id: cem_data_outfile_name += "_" + data_id 
 cem_data_outfile_name += ".tsv"
@@ -68,27 +75,28 @@ cem_data_outfile_name += ".tsv"
 ## Export DIAGNOSTICS ##
 # DO
 export_diagnostics = True
-diagnostic_outfolder = "Diagnostics"  # path = common_output_ground_dir+diagnostic_outfolder
+diagnostic_outfolder = "Diagnostics_LMv2-II_Block_L"  # path = common_output_ground_dir+diagnostic_outfolder
 # Data selection
 specific_samples = True  # 'True' here requires explicit lists below
 condition_to_process = ['LMv2-II']  # evaluated only if specific_samples is True
 approach_to_process = ['Block']  # evaluated only if specific_samples is True
 dilution_to_process = ['L']  # evaluated only if specific_samples is True  # ['L', 'M', 'N']
 # Task granularity
-inside_ISs = False
+inside_ISs = True
 # Task to perform
-checkNucleotidesBalancing = False  # Stacked-bar plot 
-FragmentLengthDistribution = False  # Fragment length histogram, fitted with soncLength and KDE
-checkShearSitesOccurrency = False  # Occurrency bar plot
-checkRandomBCoccurrency = False  # Occurrency line plot
-checkEditDistance_diagonal = False   # Edit Distance occurrency histogram (within shearsites)
+checkNucleotidesBalancing = True  # Stacked-bar plot 
+FragmentLengthDistribution = True  # Fragment length histogram, fitted with soncLength and KDE
+checkShearSitesOccurrency = True  # Occurrency bar plot
+checkRandomBCoccurrency = True  # Occurrency line plot
+checkEditDistance_diagonal = True   # Edit Distance occurrency histogram (within shearsites)
 checkEditDistance_extensive = True   # Edit Distance occurrency histogram  (all-VS-all)
-plot_heatmap = False  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
-limit_heatmap_plot = (True, 800)  # or (False, whatever); syntax: (Do?, max number of rows-cols allowed)
+checkBCcountRatio = True  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
+
+plot_heatmap = True  # evaluated only if checkEditDistance_XXX is True  # Edit distance heatmap
+limit_heatmap_plot = (True, 1000)  # or (False, whatever); syntax: (Do?, max number of rows-cols allowed)
                                   # evaluated only if plot_heatmap is True
-plot_heatmap_byChunks = False  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
+plot_heatmap_byChunks = True  # evaluated only if checkEditDistance_XXX is True  # Many Edit distance sub-heatmap
 ShS_chunk_size = 11  # evaluated only if plot_heatmap_byChunks is True; should be int>=3, odd.
-checkBCcountRatio = False  # Violin plot of randomBC seq-count ratios, divided in classes by edit-distance
 ####################################################################################################################################################
 
 
