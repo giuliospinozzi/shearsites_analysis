@@ -46,7 +46,7 @@ DISEASE="${1}";   # AssayValidation
 PATIENT="${2}";   # CEMJY
 POOL="${3}";      # LANE_1
 DBSCHEMA="${4}";  # sequence_assayvalidation
-DBTABLE="${5}";   # LANE_1
+DBTABLE="${5}";   # LANE_1, lane1 sometimes
 FASTQDIR="${6}";  # /storage/dx/ngs/data/ShearSites/data/20150706_GSK_HiSeq_validation/ftp.hsr.it/HSR_TIGET/AssayValidation
 R2_FASTQ="${7}";  # lane1_NoIndex_L001_R2.fastq.gz
 #==============================================================================#
@@ -192,7 +192,8 @@ echo "
 +-----------------------------------------------------------------+"
 echo "PYTHON: Launch create_matrix"
 ##### =================== PYTHON: Launch create_matrix ==================== #####
-create_matrix --dbDataset "$DBSCHEMA.$DBTABLE,sequence_qlam.cem_reference" --columns sample,tissue,treatment,vector,enzyme --IS_method gauss --interaction_limit 4 --alpha 0.3 --statistics --tsv --collision;
+#create_matrix --dbDataset "$DBSCHEMA.$DBTABLE,sequence_qlam.cem_reference" --columns sample,tissue,treatment,vector,enzyme --IS_method gauss --interaction_limit 4 --alpha 0.3 --statistics --tsv --collision;
+create_matrix --dbDataset "$DBSCHEMA.$DBTABLE" --columns sample,tissue,treatment,vector,enzyme --IS_method gauss --interaction_limit 4 --alpha 0.3 --statistics --tsv;
 #===============================================================================#
 
 echo "
@@ -242,7 +243,7 @@ echo "
 +-----------------------------------------------------------------+"
 echo "TRIMMOMATIC: extract random barcodes from R2 fastq file"
 #### ========== TRIMMOMATIC: extract random barcodes from R2 fastq file ============= #####
-zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader all_headers.txt > R2_selected_reads.fastq
+zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader all_headers.txt > R2_selected_reads.fastq;
 for k in $(ls *.headers.txt); do
  FILENAME=`basename $k`;
  BARCODE=${FILENAME:0:-12};
@@ -250,7 +251,7 @@ for k in $(ls *.headers.txt); do
  cat R2_selected_reads.fastq | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" CROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
  echo "done.";
 done
-rm R2_selected_reads.fastq r2.qualityFiltered.fastq;
+# rm R2_selected_reads.fastq;
 #==========================================================================================#
 
 echo "
@@ -273,9 +274,9 @@ mkdir ${OUTDIR}
 mkdir ${OUTDIR}/RandomBC
 cp *.pdf *.tsv *.xlsx *.log ${OUTDIR}/RandomBC
 echo "...done!"
-echo "
-Removing temp files..."
-rm *.pdf *.tsv *.bed *.xlsx *.txt *.randomBC.fasta
+# echo "
+# Removing temp files..."
+# rm *.pdf *.tsv *.bed *.xlsx *.txt *.randomBC.fasta
 echo "...Finished!
 **********************************************************"
 
