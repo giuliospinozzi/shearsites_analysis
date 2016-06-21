@@ -158,7 +158,7 @@ for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
   BARCODE=${FILENAME:0:-21};
   grep -v "chrM" $k > $BARCODE.NOchrM.bed;
   grep -v "chrM" ${k:0:-21}.sorted.allr2reads.bed > $BARCODE.sorted.allr2reads.NOchrM.bed;
-  python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $BARCODE.NOchrM.bed --bed2 $BARCODE.sorted.allr2reads.NOchrM.bed;
+  python ShearSites_identification.py --bed1 $BARCODE.NOchrM.bed --bed2 $BARCODE.sorted.allr2reads.NOchrM.bed;
 done
 # out files: *.shearsites.tsv
 #==============================================================================#
@@ -171,7 +171,7 @@ done
 # for k in $(ls ${BASEDIR}/bed/$POOL/*.sorted.md.rel.pg.bed); do
 #   #FILENAME=`basename $k`;
 #   #BARCODE=${FILENAME:0:-21};
-#   python /opt/applications/scripts/shearsites_analysis/ShearSites_identification.py --bed1 $k --bed2 ${k:0:-21}.sorted.allr2reads.bed;
+#   python ShearSites_identification.py --bed1 $k --bed2 ${k:0:-21}.sorted.allr2reads.bed;
 # done
 # # out files: *.shearsites.tsv
 # #==============================================================================#
@@ -184,7 +184,7 @@ for k in $(ls *.shearsites.tsv); do
   FILENAME=`basename $k`;
   BARCODE=${FILENAME:0:-15};
   awk '{print $1}' $k > $BARCODE.headers.txt;
-  awk '{print $1}' $k >> all_headers.txt;
+#  awk '{print $1}' $k >> all_headers.txt;
 done
 #==========================================================================#
 
@@ -222,6 +222,26 @@ python ShearSites_lengthCorrection.py;
 # out filename: .shearsites.ISfixed.LENGTHfixed.tsv (or set args)
 #=================================================================================#
 
+
+### IF ${BASEDIR}/quality/$POOL/*.TAGs.fa.gz  IS AVAILABLE ###
+
+echo "
++----------------------------------------------------------------------------+"
+echo "Extract random barcodes per sample from .../quality/$POOL/*.TAGs.fa.gz"
+##### ========== Extract random barcodes per sample from .../quality/$POOL/*.TAGs.fa.gz ============= #####
+for k in $(ls *.headers.txt); do
+  FILENAME=`basename $k`;
+  BARCODE=${FILENAME:0:-12};
+  echo -e -n "\t > processing ${BARCODE} ... ";
+  zcat ${BASEDIR}/quality/$POOL/r2.qf.noPlasmids.noVector.TAGs.fa.gz | faextract_pureheader $FILENAME | ${BARCODE}.randomBC.fasta;
+  echo "done.";
+done
+#========================================================================================================#
+
+
+### IF ${BASEDIR}/quality/$POOL/*.TAGs.fa.gz  IS NOT AVAILABLE ###
+### NOTE: remember to uncomment also line "" awk '{print $1}' $k >> all_headers.txt; ""
+
 # # With fastq GZIP compression
 # echo "
 # +-----------------------------------------------------------------+"
@@ -235,24 +255,24 @@ python ShearSites_lengthCorrection.py;
 #   zcat R2_selected_reads.fastq.gz | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" CROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
 #   echo "done.";
 # done
-# rm R2_selected_reads.fastq.gz r2.qualityFiltered.fastq.gz;
+# rm R2_selected_reads.fastq.gz;
 # #==========================================================================================#
 
-# Simple fastq
-echo "
-+-----------------------------------------------------------------+"
-echo "TRIMMOMATIC: extract random barcodes from R2 fastq file"
-#### ========== TRIMMOMATIC: extract random barcodes from R2 fastq file ============= #####
-zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader all_headers.txt > R2_selected_reads.fastq;
-for k in $(ls *.headers.txt); do
- FILENAME=`basename $k`;
- BARCODE=${FILENAME:0:-12};
- echo -e -n "\t > processing ${BARCODE} ... ";
- cat R2_selected_reads.fastq | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" CROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
- echo "done.";
-done
+# # Simple fastq
+# echo "
+# +-----------------------------------------------------------------+"
+# echo "TRIMMOMATIC: extract random barcodes from R2 fastq file"
+# #### ========== TRIMMOMATIC: extract random barcodes from R2 fastq file ============= #####
+# zcat ${FASTQDIR}/${R2_FASTQ} | fqextract_pureheader all_headers.txt > R2_selected_reads.fastq;
+# for k in $(ls *.headers.txt); do
+#  FILENAME=`basename $k`;
+#  BARCODE=${FILENAME:0:-12};
+#  echo -e -n "\t > processing ${BARCODE} ... ";
+#  cat R2_selected_reads.fastq | fqextract_pureheader $FILENAME | trimmomatic SE -phred33 "/dev/stdin" "/dev/stdout" CROP:12 | fastq_to_fasta -n -Q33 -o ${BARCODE}.randomBC.fasta;
+#  echo "done.";
+# done
 # rm R2_selected_reads.fastq;
-#==========================================================================================#
+# #==========================================================================================#
 
 echo "
 +-----------------------------------------------------------------+"
@@ -274,9 +294,9 @@ mkdir ${OUTDIR}
 mkdir ${OUTDIR}/RandomBC
 cp *.pdf *.tsv *.xlsx *.log ${OUTDIR}/RandomBC
 echo "...done!"
-# echo "
-# Removing temp files..."
-# rm *.pdf *.tsv *.bed *.xlsx *.txt *.randomBC.fasta
+echo "
+Removing temp files..."
+rm *.pdf *.tsv *.bed *.xlsx *.txt *.randomBC.fasta
 echo "...Finished!
 **********************************************************"
 
