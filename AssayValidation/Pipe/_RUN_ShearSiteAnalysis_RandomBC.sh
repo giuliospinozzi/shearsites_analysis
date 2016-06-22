@@ -47,8 +47,8 @@ PATIENT="${2}";   # CEMJY
 POOL="${3}";      # LANE_1
 DBSCHEMA="${4}";  # sequence_assayvalidation
 DBTABLE="${5}";   # LANE_1, lane1 sometimes
-FASTQDIR="${6}";  # /storage/dx/ngs/data/ShearSites/data/20150706_GSK_HiSeq_validation/ftp.hsr.it/HSR_TIGET/AssayValidation
-R2_FASTQ="${7}";  # lane1_NoIndex_L001_R2.fastq.gz
+# FASTQDIR="${6}";  # /storage/dx/ngs/data/ShearSites/data/20150706_GSK_HiSeq_validation/ftp.hsr.it/HSR_TIGET/AssayValidation
+# R2_FASTQ="${7}";  # lane1_NoIndex_L001_R2.fastq.gz
 #==============================================================================#
 
 
@@ -57,8 +57,7 @@ BASEDIR="/opt/NGS/results/$DISEASE/$PATIENT";
 OUTDIR="$BASEDIR/quantification/$POOL";
 #==============================================================================#
 
-
-usage="$(basename "$0") <disease> <patient> <pool> <db_schema> <db_table> <fastq_dir> <r2_fastq_file>
+usage="$(basename "$0") <disease> <patient> <pool> <db_schema> <db_table>
 
 where:
     <disease>        Disease ID
@@ -66,9 +65,18 @@ where:
     <pool>           Pool
     <db_schema>      DB Schema
     <db_table>       DB Table
-    <fastq_dir>      Path to FastQ files
-    <r2_fastq_file>  R2 FastQ file (gzipped)
     "
+# usage="$(basename "$0") <disease> <patient> <pool> <db_schema> <db_table> <fastq_dir> <r2_fastq_file>
+
+# where:
+#     <disease>        Disease ID
+#     <patient>        Patient ID
+#     <pool>           Pool
+#     <db_schema>      DB Schema
+#     <db_table>       DB Table
+#     <fastq_dir>      Path to FastQ files
+#     <r2_fastq_file>  R2 FastQ file (gzipped)
+#     "
 
 echo "$usage"
 
@@ -124,18 +132,19 @@ if [ -z "$5" ]
     ";
     exit;
 fi
-if [ -z "$6" ]
-  then
-    echo "-----------------> [ERROR] No FASTQDIR Supplied <--------------
-    ";
-    exit;
-fi
-if [ -z "$7" ]
-  then
-    echo "-----------------> [ERROR] No R2_FASTQ Supplied <--------------
-    ";
-    exit;
-fi
+# if [ -z "$6" ]
+#   then
+#     echo "-----------------> [ERROR] No FASTQDIR Supplied <--------------
+#     ";
+#     exit;
+# fi
+# if [ -z "$7" ]
+#   then
+#     echo "-----------------> [ERROR] No R2_FASTQ Supplied <--------------
+#     ";
+#     exit;
+# fi
+
 #==============================================================================#
 
 
@@ -163,7 +172,7 @@ done
 # out files: *.shearsites.tsv
 #==============================================================================#
 
-# # All data
+# # All data - Substitutes "With chrM removal" above
 # echo "
 # +-----------------------------------------------------------------+"
 # echo "PYTHON: ShearSites Identification"
@@ -233,14 +242,20 @@ for k in $(ls *.headers.txt); do
   FILENAME=`basename $k`;
   BARCODE=${FILENAME:0:-12};
   echo -e -n "\t > processing ${BARCODE} ... ";
-  zcat ${BASEDIR}/quality/$POOL/r2.qf.noPlasmids.noVector.TAGs.fa.gz | faextract_pureheader $FILENAME | ${BARCODE}.randomBC.fasta;
+  zcat ${BASEDIR}/quality/$POOL/r2.qf.noPlasmids.noVector.TAGs.fa.gz | faextract_pureheader $FILENAME > ${BARCODE}.randomBC.fasta;
   echo "done.";
 done
 #========================================================================================================#
 
 
 ### IF ${BASEDIR}/quality/$POOL/*.TAGs.fa.gz  IS NOT AVAILABLE ###
-### NOTE: remember to uncomment also line "" awk '{print $1}' $k >> all_headers.txt; ""
+### NOTE - remember to uncomment:
+###         - 'INPUT PARAMETERS'
+###         - "usage" var
+###         - 'Arguments'
+###         - line "awk '{print $1}' $k >> all_headers.txt;"
+### The following substitutes the section above
+
 
 # # With fastq GZIP compression
 # echo "
