@@ -51,11 +51,15 @@ filter_data = matrix_RandomBC_globModule.filter_data
 byHeaders = matrix_RandomBC_globModule.byHeaders
 headers_file_path = matrix_RandomBC_globModule.headers_file_path
 
+byED = matrix_RandomBC_globModule.byED
+ED_inside_ShS = matrix_RandomBC_globModule.ED_inside_ShS
+ED_rule = matrix_RandomBC_globModule.ED_rule
+
 bySC = matrix_RandomBC_globModule.bySC
-inside_samples = matrix_RandomBC_globModule.inside_samples
+SC_per_sample = matrix_RandomBC_globModule.SC_per_sample
 SC_threshold = matrix_RandomBC_globModule.SC_threshold
-inside_ShS = matrix_RandomBC_globModule.inside_ShS
-allow_IS_loss = matrix_RandomBC_globModule.allow_IS_loss
+SC_inside_ShS = matrix_RandomBC_globModule.SC_inside_ShS
+SC_allow_IS_loss = matrix_RandomBC_globModule.SC_allow_IS_loss
 
 ### COMMON OUTPUT GROUND DIR
 common_output_ground_dir = matrix_RandomBC_globModule.common_output_ground_dir
@@ -103,40 +107,28 @@ asso_dict = matrix_RandomBC_assoModule.loadAssoFile(asso_file_name, asso_folder,
 POOL_alldata_dict, POOL_IS_dict = matrix_RandomBC_dataModule.loadDataFiles(ground_dir, DISEASE, PATIENT, POOL, data_files_name_filter, data_files_delimiter)
 ##############################################################################################################################################################
 
-### Build Data ##################################################################
+### Build Data ###################################################################
 verbosePrint("\n>>> Shape data as DataFrame ...")
-#df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
-df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
+df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
+#df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
 verbosePrint(">>> Dataframe built!")
-#################################################################################
+##################################################################################
 
 ### Filter Data #######################################################################################################################################
 if filter_data:
-    verbosePrint("\n>>> Filtering DataFrame ...")
+    verbosePrint("\n>>> Cleaning DataFrame ...")
     if byHeaders:
         headers_to_remove = matrix_RandomBC_filterModule.loadGzFile(headers_file_path)
         df = matrix_RandomBC_filterModule.filterDF_byHeaders(df, headers_to_remove)
+    if byED:
+        df = matrix_RandomBC_filterModule.filterBy_randomBC_EditDistance(df, inside_ShS=ED_inside_ShS, ED_rule=ED_rule)
     if bySC:
-        if inside_samples:
-            verbosePrint("    > Apply filterDF_byRandomBCseqCount per sample ...")
-            orig_df_len = len(df)
-            import pandas as pd
-            sample_list = df['barcode'].unique()
-            verbosePrint("      Samples found: {sample_list}.".format(sample_list=str(sample_list)))
-            verbosePrint("      Total entries to analyze: {orig_df_len}.".format(orig_df_len=str(orig_df_len)))
-            verbosePrint("      Slicing DataFrame ...")
-            l = [ df[df['barcode']==barcode] for barcode in sample_list ]
-            verbosePrint("      Done!")
-            verbosePrint("      Looping over slices ...")
-            l_filt = [ matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(x, SC_threshold=SC_threshold, inside_ShS=inside_ShS, allow_IS_loss=allow_IS_loss) for x in l ]
-            verbosePrint("      Done!")
-            verbosePrint("      Building final data ...")
-            df = pd.concat(l_filt)
-            df.sort_index(inplace=True)
-            verbosePrint("    > Done. {n} entries kept ({p}% discarded)".format(n=str(len(df)), p=str((float(orig_df_len) - float(len(df))) / float(orig_df_len) * 100)[:5]))
+        if SC_per_sample:
+            df = matrix_RandomBC_filterModule.filterDF_perSample_byRandomBCseqCount(df, SC_threshold=SC_threshold, inside_ShS=SC_inside_ShS, allow_IS_loss=SC_allow_IS_loss)
         else:
-            df = matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(df, SC_threshold=SC_threshold, inside_ShS=inside_ShS, allow_IS_loss=allow_IS_loss)
+            df = matrix_RandomBC_filterModule.filterDF_byRandomBCseqCount(df, SC_threshold=SC_threshold, inside_ShS=SC_inside_ShS, allow_IS_loss=SC_allow_IS_loss)
     verbosePrint(">>> Done!")
+    
 #######################################################################################################################################################
 
 ### Process Data as Matrixes #####################################################################################################
@@ -384,13 +376,13 @@ if export_diagnostics:
                     matrix_RandomBC_barcodeDiagnosis.plotRandomBCoccurrency(IS_distinctBC_DF, title=title, show_top_ranked=10, annot=True, show_live=False, export=export)
                 # checkEditDistance - diagonal
                 if checkEditDistance_diagonal:
-                    verbosePrint("      > Check Edit Distances whitin Shear Sites ...")
+                    verbosePrint("      > Check Edit Distances within Shear Sites ...")
                     IS_diagonal_editDistance_DF = matrix_RandomBC_barcodeDiagnosis.checkEditDistance(IS_df, all_combinations=False)
                     verbosePrint("        Done! Square matrix {dim}X{dim}.".format(dim=str(len(IS_diagonal_editDistance_DF))))
                     if plot_heatmap:
                         if limit_heatmap_plot[0]:
                             if len(IS_diagonal_editDistance_DF) <= limit_heatmap_plot[1]:
-                                verbosePrint("      > Plot Edit Distance Heatmap whitin Shear Sites ...")
+                                verbosePrint("      > Plot Edit Distance Heatmap within Shear Sites ...")
                                 title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                                 filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                                 export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
@@ -398,7 +390,7 @@ if export_diagnostics:
                             else:
                                 verbosePrint("      [SKIP] Edit Distance Heatmap Plot! Limit {lim}X{lim}.".format(lim=str(limit_heatmap_plot[1])))
                         else:
-                            verbosePrint("      > Plot Edit Distance Heatmap whitin Shear Sites ...")
+                            verbosePrint("      > Plot Edit Distance Heatmap within Shear Sites ...")
                             title = "{CEM_name}:{CEM_nominal_coordinate} RANDOM-BARCODES EDIT-DISTANCE MATRIX - {barcode} {label} {CEM_real_coordinate}".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                             filename = "{barcode}_{label}_{CEM_name}:{CEM_nominal_coordinate}_{CEM_real_coordinate}_EditDistanceHeatmap.pdf".format(barcode=barcode, label=sample_label, CEM_name=str(CEM_name), CEM_nominal_coordinate=str(CEM_nominal_coordinate), CEM_real_coordinate=str(CEM_real_coordinate))
                             export = os.path.normpath(os.path.join(IS_OUTDIR, filename))
