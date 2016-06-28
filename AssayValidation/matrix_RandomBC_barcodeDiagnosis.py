@@ -295,8 +295,8 @@ def checkEditDistance(any_df, all_combinations=False):
     def editDistanceMatrix (seqList1, seqList2, groupLabel1="", groupLabel2=""):
         # return a matrix with col from seqList1 and row from seqList2
         # groupLabel kwargs add a fixed string to row and col names
-        sorted_unique_seqList1 = sorted(list(set(seqList1)))
-        sorted_unique_seqList2 = sorted(list(set(seqList2)))
+        sorted_unique_seqList1 = humanSorted(list(set(seqList1)))
+        sorted_unique_seqList2 = humanSorted(list(set(seqList2)))
         l = []
         l_append = l.append
         for seq_col in sorted_unique_seqList1:
@@ -328,6 +328,14 @@ def checkEditDistance(any_df, all_combinations=False):
                 return sep.join([prefix,str(shearsite),""])
             else:
                 return sep.join([prefix,str(shearsite),suffix,""])
+                
+    def zpad_shearsite(df):
+        width = len(str(max(df.shearsite.values.astype(int))))
+        p_col = [s.zfill(width) for s in df.shearsite.values]
+        df = df.drop('shearsite', 1)
+        df['shearsite'] = pd.Series(p_col, index=df.index)
+        return df
+        
     # data collector
     l = []
     # try to take required columns -> l
@@ -347,6 +355,8 @@ def checkEditDistance(any_df, all_combinations=False):
         
     # Prepare DF: concat(l) --> DF
     DF = pd.concat(l, axis=1, join='inner')
+    # Padding shearsite strings
+    DF = zpad_shearsite(DF)
     
     # check for correct usage - IS
     try:
@@ -369,14 +379,17 @@ def checkEditDistance(any_df, all_combinations=False):
     # Collect edit distance matrix dataframes in l
     l = []
     l_append =l.append
-    for shearsite, randomBC_list in DF.iteritems():
+    shearsite_list = humanSorted(DF.keys())
+    for shearsite in shearsite_list:
         # here kwargs 'groupLabel' are fundamental to l_append dataframes with mutually disjoint column labels
         # and then exploit (outer) 'join' at the end as a quick way to reshape data as a whole
+        randomBC_list = DF.loc[shearsite]
         if all_combinations:
             inner_l = []
             inner_l_append = inner_l.append
             # compute all rows for current columns
-            for shearsite2, randomBC_list2 in DF.iteritems():
+            for shearsite2 in shearsite_list:
+                randomBC_list2 = DF.loc[shearsite2]
                 inner_l_append(editDistanceMatrix(randomBC_list, randomBC_list2, groupLabel1=buildGroupLabel(shearsite), groupLabel2=buildGroupLabel(shearsite2)))
             l_append(pd.concat(inner_l, axis=0, join='inner'))
         else:
@@ -387,6 +400,7 @@ def checkEditDistance(any_df, all_combinations=False):
     # editDistance_DF is a squared dataframe where rows and cols are equally labelled
     # (usually with randomBCs-seqs or with shearsite_randomBCs-seqs)
     editDistance_DF = pd.DataFrame().join(l, how='outer')
+    
     return editDistance_DF
 
 def chunkEditDistance_DF(editDistance_DF, ShS_chunk_size=3):
@@ -875,7 +889,7 @@ if __name__ == "__main__":
     
     ### Load Association File Data
     asso_folder = "/home/stefano/Desktop/RandomBC_matrix_development/test_input/asso"
-    asso_file_name = "asso.assayvalidation.lane1.tsv"
+    asso_file_name = "asso.assayvalidation.lane2.tsv"
     asso_delimiter = '\t'
     # load
     import matrix_RandomBC_assoModule
@@ -909,7 +923,7 @@ if __name__ == "__main__":
     #### Process Data
     import matrix_RandomBC_processingModule
     df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
-    exhaustive_df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
+    # exhaustive_df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
     # Up to now exhaustive_df is just like df with 'header_list' column added.
     # Keep in mind that this structure is ongoing and more columns will may appear. Let them be implicitly supported!!
     # Check advancements in matrix_RandomBC_processingModule.buildExhaustiveDataFrame
