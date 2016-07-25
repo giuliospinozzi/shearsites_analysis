@@ -17,6 +17,7 @@ import matrix_RandomBC_globModule
 import matrix_RandomBC_assoModule
 import matrix_RandomBC_dataModule
 import matrix_RandomBC_processingModule
+import matrix_RandomBC_filterModule
 import matrix_RandomBC_outputModule
 
 
@@ -42,13 +43,18 @@ POOL = matrix_RandomBC_globModule.POOL
 data_files_delimiter = matrix_RandomBC_globModule.data_files_delimiter
 data_files_name_filter = matrix_RandomBC_globModule.data_files_name_filter
 
+### Cleaning Dataframe configs - filterModule
+clean_df = matrix_RandomBC_globModule.clean_df
+ED_rule = matrix_RandomBC_globModule.ED_rule
+ED_inside_ShS = matrix_RandomBC_globModule.ED_inside_ShS
+
 ### COMMON OUTPUT GROUND DIR
 common_output_ground_dir = matrix_RandomBC_globModule.common_output_ground_dir
 
 ### Matrix output configs - outputModule
 matrix_outfolder = matrix_RandomBC_globModule.matrix_outfolder
 matrix_files_delimiter = matrix_RandomBC_globModule.matrix_files_delimiter
-relabelling = matrix_RandomBC_globModule.relabelling
+relabelling = matrix_RandomBC_globModule.relabelling  # Boolean
 
 
 #++++++++++++++++++++++++ CODE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -68,6 +74,14 @@ df = matrix_RandomBC_processingModule.buildDataFrame(POOL_IS_dict)
 #df = matrix_RandomBC_processingModule.buildExhaustiveDataFrame(POOL_alldata_dict)
 verbosePrint(">>> Dataframe built!")
 ###################################################################################
+
+### Filter Data ####################################################################################################
+if clean_df:
+    verbosePrint("\n>>> Cleaning DataFrame ...")
+    df = matrix_RandomBC_filterModule.filterBy_randomBC_EditDistance(df, inside_ShS=ED_inside_ShS, ED_rule=ED_rule)
+    # Here new filters!
+    verbosePrint(">>> Done!")
+####################################################################################################################
 
 ### Compute matrixes ############################################################################################################
 seqCount_matrix, ShsCount_matrix, barcodeCount_matrix, cellCount_matrix, fragmentEstimate_matrix = None, None, None, None, None

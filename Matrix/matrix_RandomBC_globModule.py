@@ -11,6 +11,7 @@ Created on Mon Jan 18 09:49:24 2016
 
 ## Screen print ##
 verbose = True
+print_time = True # evaluated only if verbose is True
 
 ## Association File - assoModule ##
 asso_folder = "/opt/applications/scripts/isatk/elements/association"
@@ -25,8 +26,15 @@ POOL = "LANE_2"
 data_files_delimiter = '\t'
 data_files_name_filter = ".ISfixed.LENGTHfixed.randomBC.tsv"  # BE CAREFUL HERE!
 
+## Cleaning Data - filterModule ##
+# do
+clean_df = True
+# configs
+ED_rule = 3
+ED_inside_ShS = True
+
 ## COMMON OUTPUT GROUND DIR ##
-common_output_ground_dir = "/storage/d3/tmp/stefano/test_RandomBCdiagnostics"  # PUT HERE AN ABS PATH
+common_output_ground_dir = "/storage/d3/tmp/stefano/test_Matrix"  # PUT HERE AN ABS PATH
 
 ## Matrix output Files - outputModule ##
 matrix_outfolder = "Matrixes"
@@ -41,9 +49,27 @@ concat = "_"  # char to concatenate fields in use_fields
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-def verbosePrint(x, verbose=verbose):
+#==============================================================================
+# import sys
+# def verbosePrint(x, verbose=verbose):
+#     if verbose:
+#         print x
+#         sys.stdout.flush()
+#==============================================================================
+
+import sys
+from time import localtime, strftime
+def verbosePrint(x, verbose=verbose, print_time=print_time):
     if verbose:
-        print x
+        if print_time:
+            y = str(x)
+            nnl = y.count("\n", 0, len(x)/2+1)
+            y = y.replace("\n", "", nnl)
+            nl_str = "".join(['\n']*nnl)
+            print nl_str+"[{time}] ".format(time=strftime("%Y-%m-%d %H:%M:%S", localtime())), y
+        else:
+            print x
+        sys.stdout.flush()
 
 import re
 def humanSorted(l):

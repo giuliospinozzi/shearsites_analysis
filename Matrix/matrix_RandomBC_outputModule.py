@@ -101,7 +101,7 @@ def buildOutputPath(ground_dir, *subfolders):
 
 
 def relabelling(df, asso_dict, use_fields=use_fields, concat=concat, inplace=False):
-    # NOTE: - df col names must be the keys of asso_dict!
+    # NOTE: - df col names must be the master-keys of asso_dict!
     #       - use_fields can be an int or a sequence of ints
     
     def buildRelabellingDict(asso_dict, use_fields, concat):
