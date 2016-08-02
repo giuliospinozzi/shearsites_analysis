@@ -8,15 +8,15 @@ Created on Thu Jan  7 13:57:28 2016
 
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
 import os, sys, csv
-import matrix_RandomBC_globModule
+import matrix_configure_module
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-verbose = matrix_RandomBC_globModule.verbose
+verbose = matrix_configure_module.verbose
 
 
 #++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
-verbosePrint = matrix_RandomBC_globModule.verbosePrint
-humanSorted = matrix_RandomBC_globModule.humanSorted
+verbosePrint = matrix_configure_module.verbosePrint
+humanSorted = matrix_configure_module.humanSorted
 
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -97,7 +97,7 @@ def arrangeAssoData(asso_file_nested_list):
     def generateMasterKey(line, master_key_indexes=[0], join_char='_'):
         """
         master_key_indexes = [0] means master_key -> First field
-        of assoFile (barcode!)
+        of assoFile (association_ID!)
         """
         master_key_items = []
         master_key_items_append = master_key_items.append
@@ -187,14 +187,4 @@ if __name__ == "__main__":
     # loadAssoFile calls getFilePath, then loadFile.
     # Loaded data are arranged by arrangeAssoData, which defines asso_dict structure through generateMasterKey and generateLineDict
     asso_dict = loadAssoFile(asso_file_name, asso_folder, asso_delimiter)
-
-
-
-
-
-
-
-
-
-
 

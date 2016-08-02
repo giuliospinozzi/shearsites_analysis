@@ -8,17 +8,17 @@ Created on Mon Jan 18 13:46:57 2016
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
 import os, sys
 import collections
-import matrix_RandomBC_globModule
+import matrix_configure_module
 
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-verbose = matrix_RandomBC_globModule.verbose
-use_fields = matrix_RandomBC_globModule.use_fields
-concat = matrix_RandomBC_globModule.concat
+verbose = matrix_configure_module.verbose
+use_fields = matrix_configure_module.use_fields
+concat = matrix_configure_module.concat
 
 
 #++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
-verbosePrint = matrix_RandomBC_globModule.verbosePrint
+verbosePrint = matrix_configure_module.verbosePrint
 # humanSorted = matrix_RandomBC_globModule.humanSorted
 
 
@@ -34,7 +34,7 @@ def buildOutputPath(ground_dir, *subfolders):
     *subfolders - optional, further subfolders to concatenate (checked every time)
     
     OUT:
-    OUTDIR - absolute folder path where write permissions are checked
+    OUTDIR - absolute folder path where write, permissions are checked
     '''
     # Final path variable
     OUTDIR = None  # <- os.path.normpath(ground_dir) + join *subfolders
@@ -95,8 +95,8 @@ def buildOutputPath(ground_dir, *subfolders):
             print "\n[ERROR] You don't have write permissions in OUTDIR='{OUTDIR}'".format(OUTDIR=str(OUTDIR))
             sys.exit("\n[QUIT]\n")
     # Return OUTDIR
-    verbosePrint(">>> OUTDIR: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
-    verbosePrint(">>> OUTDIR WRITE PERMISSIONS: [OK]")
+    verbosePrint("> OUTDIR: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+    verbosePrint("> write permission: OK.")
     return OUTDIR
 
 
@@ -127,14 +127,18 @@ def relabelling(df, asso_dict, use_fields=use_fields, concat=concat, inplace=Fal
                 
 
 def writeMatrix(df, complete_path, out_files_delimiter, metadata=None, verbose=verbose):
+    # df may be None
     # metadata takes None or asso_dict for relabelling.
     # relabelling function has use_fields and concat fixed as global vars!
+    if df is None:
+        verbosePrint("[Warning] No data available to create '{complete_path}'".format(complete_path=str(complete_path)))
+        return None
     if metadata is None:
         df.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index_label= 'IS_genomicID', encoding='utf-8')
     else:
         df_relabelled = relabelling(df, metadata)  # see default kwargs
         df_relabelled.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index_label= 'IS_genomicID', encoding='utf-8')
-    verbosePrint(">>> File created: '{complete_path}'".format(complete_path=str(complete_path)))
+    verbosePrint("> File created: '{complete_path}'".format(complete_path=str(complete_path)))
     return complete_path
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#

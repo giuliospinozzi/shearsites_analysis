@@ -8,30 +8,22 @@ Created on Mon Jan 18 09:49:24 2016
 
 #++++++++++++++++++++++++++++++++++ Global Vars +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-
+# OK
 ## Screen print ##
 verbose = True
 print_time = True # evaluated only if verbose is True
 
-## Association File - assoModule ##
+# OK
+## Association File - matrix_preprocessing_assoFile_module ##
 asso_folder = "/opt/applications/scripts/isatk/elements/association"
 asso_file_name = "asso.assayvalidation.lane2.tsv"
 asso_delimiter = '\t'
 
-## Data - dataModule ##
-ground_dir = "/opt/NGS/results"
-DISEASE = "AssayValidation"
-PATIENT = "CEMJY"
-POOL = "LANE_2"
-data_files_delimiter = '\t'
-data_files_name_filter = ".ISfixed.LENGTHfixed.randomBC.tsv"  # BE CAREFUL HERE!
-
-## Cleaning Data - filterModule ##
-# do
-clean_df = True
-# configs
-ED_rule = 3
-ED_inside_ShS = True
+#OK
+## Data - matrix_preprocessing_dataSources_module, matrix_preprocessing_dataGathering_module, matrix_preprocessing_dataLoading_module ##
+dataset_tuple_list = [ ('/opt/NGS/results', 'Ferrari', 'PE_Thalassemia_inVitro', False), ('/opt/NGS/results', 'HIV_patients', 'circDNA', ['cLR1']) ]
+drop_headers = True
+compression = 'gzip'
 
 ## COMMON OUTPUT GROUND DIR ##
 common_output_ground_dir = "/storage/d3/tmp/stefano/test_Matrix"  # PUT HERE AN ABS PATH
@@ -84,20 +76,22 @@ def humanSorted(l):
         return sorted(l, key=alphanum_key)
     return sort_nicely(l)
 
-import collections   
-def flattenDict(d, parent_key='', sep='@@'):
-    '''
-    - sep is used only in computation, so a 'robust' separator is advised
-    - parent_key can be used to add a fixed string on the key begins while flattening
-    '''
-    items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + str(k) if parent_key else k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(flattenDict(v, new_key, sep=sep).items())
-        else:
-            items.append((tuple(new_key.split(sep)), v))
-    return dict(items)
+#==============================================================================
+# import collections   
+# def flattenDict(d, parent_key='', sep='@@'):
+#     '''
+#     - sep is used only in computation, so a 'robust' separator is advised
+#     - parent_key can be used to add a fixed string on the key begins while flattening
+#     '''
+#     items = []
+#     for k, v in d.items():
+#         new_key = parent_key + sep + str(k) if parent_key else k
+#         if isinstance(v, collections.MutableMapping):
+#             items.extend(flattenDict(v, new_key, sep=sep).items())
+#         else:
+#             items.append((tuple(new_key.split(sep)), v))
+#     return dict(items)
+#==============================================================================
 
 
 #++++++++++++++++++++++++++++++++++++++ MAIN and TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
