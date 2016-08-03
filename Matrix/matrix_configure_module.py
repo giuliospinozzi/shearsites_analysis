@@ -8,46 +8,49 @@ Created on Mon Jan 18 09:49:24 2016
 
 #++++++++++++++++++++++++++++++++++ Global Vars +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-# OK
 ## Screen print ##
 verbose = True
 print_time = True # evaluated only if verbose is True
 
-# OK
 ## Association File - matrix_preprocessing_assoFile_module ##
 asso_folder = "/opt/applications/scripts/isatk/elements/association"
 asso_file_name = "asso.assayvalidation.lane2.tsv"
 asso_delimiter = '\t'
 
-#OK
 ## Data - matrix_preprocessing_dataSources_module, matrix_preprocessing_dataGathering_module, matrix_preprocessing_dataLoading_module ##
-dataset_tuple_list = [ ('/opt/NGS/results', 'Ferrari', 'PE_Thalassemia_inVitro', False), ('/opt/NGS/results', 'HIV_patients', 'circDNA', ['cLR1']) ]
-drop_headers = True
-compression = 'gzip'
+dataset_tuple_list = [ ('/opt/NGS/results', 'AssayValidation', 'CEMJY', ['LANE_2']) ]
+# dataset_tuple_list is a list of tuple(s) like:
+# (abs-path-where-find-data, a-disease, a-patient-of-the-disease, specific-pool-selection?)
+#   examples:
+#   --> ('/opt/NGS/results', 'AssayValidation', 'CEMJY', False) - all pools available (LANE_1 and LANE_2)
+#   or
+#   --> ('/opt/NGS/results', 'AssayValidation', 'CEMJY', ['LANE_2']) - only pool(s) in list (just 'LANE_2 in this case)
+drop_headers = True  # if False, headers are kept in any_df (as lists, under 'header_list' column)
+compression = 'gzip'  # supported compression: None or 'gzip'. For both refactored data and randomBC data.
+
+### Filter Data - matrix_preprocessing_filterData_module ##
+filter_data = True  # allow filtering as stated below
+# filterBy_randomBC_EditDistance: vars evaluated (and tasks executed) only if filter_data is True
+filter_by_ED = True
+inside_ShS = True
+ED_treshold = 3  # int (1->11); can be even a callable (e.g. ED_rule=func such that func(arg)-> int. See matrix_preprocessing_filterData_module)
 
 ## COMMON OUTPUT GROUND DIR ##
-common_output_ground_dir = "/storage/d3/tmp/stefano/test_Matrix"  # PUT HERE AN ABS PATH
+common_output_ground_dir = "/storage/d3/tmp/stefano/test_Matrix"  # abs path used as 'ground dir' for subfolder tree.
 
 ## Matrix output Files - outputModule ##
-matrix_outfolder = "Matrixes"
+matrix_outfolder = "Matrixes"  # subfolder of common_output_ground_dir where write matrixes
 matrix_files_delimiter = '\t'
 # Relabel columns (BARCODES <-> master-keys of asso data dict in this implementation <-> sample column in any_df)
 # with a concatenation of related attributes (fields/columns of AssoFile <-> sub-keys of asso data dict sub-dicts)
 relabelling = True
 use_fields = 6  # can be an int or a sequence of ints
-concat = "_"  # char to concatenate fields in use_fields
+concat = "_"  # char to concatenate fields in use_fields (if more than one)
 
 
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-#==============================================================================
-# import sys
-# def verbosePrint(x, verbose=verbose):
-#     if verbose:
-#         print x
-#         sys.stdout.flush()
-#==============================================================================
 
 import sys
 from time import localtime, strftime
@@ -76,6 +79,7 @@ def humanSorted(l):
         return sorted(l, key=alphanum_key)
     return sort_nicely(l)
 
+# OBSOLETE
 #==============================================================================
 # import collections   
 # def flattenDict(d, parent_key='', sep='@@'):
@@ -91,6 +95,14 @@ def humanSorted(l):
 #         else:
 #             items.append((tuple(new_key.split(sep)), v))
 #     return dict(items)
+#==============================================================================
+# OBSOLETE
+#==============================================================================
+# import sys
+# def verbosePrint(x, verbose=verbose):
+#     if verbose:
+#         print x
+#         sys.stdout.flush()
 #==============================================================================
 
 

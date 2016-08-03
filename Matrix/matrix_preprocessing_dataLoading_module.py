@@ -41,13 +41,21 @@ def loadData (launch_path_dict, drop_headers, compression):
 
     def loadPool (pool_dict, drop_headers, force_drop_rBC, compression):
         source_data_path = pool_dict['source_data_path']  # Key error if not present
+        verbosePrint("      > Loading refactored ...")
         refactored_DF = loadRefactored_asDataframe (source_data_path, compression=compression)
+        verbosePrint("        done!")
         randomBC_data_path = pool_dict.get('randomBC_data_path') # Return None instead of Key error if not present
         # Force to ignore randomBC, even if available
         if force_drop_rBC:
             randomBC_data_path = None
+        if randomBC_data_path is not None:
+            verbosePrint("      > Loading random barcodes ...")
         rBC_fasta_DF = loadFasta_asDataframe (randomBC_data_path, compression=compression)
+        if randomBC_data_path is not None:
+            verbosePrint("        done!")
+        verbosePrint("      > Shaping data as dataframe ...")
         any_df = buildDataFrame (refactored_DF, rBC_fasta_DF=rBC_fasta_DF, drop_headers=drop_headers)
+        verbosePrint("        done!")
         return any_df
     
     verbosePrint("\n>>> Loading data ...")
@@ -60,15 +68,15 @@ def loadData (launch_path_dict, drop_headers, compression):
     # Loop over launch_path_dict and load data pool-by-pool
     any_df_per_pool = []
     for DISEASE in humanSorted(launch_path_dict.keys()):
-        verbosePrint("> DISEASE:", DISEASE)
+        verbosePrint("> DISEASE: '{DISEASE}'".format(DISEASE=str(DISEASE)))
         for PATIENT in humanSorted(launch_path_dict[DISEASE].keys()):
-            verbosePrint("\t> PATIENT:", PATIENT)
+            verbosePrint("  > PATIENT: '{PATIENT}'".format(PATIENT=str(PATIENT)))
             for POOL in humanSorted(launch_path_dict[DISEASE][PATIENT].keys()):
-                verbosePrint("\t\t> POOL: {POOL}. Loading ...".format(POOL=str(POOL)))
+                verbosePrint("    > POOL: '{POOL}'".format(POOL=str(POOL)))
                 any_df_per_pool.append(loadPool(launch_path_dict[DISEASE][PATIENT][POOL], drop_headers, force_drop_rBC, compression))
     verbosePrint(">>> Data loaded!")
     # append dataframes
-    verbosePrint("\n>>> Building Dataframe ...")
+    verbosePrint("\n>>> Joining Dataframe(s) ...")
     any_df = pd.concat(any_df_per_pool, axis=0, join='inner', ignore_index=True)
     verbosePrint(">>> Done!")
     # return a unique any_df for all the data

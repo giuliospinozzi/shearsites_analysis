@@ -283,7 +283,7 @@ def getLaunchPathDict(dataset_tuple_list):
                 print "Your input dataset_tuple_list:", dataset_tuple_list
                 sys.exit("\n[QUIT]\n")
     
-    verbosePrint("\n> Data found:")
+    verbosePrint("> Data found:")
     if verbose:
         pprint.pprint(launch_path_dict)
     verbosePrint(">>> Done!")

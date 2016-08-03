@@ -49,8 +49,6 @@ def getFilePath (filename, folder=os.getcwd()):
     if not os.access(folder, os.R_OK):
         print "\n[ERROR] You have not read privileges in folder='{folder}'".format(folder=str(folder))
         sys.exit("\n[QUIT]\n")
-    if not os.access(folder, os.W_OK):
-        print "\n[WARNING] You have not write privileges in folder='{folder}'".format(folder=str(folder))
     # Cast filename
     filename = str(filename)
     # Create complete path and check if exists!
