@@ -263,8 +263,12 @@ def filterBy_randomBC_EditDistance(any_df, inside_ShS=True, ED_rule=3):
             if len(frame) != 1:
                 verbosePrint("          {n} items, EDthreshold={EDthreshold}.".format(n=str(len(frame)), EDthreshold=str(EDthreshold)))
                 BCcouples_ED_DF = checkBCcouples_ED(frame, inside_ShS=True, max_ED=EDthreshold)
-                to_remove = set([x[0]+x[1] for x in BCcouples_ED_DF[['shearsite', 'target_BC']].values])
-                filtered_frame = frame[~frame[['shearsite', 'randomBC']].apply(lambda x: x[0]+x[1] in to_remove, axis=1)]
+                # Old code when type(shearsite) was 'str'##################################################################
+                #to_remove = set([x[0]+x[1] for x in BCcouples_ED_DF[['shearsite', 'target_BC']].values])
+                #filtered_frame = frame[~frame[['shearsite', 'randomBC']].apply(lambda x: x[0]+x[1] in to_remove, axis=1)]
+                ###########################################################################################################
+                to_remove = set([(x[0], x[1]) for x in BCcouples_ED_DF[['shearsite', 'target_BC']].values])
+                filtered_frame = frame[~frame[['shearsite', 'randomBC']].apply(lambda x: (x[0], x[1]) in to_remove, axis=1)]
                 append_to_filtered_df_list(filtered_frame)
             else:
                 verbosePrint("          {n} item: skip!".format(n=str(len(frame))))
