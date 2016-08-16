@@ -12,6 +12,12 @@ Created on Fri Aug  5 2016
 description = """
 +---+ GENERAL DESCRIPTION +---------------------------------------------------+
 
+This program takes as input one or more matrix files and unify them, row and
+column wise, by summation. A single file is created as output.
+With one input matrix only, the program acts just as a "re-formatter".
+
++---+ DETAILS +---------------------------------------------------------------+
+
 INPATHs (required argument(s)) are one or more absolute path of matrix files.
 
 Matrix files are expected to be plain text files (encoding can be specified by
