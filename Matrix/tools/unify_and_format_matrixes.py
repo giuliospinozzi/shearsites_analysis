@@ -70,10 +70,10 @@ output_na_rep = ''  # how to WRITE missing data
 input_matrixes_sep = '\t'
 input_matrixes_encoding = 'utf-8'
 input_matrixes_prefix = None  # None or a list paired with input_paths
-use_attributes = None  # None or list of int 0-based (do relabelling)
-old_attibute_sep = '_'  # It makes sense only if use_attributes is not None 
-new_attribute_sep = '_'  # It makes sense only if use_attributes is not None
 
+use_attributes = None  # None or list of int 0-based (do relabelling)
+old_attibute_sep = '_'  # exploited also by add_prefix!
+new_attribute_sep = '_'  # It makes sense only if use_attributes is not None
 ###############################################################################
 
 
@@ -164,7 +164,7 @@ be tuned through specific optional arguments ("--output_file_encoding",
     # optional about input
     parser.add_argument("-in_sep", "--input_file_separator", metavar='FIELD_SEP', choices=[r'\t', ',', ';'], default=input_matrixes_sep, help="field separator of input matrix file(s).\nDefault is: {default}.\nAvailable option are [{tab}, ',', ';']".format(tab=r"'\t'", default=r"'\t'"))
     parser.add_argument("-in_enc", "--input_file_encoding", metavar='ENCODING', default=input_matrixes_encoding, help="encoding of input matrix file(s).\nDefault is: '{default}'.\nAll the standard Python encodings are supported.\nE.g.: 'utf-8', 'ascii', ...".format(default=input_matrixes_encoding))
-    parser.add_argument("-in_prefix", "--input_data_prefix", metavar='PREFIX', nargs='+', default=input_matrixes_prefix, help="allows to add a distinctive prefix to the columns\nbelonging to each input matrix.\nMust be a sequence of prefix(es) paired with\n'INPATHs' (empty prefixes, i.e. '', are allowed).\nRemember to add '_' to your prefix(es) if desired.".format(default=str(input_matrixes_prefix)))
+    parser.add_argument("-in_prefix", "--input_data_prefix", metavar='PREFIX', nargs='+', default=input_matrixes_prefix, help="allows to add a distinctive prefix to the columns\nbelonging to each input matrix.\nMust be a sequence of prefix(es) paired with\n'INPATHs' (empty prefixes, i.e. '', are allowed).".format(default=str(input_matrixes_prefix)))
     parser.add_argument("-in_attr", "--input_data_attributes", metavar='INDEXES', nargs='+', type=int, default=use_attributes, help="allows to take only some attributes from column\nlabels and re-compute the matrix(es). Must be a\nsequence of non-negative integers, indicating\nindexes of attributes to keep (0-based).\nDefault behaviour is 'keep all'.\nAttribute separator is asumed to be '{old_attibute_sep}' and\ncannot be set as arg in actual implementation.".format(old_attibute_sep=str(old_attibute_sep)))
     # Parse Args
     args = parser.parse_args()
@@ -503,7 +503,7 @@ def add_prefixes_to_matrixes(prefix_sequence, matrix_sequence):
         '''
         if kwargs:
             verbosePrint("> processing {i} of {l} (prefix='{p}') ... ".format(i=str(kwargs['n']), l=str(kwargs['tot']), p=str(prefix)))
-        pref_m = [df.add_prefix(prefix) for df in matrixes]
+        pref_m = [df.add_prefix(prefix+old_attibute_sep) for df in matrixes]
         if len(pref_m) == 1:
             return pref_m[0]
         else:
