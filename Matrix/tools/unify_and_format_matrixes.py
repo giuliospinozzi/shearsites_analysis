@@ -9,52 +9,18 @@ Created on Fri Aug  5 2016
 """
 
 
-description = """
-+---+ GENERAL DESCRIPTION +---------------------------------------------------+
-
-This program takes as input one or more matrix files and unify them, row and
-column wise, by summation. A single file is created as output.
-With one input matrix only, the program acts just as a "re-formatter".
-
-+---+ DETAILS +---------------------------------------------------------------+
-
-INPATHs (required argument(s)) are one or more absolute path of matrix files.
-
-Matrix files are expected to be plain text files (encoding can be specified by
-"--input_file_encoding" optional argument), tabulated with a file separator
-("--input_file_separator" optional argument).
-
-First column is expected to host row IDs (IS IDs or whatever) as well as first
-row is interpreted as column labels. The cell in common is taken as
-"row ID name" and can be any.
-
-The rest of the matrix is taken as 'content' (no special 'margins' or whatever
-are allowed). Matrix content of each cell must be numeric or empty.
-
-INPUT COMPLIANCE IS UP TO THE USER AND NO CONTROL ARE PERFORMED.
-
-In case of duplicated row IDs or column labels, the program merges them by
-summation (mandatory in order to provide results consistent with expectations).
-
-You can give a signature to columns belonging to distinct matrix file, before
-unifying data ("--input_data_prefix" optional argument). Obviously prefixes
-impact on unification, that is column-label-based (you have to pay attention in
-exchange for possible tricky usages).
-
-OUTPATH (required argument) is the absolute path of the output matrix file.
-Output file features (text encoding, field separator, empty cell content) can
-be tuned through specific optional arguments ("--output_file_encoding",
-"--output_file_separator", "--output_file_na_representation").
-
-+---+ ABOUT ARGUMENTS: +------------------------------------------------------+
-
-"""
-
-
-
-import os, sys
+import sys
+import os
 import pandas as pd
 
+
+__author__ = "Stefano Brasca"
+__copyright__ = "SR-TIGET"
+__credits__ = ["Stefano Brasca", "Andrea Calabria", "Giulio Spinozzi"]
+__version__ = "0.99"
+__maintainer__ = "Stefano Brasca"
+__email__ = "brasca.stefano@hsr.it"
+__status__ = "Development"
 
 
 ### APPUNTI DI SVILUPPO ##############################################################################################################
@@ -104,12 +70,62 @@ output_na_rep = ''  # how to WRITE missing data
 input_matrixes_sep = '\t'
 input_matrixes_encoding = 'utf-8'
 input_matrixes_prefix = None  # None or a list paired with input_paths
+use_attributes = None  # None or list of int 0-based (do relabelling)
+old_attibute_sep = '_'  # It makes sense only if use_attributes is not None 
+new_attribute_sep = '_'  # It makes sense only if use_attributes is not None
+
 ###############################################################################
 
 
 if __name__ == '__main__':
     
-    ### DEFAULT VALUES AS PROGRAM ####################################################################################
+    description = """
++---+ GENERAL DESCRIPTION +---------------------------------------------------+
+
+This program takes as input one or more matrix files and unify them, row and
+column wise, by summation. A single file is created as output.
+With one input matrix only, the program acts just as a "re-formatter".
+
++---+ DETAILS +---------------------------------------------------------------+
+
+INPATHs (required argument(s)) are one or more absolute path of matrix files.
+
+Matrix files are expected to be plain text files (encoding can be specified by
+"--input_file_encoding" optional argument), tabulated with a file separator
+("--input_file_separator" optional argument).
+
+First column is expected to host row IDs (IS IDs or whatever) as well as first
+row is interpreted as column labels. The cell in common is taken as
+"row ID name" and can be any.
+
+The rest of the matrix is taken as 'content' (no special 'margins' or whatever
+are allowed). Matrix content of each cell must be numeric or empty.
+
+INPUT COMPLIANCE IS UP TO THE USER AND NO CONTROL ARE PERFORMED.
+
+In case of duplicated row IDs or column labels, the program merges them by
+summation (mandatory in order to provide results consistent with expectations).
+
+You can redefine column labels of input matrix, specifying which attributes you
+wish to keep, with a sequence of indexes 0-based: you might want to keep just a
+subset (columns-to-group-like behaviour), re-shuffle them or whatever, even
+calling same attributes more than once ("--input_data_attributes" optional
+argument"). Up to now, input/output attribute separators are statically set
+to '_'.
+
+You can also add a signature to columns belonging to distinct matrix file,
+before unifying data ("--input_data_prefix" optional argument). Obviously
+prefixes impact on unification, that is column-label-based (you have to pay
+attention in exchange for possible tricky usages).
+
+OUTPATH (required argument) is the absolute path of the output matrix file.
+Output file features (text encoding, field separator, empty cell content) can
+be tuned through specific optional arguments ("--output_file_encoding",
+"--output_file_separator", "--output_file_na_representation").
+
++---+ ABOUT ARGUMENTS: +------------------------------------------------------+ """
+    
+    ### DEFAULT VALUES AS PROGRAM #####################################################################################
     # Print on screen
     verbose = False
     print_time = True  # eval if verbose is True
@@ -121,7 +137,10 @@ if __name__ == '__main__':
     input_matrixes_sep = '\t'  # PARSER HELP NEEDS TO BE MANUALLY UPDATED AFTER CHANGE
     input_matrixes_encoding = 'utf-8'
     input_matrixes_prefix = None  # MUST BE NONE HERE. If parsed as argument, will be a list paired with input_paths
-    ##################################################################################################################
+    use_attributes = None  # None or list/tuple of int 0-based, if parsed, for relabelling
+    old_attibute_sep = '_'  # NOT PARSED UP TO NOW. It makes sense only if use_attributes is not None (do relabelling)
+    new_attribute_sep = '_'  # NOT PARSED UP TO NOW. It makes sense only if use_attributes is not None (do relabelling)
+    ###################################################################################################################
     
     ### ARGS ###############################################################################################################
     import argparse
@@ -146,6 +165,7 @@ if __name__ == '__main__':
     parser.add_argument("-in_sep", "--input_file_separator", metavar='FIELD_SEP', choices=[r'\t', ',', ';'], default=input_matrixes_sep, help="field separator of input matrix file(s).\nDefault is: {default}.\nAvailable option are [{tab}, ',', ';']".format(tab=r"'\t'", default=r"'\t'"))
     parser.add_argument("-in_enc", "--input_file_encoding", metavar='ENCODING', default=input_matrixes_encoding, help="encoding of input matrix file(s).\nDefault is: '{default}'.\nAll the standard Python encodings are supported.\nE.g.: 'utf-8', 'ascii', ...".format(default=input_matrixes_encoding))
     parser.add_argument("-in_prefix", "--input_data_prefix", metavar='PREFIX', nargs='+', default=input_matrixes_prefix, help="allows to add a distinctive prefix to the columns\nbelonging to each input matrix.\nMust be a sequence of prefix(es) paired with\n'INPATHs' (empty prefixes, i.e. '', are allowed).\nRemember to add '_' to your prefix(es) if desired.".format(default=str(input_matrixes_prefix)))
+    parser.add_argument("-in_attr", "--input_data_attributes", metavar='INDEXES', nargs='+', type=int, default=use_attributes, help="allows to take only some attributes from column\nlabels and re-compute the matrix(es). Must be a\nsequence of non-negative integers, indicating\nindexes of attributes to keep (0-based).\nDefault behaviour is 'keep all'.\nAttribute separator is asumed to be '{old_attibute_sep}' and\ncannot be set as arg in actual implementation.".format(old_attibute_sep=str(old_attibute_sep)))
     # Parse Args
     args = parser.parse_args()
     
@@ -183,6 +203,8 @@ if __name__ == '__main__':
             print "\n[CODING ERROR] something went wrong while handling -in_prefix/--input_data_prefix. If you used it explicitly, please retry without. If this is not your case, or if the problem persists, please report this bug to the author!"
             sys.exit("\n[QUIT]\n")
         input_matrixes_prefix = args.input_data_prefix  # list or None
+    if args.input_data_attributes != use_attributes:
+        use_attributes = args.input_data_attributes
     ########################################################################################################################
 
 
@@ -226,7 +248,7 @@ def check_input_paths (*paths):
     OUT:
     0
     '''
-    verbosePrint("\n[CHECK INPUT PATH(S)]")
+    verbosePrint("\n[CHECK IN PATH(S)]")
     for p in paths:
         # normalize path
         p = str(p)
@@ -238,15 +260,15 @@ def check_input_paths (*paths):
             sys.exit("\n[QUIT]\n")
         p = os.path.expanduser(p)
         p = os.path.expandvars(p)
-        # check read permission, if path points to a file and if file exists
+        # check if path is absolute, read permission and if path points to an existing file
+        if not os.path.isabs(p):
+            print "\n[ERROR] input path must be an absolute path! Your input path='{p}'".format(p=str(p))
+            sys.exit("\n[QUIT]\n")
         if not os.access(os.path.dirname(p), os.R_OK):
             print "\n[ERROR] You have not read permission in folder='{f}'".format(f=str(os.path.dirname(p)))
             sys.exit("\n[QUIT]\n")
         if not os.path.isfile(p):
-            print "\n[ERROR] input path must point to a file! Your input path='{p}'".format(p=str(p))
-            sys.exit("\n[QUIT]\n")
-        if not os.path.exists(p):
-            print "\n[ERROR] file '{p}' does not exist!".format(p=str(p))
+            print "\n[ERROR] input path must point to an existing file! Your input path='{p}'".format(p=str(p))
             sys.exit("\n[QUIT]\n")
     verbosePrint("[DONE]")
     return 0
@@ -292,9 +314,117 @@ def import_matrixes (*paths):
     matrixes = [parse_matrix(p) for p in paths]
     verbosePrint("[DONE]")
     return matrixes
+
+def redefine_matrixes_col_labels (use_attributes, *matrixes):
+    '''
+    Purpose: 
+    return *matrixes relabelled, exploiting a sub-set of attributes
+    from original column labels, specified by 0-based indexes in use_attributes
+    (duplicates may arise). Attributes can be just reordered, or taken twice,
+    there are no constraints about this, just set use_attributes properly.
     
+    IN:
+    use_attributes - supposed to be None or a list of ints, further
+    checks will be performed inplace if needed. As list of ints, it
+    specifies indexes (0-based) of attributes in column labels
+    to be exploited for relabelling. 
+    *matrixes - ...
+    
+    OUT:
+    matrixes - list of DataFrame objects
+    '''
+    def old_labels_as_tuple_list (df, old_attibute_sep=old_attibute_sep):
+        return [tuple(label.split(old_attibute_sep)) for label in df.columns]
+    
+    def new_labels_as_tuple_list (df, use_attributes):
+        return [ tuple([o[i] for i in use_attributes]) for o in old_labels_as_tuple_list (df) ]
+    
+    def build_relabelling_dict (df, use_attributes, new_attribute_sep=new_attribute_sep):
+        '''
+        Purpose: build a relabelling_dict suitable for
+                 df.rename(columns=relabelling_dict)
+        '''
+        old_labels = df.columns
+        new_labels = [new_attribute_sep.join(t) for t in new_labels_as_tuple_list (df, use_attributes)]
+        relabelling_dict = {}
+        for o, n in zip(old_labels, new_labels):
+            relabelling_dict[o] = n
+        return relabelling_dict
+    
+    def redefine_df_col_labels (df, use_attributes, **kwargs):
+        '''
+        Purpose: return a new df relabelled according
+        to use_attributes rules.
+        Kwargs are needed only to verbosePrint
+        operations: if provided, must be both
+        "n" and "tot" (in the spirit of
+        "processing n out of tot ...")
+        '''
+        if kwargs:
+            verbosePrint("> processing {i} of {l} ... ".format(i=str(kwargs['n']), l=str(kwargs['tot'])))
+        relabelling_dict = build_relabelling_dict (df, use_attributes)
+        return df.rename(columns=relabelling_dict)
+    
+    def check_before_relabelling (df, use_attributes):
+        '''
+        Purpose: check df and return False if something
+        is not ok.
+        '''
+        # get splitted column labels
+        labels_as_tuple_list = old_labels_as_tuple_list (df)
+        # create a list of len of splitted column labels
+        tuple_len_list = [len(t) for t in labels_as_tuple_list]
+        # non homogeneous label structure (also due to old_attibute_sep)
+        if len(set(tuple_len_list)) > 1:
+            verbosePrint("[ERROR] non homogeneous label structure among input matrixes!")
+            return False
+        # single field labels or wrong old_attibute_sep
+        if tuple_len_list[0] == 1:
+            verbosePrint("[ERROR] can't find old_attibute_separator in (some) column labels!")
+            return False
+        # check label fields
+        for t in labels_as_tuple_list:
+            for f in t:
+                if (f=='') or False:  # here further tests in place of 'False'
+                    verbosePrint("[ERROR] bad split: old_attibute_separator generated empty attribute(s)!")
+                    return False
+        # use_attributes must be seq of in >= 0
+        if min(use_attributes) < 0:
+            verbosePrint("[ERROR] use_attributes schema must be sequence of int >= 0 !")
+            return False
+        # use_attributes goes beyond index of last field of column labels
+        if tuple_len_list[0] <= max(use_attributes):
+            verbosePrint("[ERROR] use_attributes schema goes beyond last index of column label attributes!")
+            return False
+        return True
+    # Do nothing if use_attributes is None
+    if use_attributes is None:
+        return [m for m in matrixes]  # return input *matrixes unchanged, as list
+    # Here task to do
+    verbosePrint("\n[REDEFINE MATRIX(ES) COLUMN LABELS]")
+    verbosePrint("* use_attributes schema: {use_attributes}".format(use_attributes=str(tuple(use_attributes))))
+    verbosePrint("* old_attibute_separator: {old_attibute_sep}".format(old_attibute_sep=str(old_attibute_sep)))
+    verbosePrint("* new_attibute_separator: {new_attribute_sep}".format(new_attribute_sep=str(new_attribute_sep)))
+    # Check
+    for m in matrixes:
+        check_m = check_before_relabelling (m, use_attributes)
+        if check_m is False:
+            verbosePrint("[SKIP THIS TASK]")
+            return [m for m in matrixes]  # return input *matrixes unchanged, as list
+    # Relabel if check went straight
+    matrixes = [redefine_df_col_labels (m, use_attributes, n=i, tot=len(matrixes)) for i,m in enumerate(matrixes, start=1)]
+    verbosePrint("[DONE]")
+    return matrixes
+
 def compact_matrixes (*matrixes):
+    '''
+    Purpose: if *matrixes have duplicate column or row
+    IDs, related columns or rows will be merged by
+    summation.
     
+    IN: *matrixes
+    OUT: matrixes - list of ...
+    '''
     def merge_rows_by_index (df):
         '''
         Purpose: sum-up rows with same index
@@ -338,7 +468,7 @@ def compact_matrixes (*matrixes):
         return df
     verbosePrint("\n[COMPACT MATRIX(ES)]")
     matrixes = [compact_df(m, n=i, tot=len(matrixes)) for i,m in enumerate(matrixes, start=1)]
-    verbosePrint("[DONE]")      
+    verbosePrint("[DONE]")
     return matrixes
 
 def add_prefixes_to_matrixes(prefix_sequence, matrix_sequence):
@@ -544,6 +674,8 @@ def main(out_path, *input_paths):
     out_path = build_outpath (out_path)
     # load matrixes - 'matrixes' var is always a list
     matrixes = import_matrixes (*input_paths)
+    # redefine col label strcture according to use_attributes (acts only if use_attributes is not None)
+    matrixes = redefine_matrixes_col_labels (use_attributes, *matrixes)
     # merge (sum) rows/cols with same IDs/Labels
     matrixes = compact_matrixes (*matrixes)
     # add prefixes (acts only if input_matrixes_prefix is not None)
