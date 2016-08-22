@@ -17,10 +17,10 @@ import pandas as pd
 __author__ = "Stefano Brasca"
 __copyright__ = "SR-TIGET"
 __credits__ = ["Stefano Brasca", "Andrea Calabria", "Giulio Spinozzi"]
-__version__ = "0.99"
+__version__ = "1.0"
 __maintainer__ = "Stefano Brasca"
 __email__ = "brasca.stefano@hsr.it"
-__status__ = "Development"
+__status__ = "Testing"
 
 
 ### APPUNTI DI SVILUPPO ##############################################################################################################
@@ -58,7 +58,7 @@ __status__ = "Development"
 ###########################################################
 
 
-### DEFAULT VALUES AS MODULE ##################################################
+### DEFAULT VALUES AS MODULE ##############################################################################
 # Print on screen
 verbose = True
 print_time = True  # eval if verbose is True
@@ -72,9 +72,9 @@ input_matrixes_encoding = 'utf-8'
 input_matrixes_prefix = None  # None or a list paired with input_paths
 
 use_attributes = None  # None or list of int 0-based (do relabelling)
-old_attibute_sep = '_'  # exploited also by add_prefix!
-new_attribute_sep = '_'  # It makes sense only if use_attributes is not None
-###############################################################################
+old_attibute_sep = '_'  # Exploited in relabelling (use_attributes is not None) but also by add_prefix!
+new_attribute_sep = '_'  # It makes sense only if use_attributes is not None (do relabelling)
+###########################################################################################################
 
 
 if __name__ == '__main__':
@@ -84,11 +84,11 @@ if __name__ == '__main__':
 
 This program takes as input one or more matrix files and unify them, row and
 column wise, by summation. A single file is created as output.
-With one input matrix only, the program acts just as a "re-formatter".
+With one input matrix only, the program acts similarly to a "re-formatter".
 
 +---+ DETAILS +---------------------------------------------------------------+
 
-INPATHs (required argument(s)) are one or more absolute path of matrix files.
+INPATHs (required argument(s)) are one or more absolute paths of matrix files.
 
 Matrix files are expected to be plain text files (encoding can be specified by
 "--input_file_encoding" optional argument), tabulated with a file separator
@@ -125,7 +125,7 @@ be tuned through specific optional arguments ("--output_file_encoding",
 
 +---+ ABOUT ARGUMENTS: +------------------------------------------------------+ """
     
-    ### DEFAULT VALUES AS PROGRAM #####################################################################################
+    ### DEFAULT VALUES AS PROGRAM ##################################################################################################
     # Print on screen
     verbose = False
     print_time = True  # eval if verbose is True
@@ -138,11 +138,11 @@ be tuned through specific optional arguments ("--output_file_encoding",
     input_matrixes_encoding = 'utf-8'
     input_matrixes_prefix = None  # MUST BE NONE HERE. If parsed as argument, will be a list paired with input_paths
     use_attributes = None  # None or list/tuple of int 0-based, if parsed, for relabelling
-    old_attibute_sep = '_'  # NOT PARSED UP TO NOW. It makes sense only if use_attributes is not None (do relabelling)
+    old_attibute_sep = '_'  # NOT PARSED UP TO NOW. Exploited in relabelling (use_attributes is not None) but also by add_prefix!
     new_attribute_sep = '_'  # NOT PARSED UP TO NOW. It makes sense only if use_attributes is not None (do relabelling)
-    ###################################################################################################################
+    ################################################################################################################################
     
-    ### ARGS ###############################################################################################################
+    ### ARGS ############################################################################################################################
     import argparse
     class MyParser(argparse.ArgumentParser): 
        def error(self, message):
@@ -169,7 +169,7 @@ be tuned through specific optional arguments ("--output_file_encoding",
     # Parse Args
     args = parser.parse_args()
     
-    ########################################################################################################################
+    #####################################################################################################################################
     
     ### SET VALUES #########################################################################################################
     # positional
@@ -270,6 +270,7 @@ def check_input_paths (*paths):
         if not os.path.isfile(p):
             print "\n[ERROR] input path must point to an existing file! Your input path='{p}'".format(p=str(p))
             sys.exit("\n[QUIT]\n")
+    verbosePrint("...OK!")
     verbosePrint("[DONE]")
     return 0
 
@@ -376,7 +377,7 @@ def redefine_matrixes_col_labels (use_attributes, *matrixes):
         tuple_len_list = [len(t) for t in labels_as_tuple_list]
         # non homogeneous label structure (also due to old_attibute_sep)
         if len(set(tuple_len_list)) > 1:
-            verbosePrint("[ERROR] non homogeneous label structure among input matrixes!")
+            verbosePrint("[ERROR] non homogeneous label structure within input matrix(es)!")
             return False
         # single field labels or wrong old_attibute_sep
         if tuple_len_list[0] == 1:
@@ -399,7 +400,7 @@ def redefine_matrixes_col_labels (use_attributes, *matrixes):
         return True
     # Do nothing if use_attributes is None
     if use_attributes is None:
-        return [m for m in matrixes]  # return input *matrixes unchanged, as list
+        return list(matrixes)  # return input *matrixes unchanged, as list
     # Here task to do
     verbosePrint("\n[REDEFINE MATRIX(ES) COLUMN LABELS]")
     verbosePrint("* use_attributes schema: {use_attributes}".format(use_attributes=str(tuple(use_attributes))))
@@ -410,7 +411,7 @@ def redefine_matrixes_col_labels (use_attributes, *matrixes):
         check_m = check_before_relabelling (m, use_attributes)
         if check_m is False:
             verbosePrint("[SKIP THIS TASK]")
-            return [m for m in matrixes]  # return input *matrixes unchanged, as list
+            return list(matrixes)  # return input *matrixes unchanged, as list
     # Relabel if check went straight
     matrixes = [redefine_df_col_labels (m, use_attributes, n=i, tot=len(matrixes)) for i,m in enumerate(matrixes, start=1)]
     verbosePrint("[DONE]")
@@ -475,7 +476,7 @@ def add_prefixes_to_matrixes(prefix_sequence, matrix_sequence):
     '''
     Purpose: add prefixes to matrixes, pair-wise (one prefix in prefix_sequence
     applied to all columns of one matrix in matrix_sequence). If prefix_sequence
-    is None, matrix_sequence is returned unchanged.
+    is None, matrix_sequence is returned unchanged (as list).
     
     IN:
     prefix_sequence - a sequence of item(s) that support __str__
@@ -487,12 +488,13 @@ def add_prefixes_to_matrixes(prefix_sequence, matrix_sequence):
     NOTE: if input sequences have the same length, OUT is exhaustive.
     '''
     # check arguments
-    if prefix_sequence is None:
-        return matrix_sequence  # hopefully a list 
     from collections import Sequence
-    if not ((isinstance(prefix_sequence, Sequence) and not isinstance(prefix_sequence, basestring)) and (isinstance(matrix_sequence, Sequence) and not isinstance(matrix_sequence, basestring))):
-        print "\n[ERROR] add_prefixes_to_matrixes takes only sequences as arguments!"
-        sys.exit("\n[QUIT]\n")
+    if prefix_sequence is not None:
+        if not ((isinstance(prefix_sequence, Sequence) and not isinstance(prefix_sequence, basestring)) and (isinstance(matrix_sequence, Sequence) and not isinstance(matrix_sequence, basestring))):
+            print "\n[ERROR] add_prefixes_to_matrixes takes only sequences as arguments!"
+            sys.exit("\n[QUIT]\n")
+    if prefix_sequence is None:
+        return list(matrix_sequence)  # return input matrix_sequence unchanged, as list
     # def func
     def add_prefix (prefix, *matrixes, **kwargs):
         '''
@@ -524,16 +526,20 @@ def unify_matrixes (*matrixes):
     OUT:
     final_matrix -  resulting Pandas DataFrame
     '''
-    final_matrix = pd.DataFrame()
-    verbosePrint("\n[UNIFY MATRIXES]")
-    i=0
-    for m in matrixes:
-        i += 1
-        verbosePrint("> processing {i} of {l} ... ".format(i=str(i), l=str(len(matrixes))))
-        final_matrix = final_matrix.add(m,
-                                        fill_value=0)
-    verbosePrint("[DONE]")
-    return final_matrix
+    
+    if len(matrixes) > 1:
+        verbosePrint("\n[UNIFY MATRIXES]")
+        final_matrix = pd.DataFrame()
+        i=0
+        for m in matrixes:
+            i += 1
+            verbosePrint("> processing {i} of {l} ... ".format(i=str(i), l=str(len(matrixes))))
+            final_matrix = final_matrix.add(m,
+                                            fill_value=0)
+        verbosePrint("[DONE]")
+        return final_matrix
+    else:
+        return matrixes[0]
    
 def buildOUTDIR(ground_dir, *subfolders):
     '''
@@ -622,7 +628,7 @@ def build_outpath (out_path):
     out_path - complete abs path of the file you want to write
     (checked, normed, expanded and existing till the last directory)
     '''
-    verbosePrint("\n[CHECK OUT PATH]")
+    verbosePrint("\n[CHECK AND CREATE OUT PATH]")
     out_path = str(out_path)
     try:
         out_path = os.path.normpath(out_path)
@@ -638,7 +644,7 @@ def build_outpath (out_path):
     items = out_path.split(os.sep)
     buildOUTDIR(items[0]+os.sep, *tuple(items[1:-1]))
     verbosePrint("[DONE]")
-    return out_path
+    return str(out_path)
 
 def export_matrix (matrix, path):
     '''
@@ -666,13 +672,13 @@ def export_matrix (matrix, path):
 ### MAIN FUNC ############################################################################################################################################################################
 
 def main(out_path, *input_paths):
-    verbosePrint("\n[[[START]]]")
-    # check and norm input paths
+    verbosePrint("\n[START]")
+    # check and norm input paths - returned input_paths is a list
     check_input_paths (*input_paths)
     input_paths = normalize_input_paths (*input_paths)
-    # check and norm out path and create folder's tree if does not exist
+    # check and norm out path and create folder's tree if does not exist - returned out_path is a str
     out_path = build_outpath (out_path)
-    # load matrixes - 'matrixes' var is always a list
+    # load matrixes - returned matrixes is always a list of Pandas DataFrame(s), from now on
     matrixes = import_matrixes (*input_paths)
     # redefine col label strcture according to use_attributes (acts only if use_attributes is not None)
     matrixes = redefine_matrixes_col_labels (use_attributes, *matrixes)
@@ -680,18 +686,12 @@ def main(out_path, *input_paths):
     matrixes = compact_matrixes (*matrixes)
     # add prefixes (acts only if input_matrixes_prefix is not None)
     matrixes = add_prefixes_to_matrixes(input_matrixes_prefix, matrixes)
-    final_matrix = None
-    # split cases
-    if len(matrixes) > 1:
-        # unify matrixes
-        final_matrix = unify_matrixes (*matrixes)
-    else:
-        # just extract from matrixes (list)
-        final_matrix = matrixes[0]
+    # merge matrixes: acts only if len(matrixes) > 1, else matrixes[0] is returned - final_matrix is a Pandas DataFrame
+    final_matrix = unify_matrixes (*matrixes)
     # export
     export_matrix (final_matrix, out_path)
-    verbosePrint("\n[[[END]]]\n")
-    return 0
+    verbosePrint("\n[END]\n")
+    return out_path
 
 
 
