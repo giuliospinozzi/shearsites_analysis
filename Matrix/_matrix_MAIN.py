@@ -75,6 +75,15 @@ any_df = loadData(launch_path_dict, drop_headers, compression)
 
 # Here describe() and check() any_df should be a good idea
 
+
+### TEST CODE #################################
+import density_devel
+verbosePrint("\n>>> TESTING ISs DETECTION ...")
+any_df = density_devel.compute_ISs(any_df)
+verbosePrint(">>> Done!")
+###############################################
+
+
 ### Filter Data #######################################################################################################################################
 if filter_data:
     verbosePrint("\n>>> Cleaning DataFrame ...")

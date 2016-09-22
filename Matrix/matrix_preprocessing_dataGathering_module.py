@@ -97,17 +97,17 @@ def buildDataFrame (refactored_DF, rBC_fasta_DF=None, drop_headers=True):
         # reset index / keep headers
         raw_DF.reset_index(inplace=True, drop=drop_headers)
         # change columns order and return
-        col = ['association_ID', 'genomic_coordinates', 'shearsite', 'randomBC', 'header']
+        col = ['association_ID', 'genomic_coordinates', 'shearsite', 'randomBC', 'prod_header']
         if 'randomBC' not in raw_DF.columns:
             col.remove('randomBC')
         if drop_headers:
-            col.remove('header')
+            col.remove('prod_header')
         long_DF = raw_DF[col]
         return long_DF
         # NOTE:
         #      0) long_DF has one row per read
         #      1) for sure long_DF has columns: ['association_ID', 'genomic_coordinates', 'shearsite']
-        #      2) 'header' column may exist or not (arg drop_headers: True o False)
+        #      2) 'prod_header' column may exist or not (arg drop_headers: True o False)
         #      3) 'randomBC' column may exist or not (dipende dall'input, v. join function)
         #      4) seq_count column does not exist yet (should be identically 1!)
         # long_DF is just a pointer to raw_DF: raw_DF is MODIFIED INPLACE along the function.
@@ -116,15 +116,15 @@ def buildDataFrame (refactored_DF, rBC_fasta_DF=None, drop_headers=True):
         import numpy as np
         # set up grouping rule (all but 'header' if present)
         grouping = list(long_DF.columns)
-        if 'header' in grouping:
-            grouping.remove('header')
+        if 'prod_header' in grouping:
+            grouping.remove('prod_header')
         # exhausitve df
-        if 'header' in long_DF.columns:
+        if 'prod_header' in long_DF.columns:
             # create groups
             # work-around "the function does not reduce" error. This way I can get lists of headers in a new column named 'header_list'
-            exhaustive_df = long_DF.groupby(grouping)['header'].apply(lambda x: x.tolist())
+            exhaustive_df = long_DF.groupby(grouping)['prod_header'].apply(lambda x: x.tolist())
             exhaustive_df = pd.DataFrame(exhaustive_df)
-            exhaustive_df.rename(columns={'header': 'header_list'}, inplace=True)
+            exhaustive_df.rename(columns={'prod_header': 'header_list'}, inplace=True)
             exhaustive_df.reset_index(inplace=True)
             # add 'seq_count' column as len(header list)
             exhaustive_df['seq_count'] = exhaustive_df['header_list'].apply(lambda x: len(x))
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     # do stuff for test purposes
     DF_refactored = DF_refactored.append(DF_refactored) #double data
     DF_refactored.index = range(1000, 1000+len(DF_refactored)) #forced tricky indexing to let something match
-    DF_refactored.index.name = 'header' #fix index name
+    DF_refactored.index.name = 'prod_header' #fix index name
     DF_randomBC = DF_randomBC.append(DF_randomBC) #double data
     DF_randomBC.index = range(1000, 1000+len(DF_randomBC)) #forced tricky indexing to let something match
     DF_randomBC.index.name = 'header' #fix index name
