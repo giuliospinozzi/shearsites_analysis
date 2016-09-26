@@ -19,16 +19,19 @@ verbosePrint = matrix_configure_module.verbosePrint
 humanSorted = matrix_configure_module.humanSorted
 
 
+#+++++++++++++++++++++++++++++++++++++++ FUNCTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-
-def get_ensembles (any_df, per_sample=False, max_dist=3, max_span=5):
-    # if per_sample is True, esnambles are computed sample-by-sample, not overall (False)
+def get_ensembles (any_df, per_sample, max_dist, max_span):
+    # if per_sample is True, ensambles are computed sample-by-sample, not overall (False)
     # if (locus[n+1] - locus[n] > max_dist), the ensamble is truncated at locus[n]
     # if (locus[n+1] - locus[0] > max_span), the ensamble is truncated at locus[n]
     # NOTE/TrickyUsages: > max_dist=0 OR max_span=1 yield single-covered-base ensambles
     #                    > max_span=0 yield single-ENTRY ensambles (usually NON-SENSE)
     
     verbosePrint("    > Building covered base ensembles ...")
+    verbosePrint("      per_sample: {per_sample}".format(per_sample=str(per_sample)))
+    verbosePrint("      max_dist: {max_dist}".format(max_dist=str(max_dist)))
+    verbosePrint("      max_span: {max_span}".format(max_span=str(max_span)))
     
     # Add and cast 'chr', 'locus' and 'strand' columns
     verbosePrint("      * Preparing data ...")
@@ -102,24 +105,23 @@ def get_ensembles (any_df, per_sample=False, max_dist=3, max_span=5):
         ensembles += frame_as_ensambles
         verbosePrint("          {z} ensembles built.".format(z=str(len(frame_as_ensambles))))
     
-    verbosePrint("    > Done! {tot} ensembles built.".format(tot=str(len(ensembles))))
+    verbosePrint("      Done! {tot} ensembles built.".format(tot=str(len(ensembles))))
     return ensembles
-
-
 
 
 def classic_IS (ensemble, place_on_mode=True, **kwargs):
     # NOTE: Kwargs are needed only to verbosePrint operations: if provided, must be both "n" and "tot" (in the spirit of "processing n out of tot ...")
-    
-    if kwargs:
-            verbosePrint("        > processing {n} of {tot} ... ".format(n=str(kwargs['n']), tot=str(kwargs['tot'])))
-            
+                
     # Fast exit for single-base ensembles
     if len(set(ensemble['genomic_coordinates'])) < 2:
-        verbosePrint("          Fast IS: {is_id}".format(is_id=str(list(set(ensemble['genomic_coordinates']))[0])))
+        if kwargs:
+            verbosePrint("        > processing {n} of {tot}: {is_id} ... ".format(n=str(kwargs['n']), tot=str(kwargs['tot']), is_id=str(list(set(ensemble['genomic_coordinates']))[0])))
         return ensemble.copy()
-    verbosePrint("          Slow IS: {is_ids}".format(is_ids=str(set(ensemble['genomic_coordinates']))))
-    
+        
+    # Standard flux
+    if kwargs:
+        verbosePrint("        > processing {n} of {tot}: {is_ids} ... ".format(n=str(kwargs['n']), tot=str(kwargs['tot']), is_ids=str(tuple(humanSorted(list(set(ensemble['genomic_coordinates'])))))))
+
     # Get coordinates and seq_count in tmp_df
     tmp_df = pd.concat([ensemble['seq_count'], ensemble['genomic_coordinates'].str.split('_').apply(pd.Series).rename(columns={0:'chr', 1:'locus', 2:'strand'})], axis=1)
     tmp_df['locus'] = tmp_df['locus'].astype(int)
@@ -164,31 +166,34 @@ def classic_IS (ensemble, place_on_mode=True, **kwargs):
     return IS
 
 
-
-
-def compute_ISs (any_df, method='classic'):
+def compute_ISs (any_df, ensembles_per_sample=False, ensembles_max_dist=7, ensembles_max_span=8, ISs_method='classic'):
     
     # Compute ensembles
-    ensembles = get_ensembles (any_df)
+    ensembles = get_ensembles (any_df, ensembles_per_sample, ensembles_max_dist, ensembles_max_span)
     
     # Get ISs (list of any_df chunks properly processed)
     verbosePrint("    > Computing ISs over covered base ensembles ...")
     ISs = None
-    if method=='classic':
-        verbosePrint("      * method: 'classic'")
+    if ISs_method=='classic':
+        verbosePrint("      * method: {method}".format(method=str(ISs_method)))
         if 'header_list' in any_df.columns:
-            verbosePrint("        [WARNING] 'classic' method for ISs computing is still buggy and may also CRUSH while trying handle 'header_list'!")
+            verbosePrint("        [WARNING] 'classic' method for ISs computing is still buggy and cannot properly handle 'header_list'!")
+            verbosePrint("                  It may crush while performing operations requiring read headers or even yield wrong results.")
+            verbosePrint("                  TO BE SAFE, PLEASE RELAUCH configuring 'drop_headers=True'.")
         #ISs = [classic_IS(e) for e in ensembles]
         ISs = [classic_IS(e, n=n, tot=len(ensembles)) for n,e in enumerate(ensembles, start=1)]
+    elif ISs_method=='another_ISs_method':
+        #verbosePrint("      * method: {method}".format(method=str(ISs_method)))
+        #ISs = [another_ISs_method_func(e) for e in ensembles]
+        pass
     else:
-        print "\n[ERROR] Unsupported 'method={m}' for compute_ISs".format(m=str(method))
+        print "\n[ERROR] Unsupported 'method={m}' for compute_ISs".format(m=str(ISs_method))
         sys.exit("\n[QUIT]\n")
-    verbosePrint("    > Done! {tot} ISs built.".format(tot=str(len(ISs))))
+    verbosePrint("      Done! {tot} ISs built.".format(tot=str(len(ISs))))
     
     # Reconstruct data
     verbosePrint("    > Reshaping data ...")
-    ISs_any_df = pd.concat(ISs)
-    ISs_any_df.reset_index(inplace=True, drop=True)
+    ISs_any_df = pd.concat(ISs, ignore_index=True)
     verbosePrint("      Done! DataFrame built. {n} entries.".format(n=str(len(ISs_any_df))))
     
     return ISs_any_df

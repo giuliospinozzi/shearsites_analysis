@@ -238,7 +238,7 @@ def filterBy_randomBC_EditDistance(any_df, inside_ShS=True, ED_rule=3):
     verbosePrint("      {n} total entries to analyze.".format(n=str(len(any_df))))
     verbosePrint("      inside_ShS: {inside_ShS}.".format(inside_ShS=str(inside_ShS)))
     if EDthreshold is not None:
-        verbosePrint("      Static ED_rule: {ED_rule}. Filer out if less or equal!".format(ED_rule=str(ED_rule)))
+        verbosePrint("      Static ED_rule: {ED_rule}. Filter out if less or equal!".format(ED_rule=str(ED_rule)))
     else:
         verbosePrint("      Dynamic ED_rule: inferred for each group.")
     # prepare data
@@ -291,9 +291,11 @@ def filterBy_randomBC_EditDistance(any_df, inside_ShS=True, ED_rule=3):
                 append_to_filtered_df_list(filtered_frame)
             else:
                 append_to_filtered_df_list(frame)
+    verbosePrint("        Done.")
     # build filtered_any_df to return
+    verbosePrint("      * Reshaping data ...")
     filtered_any_df = pd.concat(filtered_df_list)
-    verbosePrint("        Done. {n} entries kept ({p}% discarded)".format(n=str(len(filtered_any_df)), p=str((float(len(any_df)) - float(len(filtered_any_df))) / float(len(any_df)) * 100)[:5]))
+    verbosePrint("        Done. {n} / {N} entries kept ({d} discarded - {p}%)".format(d=str(len(any_df) - len(filtered_any_df)), N=str(len(any_df)), n=str(len(filtered_any_df)), p=str((float(len(any_df)) - float(len(filtered_any_df))) / float(len(any_df)) * 100)[:5]))
     verbosePrint("    > Done!")
     return filtered_any_df
 

@@ -28,6 +28,15 @@ dataset_tuple_list = [ ('/opt/NGS/results', 'AssayValidation', 'CEMJY', ['LANE_2
 drop_headers = True  # if False, headers are kept in any_df (as lists, under 'header_list' column)
 compression = 'gzip'  # supported compression: None or 'gzip'. For both refactored data and randomBC data.
 
+## ISs computation - matrix_processing_ISsMethods_module ##
+do_ISs = True
+# ensembles config: vars evaluated (and tasks executed) only if do_ISs is True
+ensembles_per_sample = False
+ensembles_max_dist = 7
+ensembles_max_span = 8
+# ISs method: vars evaluated (and tasks executed) only if do_ISs is True
+ISs_method = 'classic'  # The only one available up to now. place_on_mode=True default behaviour.
+
 ### Filter Data - matrix_preprocessing_filterData_module ##
 filter_data = True  # allow filtering as stated below
 # filterBy_randomBC_EditDistance: vars evaluated (and tasks executed) only if filter_data is True
@@ -43,7 +52,7 @@ matrix_outfolder = "Matrixes"  # subfolder of common_output_ground_dir where wri
 matrix_files_delimiter = '\t'
 # Relabel columns (BARCODES <-> master-keys of asso data dict in this implementation <-> sample column in any_df)
 # with a concatenation of related attributes (fields/columns of AssoFile <-> sub-keys of asso data dict sub-dicts)
-relabelling = True
+relabelling = False
 use_fields = 6  # can be an int or a sequence of ints
 concat = "_"  # char to concatenate fields in use_fields (if more than one)
 

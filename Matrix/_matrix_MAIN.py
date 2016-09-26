@@ -20,6 +20,8 @@ from matrix_preprocessing_assoFile_module import loadAssoFile
 from matrix_preprocessing_dataSources_module import getLaunchPathDict
 from matrix_preprocessing_dataLoading_module import loadData
 
+from matrix_processing_ISsMethods_module import compute_ISs
+
 from matrix_preprocessing_filterData_module import filterBy_randomBC_EditDistance
 
 from matrix_processing_computeMatrixes_module import buildSeqCountMatrix, buildShsCountMatrix, buildBarcodeCountMatrix, buildCellCountMatrix, buildFragmentEstimateMatrix
@@ -45,6 +47,15 @@ asso_delimiter = matrix_configure_module.asso_delimiter
 dataset_tuple_list = matrix_configure_module.dataset_tuple_list
 drop_headers = matrix_configure_module.drop_headers
 compression = matrix_configure_module.compression
+
+### ISs computation - matrix_processing_ISsMethods_module
+do_ISs = matrix_configure_module.do_ISs
+# ensembles config
+ensembles_per_sample = matrix_configure_module.ensembles_per_sample
+ensembles_max_dist = matrix_configure_module.ensembles_max_dist
+ensembles_max_span = matrix_configure_module.ensembles_max_span
+# ISs method
+ISs_method = 'classic'
 
 ### Filter Data configs - matrix_preprocessing_filterData_module
 filter_data = matrix_configure_module.filter_data
@@ -75,14 +86,12 @@ any_df = loadData(launch_path_dict, drop_headers, compression)
 
 # Here describe() and check() any_df should be a good idea
 
-
-### TEST CODE #################################
-import density_devel
-verbosePrint("\n>>> TESTING ISs DETECTION ...")
-any_df = density_devel.compute_ISs(any_df)
-verbosePrint(">>> Done!")
-###############################################
-
+### Compute ISs ################################################################################################################################################################
+if do_ISs:
+    verbosePrint("\n>>> Computing ISs (alpha version) ...")
+    any_df = compute_ISs(any_df, ensembles_per_sample=ensembles_per_sample, ensembles_max_dist=ensembles_max_dist, ensembles_max_span=ensembles_max_span, ISs_method=ISs_method)
+    verbosePrint(">>> Done!")
+################################################################################################################################################################################
 
 ### Filter Data #######################################################################################################################################
 if filter_data:
