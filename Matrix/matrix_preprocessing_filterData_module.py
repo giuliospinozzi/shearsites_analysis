@@ -115,9 +115,12 @@ def checkBCcouples_ED(any_df, inside_ShS=True, max_ED=12):
         print "\n[ERROR] checkBCcouples_ED wrong input! Columns {required_columns} are required. Given dataframe has {columns_found}.".format(required_columns=str(required_columns), columns_found=str(list(any_df)))
         sys.exit("\n[QUIT]\n")
     DF = pd.concat(l, axis=1, join='inner')
-    # Shuffle DF to guarantee randomness in case of ties
-    from numpy.random import permutation as shuffle_rows
-    DF = DF.iloc[shuffle_rows(len(DF))]
+    # Shuffling removed to guarantee reproducibility
+    ########################################################
+    ## Shuffle DF to guarantee randomness in case of ties
+    #from numpy.random import permutation as shuffle_rows
+    #DF = DF.iloc[shuffle_rows(len(DF))]
+    ########################################################
     DF.reset_index(inplace=True, drop=True)
     
     # Create BCcouples_ED_DF from new DF
