@@ -36,9 +36,9 @@ __status__ = "Testing"
 
 
 ### NOTE ABOUT DEFAULT VALUES (as prog or module) #########
-# This parameters are hidden inside funcs and they
-# do not appear as expicit kwargs. The reason is that
-# python 2.7 does not support the synthax:
+# These variables are hidden inside funcs (globally called)
+# and they do not appear as expicit kwargs. The reason is
+# that python 2.7 does not support the synthax:
 #     func(*args, kwarg1='stuff', kwarg2='items', ...)
 # while python 3 does.
 # The only option could have been something like:
@@ -165,7 +165,7 @@ be tuned through specific optional arguments ("--output_file_encoding",
     parser.add_argument("-in_sep", "--input_file_separator", metavar='FIELD_SEP', choices=[r'\t', ',', ';'], default=input_matrixes_sep, help="field separator of input matrix file(s).\nDefault is: {default}.\nAvailable option are [{tab}, ',', ';']".format(tab=r"'\t'", default=r"'\t'"))
     parser.add_argument("-in_enc", "--input_file_encoding", metavar='ENCODING', default=input_matrixes_encoding, help="encoding of input matrix file(s).\nDefault is: '{default}'.\nAll the standard Python encodings are supported.\nE.g.: 'utf-8', 'ascii', ...".format(default=input_matrixes_encoding))
     parser.add_argument("-in_prefix", "--input_data_prefix", metavar='PREFIX', nargs='+', default=input_matrixes_prefix, help="allows to add a distinctive prefix to the columns\nbelonging to each input matrix.\nMust be a sequence of prefix(es) paired with\n'INPATHs' (empty prefixes, i.e. '', are allowed).".format(default=str(input_matrixes_prefix)))
-    parser.add_argument("-in_attr", "--input_data_attributes", metavar='INDEXES', nargs='+', type=int, default=use_attributes, help="allows to take only some attributes from column\nlabels and re-compute the matrix(es). Must be a\nsequence of non-negative integers, indicating\nindexes of attributes to keep (0-based).\nDefault behaviour is 'keep all'.\nAttribute separator is asumed to be '{old_attibute_sep}' and\ncannot be set as arg in actual implementation.".format(old_attibute_sep=str(old_attibute_sep)))
+    parser.add_argument("-in_attr", "--input_data_attributes", metavar='INDEXES', nargs='+', type=int, default=use_attributes, help="allows to take only some attributes from column\nlabels and re-compute the matrix(es). Must be a\nsequence of non-negative integers, indicating\nindexes of attributes to keep (0-based).\nDefault behaviour is 'keep all'.\nAttribute separator is assumed to be '{old_attibute_sep}' and\ncannot be set as arg in actual implementation.".format(old_attibute_sep=str(old_attibute_sep)))
     # Parse Args
     args = parser.parse_args()
     
@@ -307,10 +307,7 @@ def import_matrixes (*paths):
     '''
     def parse_matrix (path):
         verbosePrint("> loading {path} ... ".format(path=str(path)))
-        return pd.DataFrame.from_csv(path,
-                                     encoding=input_matrixes_encoding,
-                                     sep=input_matrixes_sep,
-                                     parse_dates=False)
+        return pd.DataFrame.from_csv(path,encoding=input_matrixes_encoding,sep=input_matrixes_sep,parse_dates=False)
     verbosePrint("\n[LOAD MATRIX(ES)]")
     matrixes = [parse_matrix(p) for p in paths]
     verbosePrint("[DONE]")
