@@ -23,8 +23,8 @@ __status__ = "Testing"
 
 
 ### APPUNTI DI SVILUPPO ##############################################################################################################
-# 1) l'argomento inpath deve accettare non solo (liste di) file ma anche (liste di) directory, da processare per intero.
-#    Deve accorgersi automaticamente se si tratta di directory e, in questo caso, la sezione CHECK AND SET VALUES deve
+# 1) - FATTO !!! l'argomento inpath deve accettare non solo (liste di) file ma anche (liste di) directory, da processare per intero.
+#    Deve accorgersi automaticamente se si tratta di directory e, in questo caso, deve
 #    occuparsi di ricavare tutti i path dei file da processare e fare override della variabile 'input_paths'
 # 2) aggiungere altri arg che ora sono parametri statici: qualcosa è già pronto (es. old_to_new_suffix ...), altri
 #    vanno cercati nel codice (es. input_matrixes_encoding ...)
@@ -147,7 +147,7 @@ def verbosePrint(x, verbose=verbose, print_time=print_time):
             print x
         sys.stdout.flush()
 
-def check_input_paths (*paths):
+def check_input_paths (*paths, **kwargs):
     '''
     Purpose: check input matrix file path(s);
              exit and explain why if something is wrong.
@@ -158,7 +158,12 @@ def check_input_paths (*paths):
     OUT:
     0
     '''
-    verbosePrint("\n[CHECK IN PATH(S)]")
+    # set behaviour by kwargs
+    quiet=kwargs.get('quiet', False)
+    check_isfile=kwargs.get('check_isfile', True)
+
+    if not quiet:
+        verbosePrint("\n[CHECK IN PATH(S)]")
     for p in paths:
         # normalize path
         p = str(p)
@@ -177,12 +182,30 @@ def check_input_paths (*paths):
         if not os.access(os.path.dirname(p), os.R_OK):
             print "\n[ERROR] You have not read permission in folder='{f}'".format(f=str(os.path.dirname(p)))
             sys.exit("\n[QUIT]\n")
-        if not os.path.isfile(p):
-            print "\n[ERROR] input path must point to an existing file! Your input path='{p}'".format(p=str(p))
-            sys.exit("\n[QUIT]\n")
-    verbosePrint("...OK!")
-    verbosePrint("[DONE]")
+        if check_isfile:
+            if not os.path.isfile(p):
+                print "\n[ERROR] input path must point to an existing file! Your input path='{p}'".format(p=str(p))
+                sys.exit("\n[QUIT]\n")
+    if not quiet:
+        verbosePrint("...OK!")
+        verbosePrint("[DONE]")
     return 0
+
+def input_paths_from_dir (*paths):
+    '''
+    '''
+    verbosePrint("\n[GET IN PATH(S)]")
+    check_input_paths (*paths, quiet=True, check_isfile=False)
+    path_list = []
+    for p in paths:
+        if os.path.isdir(p):
+            path_list += [os.path.normpath(os.path.join(p, f)) for f in os.listdir(p) if (os.path.isfile(os.path.join(p, f)) and not p.startswith('.'))]
+        else:
+            path_list.append(p)
+    verbosePrint("...OK!")
+    verbosePrint("* input paths: {path_list}".format(path_list=str(path_list)))
+    verbosePrint("[DONE]")
+    return path_list
 
 def normalize_input_paths (*paths):
     '''
@@ -497,6 +520,8 @@ def build_output_paths (outdir, suffix, *input_paths):
 
 def main_old_to_new (*input_paths):
     verbosePrint("\n[START]")
+    # manage entire directories along with single file paths  - returned input_paths is a list
+    input_paths = input_paths_from_dir (*input_paths)
     # check and norm input paths - returned input_paths is a list
     check_input_paths (*input_paths)
     input_paths = normalize_input_paths (*input_paths)
@@ -512,6 +537,8 @@ def main_old_to_new (*input_paths):
 
 def main_new_to_old (*input_paths):
     verbosePrint("\n[START]")
+    # manage entire directories along with single file paths  - returned input_paths is a list
+    input_paths = input_paths_from_dir (*input_paths)
     # check and norm input paths - returned input_paths is a list
     check_input_paths (*input_paths)
     input_paths = normalize_input_paths (*input_paths)
