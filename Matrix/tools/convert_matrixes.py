@@ -23,12 +23,8 @@ __status__ = "Testing"
 
 
 ### APPUNTI DI SVILUPPO ##############################################################################################################
-# 1) - FATTO !!! l'argomento inpath deve accettare non solo (liste di) file ma anche (liste di) directory, da processare per intero.
-#    Deve accorgersi automaticamente se si tratta di directory e, in questo caso, deve
-#    occuparsi di ricavare tutti i path dei file da processare e fare override della variabile 'input_paths'
-# 2) aggiungere altri arg che ora sono parametri statici: qualcosa è già pronto (es. old_to_new_suffix ...), altri
-#    vanno cercati nel codice (es. input_matrixes_encoding ...)
-# 3) SISTEMARE HELP e description
+# 1) aggiungere parsing dei subargs (v. DEFAULT VALUES AS PROGRAM -> # NOT PARSED UP TO NOW)
+# 2) SISTEMARE HELP e description
 ######################################################################################################################################
 
 
@@ -36,7 +32,18 @@ __status__ = "Testing"
 # Print on screen
 verbose = True
 print_time = True  # eval if verbose is True
+# Input
+new_format_input_matrixes_encoding = 'utf-8'
+new_format_input_matrixes_sep = '\t'
+old_format_input_matrixes_encoding = 'utf-8'
+old_format_input_matrixes_sep = '\t'
 # Output
+new_format_output_matrixes_encoding = 'utf-8'
+new_format_output_matrix_sep = '\t'
+new_format_output_na_rep = ''
+old_format_output_matrixes_encoding = 'utf-8'
+old_format_output_matrix_sep = '\t'
+old_format_output_na_rep = ''
 old_to_new_suffix = '_newFormat.tsv'
 new_to_old_suffix = '_oldFormat.tsv'
 outdir = None  # write outfile(s) alongside infile(s) [None] or specify a different common folder [complete out dir path]
@@ -52,8 +59,7 @@ This program takes as input one or more matrix files in the same format and
 convert them through 'old_to_new' / 'new_to_old' commands: it's up to the user
 to select the right one. For each file processed, a new file will be created,
 in the same location and with the same name, except for a suffix appended to
-avoid overwriting ('_newFormat.tsv' / '_oldFormat.tsv', fixed and not parsed
-in the actual version).
+avoid overwriting ('_newFormat.tsv' / '_oldFormat.tsv').
 
 +---+ DETAILS +---------------------------------------------------------------+
 
@@ -91,6 +97,7 @@ NOTES:
    'all' column and annotations; 0's are replaced by blank cells; 
  - converting from new_to_old do not act at all over 0's/NA/blank-cells: what
    you give as input is what you get as output.
+ - new format 'IS_genomicID' must be:  chrSOMETHING_LOCUSNUMBER_STRAND.
 
 
 +---+ ABOUT ARGUMENTS: +------------------------------------------------------+ """
@@ -99,12 +106,23 @@ NOTES:
     # Print on screen
     verbose = False
     print_time = True  # eval if verbose is True
+    # Input
+    new_format_input_matrixes_encoding = 'utf-8'  # NOT PARSED UP TO NOW
+    new_format_input_matrixes_sep = '\t'  # NOT PARSED UP TO NOW
+    old_format_input_matrixes_encoding = 'utf-8'  # NOT PARSED UP TO NOW
+    old_format_input_matrixes_sep = '\t'  # NOT PARSED UP TO NOW
     # Output
-    old_to_new_suffix = '_newFormat.tsv'  # NOT PARSED UP TO NOW
-    new_to_old_suffix = '_oldFormat.tsv'  # NOT PARSED UP TO NOW
+    new_format_output_matrixes_encoding = 'utf-8'  # NOT PARSED UP TO NOW
+    new_format_output_matrix_sep = '\t'  # NOT PARSED UP TO NOW
+    new_format_output_na_rep = ''  # NOT PARSED UP TO NOW
+    old_format_output_matrixes_encoding = 'utf-8'  # NOT PARSED UP TO NOW
+    old_format_output_matrix_sep = '\t'  # NOT PARSED UP TO NOW
+    old_format_output_na_rep = ''  # NOT PARSED UP TO NOW
+    old_to_new_suffix = '_newFormat.tsv'
+    new_to_old_suffix = '_oldFormat.tsv'
     outdir = None  # write outfile(s) alongside infile(s) [None] or specify a different common folder [complete out dir path]
     # Command choices
-    command_choices = ['old_to_new', 'new_to_old']
+    #command_choices = ['old_to_new', 'new_to_old']
     ################################################################################################################################
 
     ### ARGS ############################################################################################################################
@@ -117,20 +135,20 @@ NOTES:
           sys.exit("\n[QUIT]\n")
     # Parser
     parser = MyParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
+    # SubParsers
+    subparsers = parser.add_subparsers(dest='command', metavar='COMMAND', help='select conversion to perform. Alternatives are:')
     # Shared args
     parser.add_argument("inpath", metavar='INPATHs', nargs='+', help="absolute file path(s) of input matrix(es). Absolute\npaths of directories are also allowed: in this case all\nthe files inside will be processed.")
     parser.add_argument("-od", "--output_directory_path", metavar='OUTDIR', default=outdir, help="absolute path of a common output directory. Default\nbehaviour is to write each output file in the same\nlocation of related input.")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose execution")
-    # SubParsers
-    subparsers = parser.add_subparsers(dest='command', metavar='COMMAND', help='select conversion to perform. Alternatives are:')
     # create the parser for the "old_to_new" command
-    parser_old_to_new = subparsers.add_parser('old_to_new', help='')
-    ## Args for "old_to_new"
-    #parser_old_to_new.add_argument('--arg_old_to_new', help='arg_old_to_new help')
+    parser_old_to_new = subparsers.add_parser('old_to_new', help='{name} old_to_new -h for sub-args help'.format(name=str(os.path.basename(__file__))))
+    # Args for "old_to_new"
+    parser_old_to_new.add_argument("-s", "--suffix", dest='old_to_new_suffix', metavar='SUFFIX.ext', help="suffix + extension for output files. Default is: '{old_to_new_suffix}'".format(old_to_new_suffix=str(old_to_new_suffix)))
     # create the parser for the "new_to_old" command
-    parser_new_to_old = subparsers.add_parser('new_to_old', help='')
-    ## Args for "new_to_old"
-    #parser_new_to_old.add_argument('--arg_new_to_old', help='arg_new_to_old help')
+    parser_new_to_old = subparsers.add_parser('new_to_old', help='{name} new_to_old -h for sub-args help'.format(name=str(os.path.basename(__file__))))
+    # Args for "new_to_old"
+    parser_new_to_old.add_argument("-s", "--suffix", dest='new_to_old_suffix', metavar='SUFFIX.ext', help="suffix + extension for output files. Default is: '{new_to_old_suffix}'".format(new_to_old_suffix=str(new_to_old_suffix)))
     # Parse Args
     args = parser.parse_args()
     
@@ -148,12 +166,12 @@ NOTES:
         
     if args.command == 'old_to_new':
         # here specific args and settings
-        # e.g.: old_to_new_suffix
-        pass
+        if args.old_to_new_suffix != old_to_new_suffix:
+            old_to_new_suffix = args.old_to_new_suffix
     elif args.command == 'new_to_old':
         # here specific args and settings
-        # e.g.: new_to_old_suffix
-        pass
+        if args.new_to_old_suffix != new_to_old_suffix:
+            new_to_old_suffix = args.new_to_old_suffix
     #####################################################################################################################################
 
 
@@ -279,8 +297,8 @@ def import_new_matrixes (*paths):
     matrixes - list of DataFrame objects
     '''
     # Settings
-    input_matrixes_encoding = 'utf-8'
-    input_matrixes_sep = '\t'
+    input_matrixes_encoding = new_format_input_matrixes_encoding
+    input_matrixes_sep = new_format_input_matrixes_sep
     # Func
     def parse_matrix (path):
         verbosePrint("> loading {path} ... ".format(path=str(path)))
@@ -303,8 +321,8 @@ def import_old_matrixes (*paths):
     matrixes - list of DataFrame objects
     '''
     # Parse settings
-    input_matrixes_encoding = 'utf-8'
-    input_matrixes_sep = '\t'
+    input_matrixes_encoding = old_format_input_matrixes_encoding
+    input_matrixes_sep = old_format_input_matrixes_sep
     index_col = (0,1,2)
     # Clean settings
     cols_to_drop = ['all', 'GeneName', 'GeneStrand']
@@ -321,7 +339,7 @@ def import_old_matrixes (*paths):
         df.reset_index(inplace=True)
         return df
     def clean_matrix (df):
-        verbosePrint("> detect columns to remove ...")
+        verbosePrint("> detecting columns to remove ...")
         drop_list = []
         for label in df.columns:
             if label in cols_to_drop:
@@ -361,9 +379,9 @@ def export_matrixes_as_new (matrixes, paths):
     0
     '''
     # Write settings
-    output_matrixes_encoding = 'utf-8'
-    output_matrix_sep = '\t'
-    output_na_rep = ''
+    output_matrixes_encoding = new_format_output_matrixes_encoding
+    output_matrix_sep = new_format_output_matrix_sep
+    output_na_rep = new_format_output_na_rep
     # Func
     def write_df_as_new (df, path):
         verbosePrint("> writing {path} ... ".format(path=str(path)))
@@ -389,9 +407,9 @@ def export_matrixes_as_old (matrixes, paths):
     0
     '''
     # Write settings
-    output_matrixes_encoding = 'utf-8'
-    output_matrix_sep = '\t'
-    output_na_rep = ''
+    output_matrixes_encoding = old_format_output_matrixes_encoding
+    output_matrix_sep = old_format_output_matrix_sep
+    output_na_rep = old_format_output_na_rep
     # Conversion settings
     chr_col_name = 'chr'
     locus_col_name = 'integration_locus'
