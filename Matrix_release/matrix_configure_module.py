@@ -85,7 +85,9 @@ ensembles_max_span = args.ISs_max_span
 filter_data = args.unfiltered
 inside_ShS = args.filter_ignoring_shearsites
 ED_treshold = args.filter_edit_distance_threshold
-
+## Output
+common_output_ground_dir = args.out_dir_path
+matrix_outfolder = args.subfolder
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
