@@ -86,7 +86,8 @@ def buildOutputPath(ground_dir, *subfolders):
                 sys.exit("\n[QUIT]\n")
             verbosePrint("> subfolder created: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
         else:
-            verbosePrint("> subfolder found: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
+            if sf != '':
+                verbosePrint("> subfolder found: {OUTDIR}".format(OUTDIR=str(OUTDIR)))
         # Check: write permissions
         if not os.access(OUTDIR, os.W_OK):
             print "\n[ERROR] You don't have write permissions in OUTDIR='{OUTDIR}'".format(OUTDIR=str(OUTDIR))

@@ -10,7 +10,6 @@ Created on Tue Aug  2 10:15:10 2016
 import pandas as pd
 import matrix_configure_module
 
-from matrix_preprocessing_dataSources_module import getLaunchPathDict
 from matrix_preprocessing_dataGathering_module import buildDataFrame
 from matrix_preprocessing_dataGathering_module import loadRefactored_asDataframe
 from matrix_preprocessing_dataGathering_module import loadFasta_asDataframe
@@ -82,46 +81,3 @@ def loadData (launch_path_dict, drop_headers, compression):
     # return a unique any_df for all the data
     return any_df
 
-
-#++++++++++++++++++++++++++++++++++++++ MAIN and TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
-
-if __name__ == "__main__":
-    
-    ### Test vars ###
-    # 2 dataset:
-    #   - Ferrari, thalassemia, all pools
-    #   - HIV, circulatingDNA, pool 'cLR1' only
-    dataset_tuple_list = [ ('/opt/NGS/results', 'Ferrari', 'PE_Thalassemia_inVitro', False), ('/opt/NGS/results', 'HIV_patients', 'circDNA', ['cLR1']) ]
-    drop_headers = True
-    compression = 'gzip'
-    
-    ### Test code ###
-    verbosePrint("\n[START] \n")
-    verbosePrint("[INPUT VAR]")
-    verbosePrint("> dataset_tuple_list: {dataset_tuple_list}".format(dataset_tuple_list=str(dataset_tuple_list)))
-    verbosePrint("> drop_headers: {drop_headers}".format(drop_headers=str(drop_headers)))
-    verbosePrint("> compression: {compression}".format(compression=str(compression)))
-    # Load data Paths
-    verbosePrint("\n[LOADING PATHS]")
-    launch_path_dict = getLaunchPathDict(dataset_tuple_list)
-    # Load Data
-    verbosePrint("\n[LOADING DATA]")
-    any_df = loadData (launch_path_dict, drop_headers, compression)
-    verbosePrint("\n[OUTPUT FEATURES]")
-    verbosePrint("> len: {len_df}".format(len_df=str(len(any_df))))
-    verbosePrint("> columns: {col}".format(col=str(list(any_df.columns))))
-    verbosePrint("\n[OUTPUT HEAD]")
-    verbosePrint(any_df.head(20))
-    verbosePrint("\n[OUTPUT TAIL]")
-    verbosePrint(any_df.tail(20))
-    
-#    # Write data to check them
-#    import os
-#    out_path = os.path.join(os.getcwd(), "data_dump.csv")
-#    verbosePrint("\n>>> Export Dataframe to check data (path = '{out_path}' ) ...".format(out_path=str(out_path)))
-#    any_df.to_csv(path_or_buf=out_path, sep='\t', encoding='utf-8')
-#    verbosePrint( ">>> File Created!")
-    
-    verbosePrint("\n[QUIT] \n")
-    

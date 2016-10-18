@@ -7,7 +7,6 @@ Created on Mon Jan 18 11:29:56 2016
 
 #++++++++++++++ Requested Package(s) Import +++++++++++++++#
 import matrix_configure_module
-import sys
 import pandas as pd
 import numpy as np
 
@@ -33,6 +32,7 @@ def buildSeqCountMatrix(any_df, sample_column='association_ID'):
     required_columns = set([sample_column, 'genomic_coordinates', 'seq_count'])
     if required_columns.intersection(set(any_df.columns)) != required_columns:
         verbosePrint("[Warning] Columns {required_columns} are required for SeqCountMatrix. Given data have {columns_found}.".format(required_columns=str(humanSorted(list(required_columns))), columns_found=str(humanSorted(list(any_df)))))
+        verbosePrint("...SKIP!")
         return None
     # pivot to get SEQUENCE COUNTS of ISs in df
     seqCount_matrix = pd.pivot_table(any_df, index='genomic_coordinates', columns=sample_column, values='seq_count', aggfunc='sum', margins=False)
@@ -44,6 +44,7 @@ def buildShsCountMatrix(any_df, sample_column='association_ID'):
     required_columns = set([sample_column, 'genomic_coordinates', 'shearsite'])
     if required_columns.intersection(set(any_df.columns)) != required_columns:
         verbosePrint("[Warning] Columns {required_columns} are required for ShsCountMatrix. Given data have {columns_found}.".format(required_columns=str(humanSorted(list(required_columns))), columns_found=str(humanSorted(list(any_df)))))
+        verbosePrint("...SKIP!")
         return None
     # pivot to get counts of distinct SHEARSITES for each ISs in df (unique method exploited by lambda in aggfunc is a method of pd.Series class)
     # NOTE: here MARGINS are not as expected (not partial 'sums' of course, but the 'overall' len(x.unique()) column!!)
@@ -59,6 +60,7 @@ def buildBarcodeCountMatrix(any_df, sample_column='association_ID'):
         [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
     except:
         verbosePrint("[Warning] Columns {required_columns} are required for BarcodeCountMatrix. Given data have {columns_found}.".format(required_columns=str(humanSorted(required_columns)), columns_found=str(humanSorted(list(any_df)))))
+        verbosePrint("...SKIP!")
         return None
     DF = pd.concat(l, axis=1, join='inner')
     # group-by remaining fields but randomBC - > duplicate entries may arise
@@ -76,6 +78,7 @@ def buildCellCountMatrix(any_df, sample_column='association_ID'):
     required_columns = set([sample_column, 'genomic_coordinates', 'shearsite', 'randomBC'])  # 'shearsite' is redundant, just to be sure about the completeness of the hierarchy (exploited in pivot_table)
     if required_columns.intersection(set(any_df.columns)) != required_columns:
         verbosePrint("[Warning] Columns {required_columns} are required for CellCountMatrix. Given data have {columns_found}.".format(required_columns=str(humanSorted(list(required_columns))), columns_found=str(humanSorted(list(any_df)))))
+        verbosePrint("...SKIP!")
         return None
     # pivot to get counts of distinct SHEARSITE-RANDOMTAG couples for each ISs in df
     cellCount_matrix = pd.pivot_table(any_df, index='genomic_coordinates', columns=sample_column, values='randomBC', aggfunc=lambda x: len(x), margins=False)
@@ -87,21 +90,24 @@ def buildFragmentEstimateMatrix(any_df, sample_column='association_ID'):
     try:
         import rpy2.robjects as robjects
     except Exception, err_message:
-        print "\n[ERROR] buildFragmentEstimateMatrix can't run due to some troubles with 'import rpy2.robjects as robjects'."
-        print "'import rpy2.robjects as robjects' returned: ", err_message
-        sys.exit("\n[QUIT]\n")
+        verbosePrint("[Warning] buildFragmentEstimateMatrix can't run due to some troubles with 'import rpy2.robjects as robjects'.")
+        verbosePrint("'import rpy2.robjects as robjects' returned: "+str(err_message))
+        verbosePrint("...SKIP!")
+        return None
     try:
         from rpy2.robjects.packages import importr
     except Exception, err_message:
-        print "\n[ERROR] buildFragmentEstimateMatrix can't run due to some troubles with 'from rpy2.robjects.packages import importr'."
-        print "'from rpy2.robjects.packages import importr' returned: ", err_message
-        sys.exit("\n[QUIT]\n")
+        verbosePrint("[Warning] buildFragmentEstimateMatrix can't run due to some troubles with 'from rpy2.robjects.packages import importr'.")
+        verbosePrint("'from rpy2.robjects.packages import importr' returned: "+str(err_message))
+        verbosePrint("...SKIP!")
+        return None
     try:
         sonicLength = importr("sonicLength")
     except Exception, err_message:
-        print "\n[ERROR] buildFragmentEstimateMatrix can't run due to some troubles occurred while loading 'sonicLength' R-library."
-        print '''importr("sonicLength") returned: ''', err_message
-        sys.exit("\n[QUIT]\n")
+        verbosePrint("[Warning] buildFragmentEstimateMatrix can't run due to some troubles occurred while loading 'sonicLength' R-library.")
+        verbosePrint('''importr("sonicLength") returned: '''+str(err_message))
+        verbosePrint("...SKIP!")
+        return None
     # try to take required columns -> new DF
     required_columns = [sample_column, 'genomic_coordinates', 'shearsite']
     l = []
@@ -109,6 +115,7 @@ def buildFragmentEstimateMatrix(any_df, sample_column='association_ID'):
         [l.append(any_df.loc[:,c].to_frame()) for c in required_columns]
     except:
         verbosePrint("[Warning] Columns {required_columns} are required for FragmentEstimateMatrix. Given data have {columns_found}.".format(required_columns=str(humanSorted(required_columns)), columns_found=str(humanSorted(list(any_df)))))
+        verbosePrint("...SKIP!")
         return None
     DF = pd.concat(l, axis=1, join='inner')
     # detect samples

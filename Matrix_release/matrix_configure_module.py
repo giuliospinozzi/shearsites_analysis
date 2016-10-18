@@ -153,3 +153,59 @@ def humanSorted(l):
 #    verbosePrint("    * matrix_files_delimiter: {x}".format(x=str(matrix_files_delimiter)))
 #verbosePrint(">>> Done!")
 
+
+### CHECK MODULES HERE, ACCORDING TO ACTUAL CONFIGUARTION
+verbosePrint("\n>>> Checking program requirements ...")
+
+# Check python - Mandatory
+safe_python_version = '2.7.8'
+actual_python_version = '.'.join([str(sys.version_info[0]), str(sys.version_info[1]), str(sys.version_info[2])])
+if sys.version_info[0] != 2:
+    print "\n[ERROR] This program was written for python 2. Your version: {n}.".format(n=str(actual_python_version))
+    sys.exit("\n[QUIT]\n")
+if sys.version_info[1] < 7:
+    print "\n[ERROR] This program must run under python 2.7.X. Your version: {n}.".format(n=str(actual_python_version))
+    sys.exit("\n[QUIT]\n")
+test = [safe_python_version, actual_python_version]
+if test[0] != humanSorted(test)[0]:
+    print "[Warning] It is safer to run this script under python v{p} or later (detected version is {n}). However, any 2.7.X version should be ok.".format(p=str(safe_python_version), n=str(actual_python_version))
+
+# Check pandas - Mandatory
+pandas_found = False
+try:
+    import pandas as pd  # numpy is a dependency
+    pandas_found = True
+except ImportError:
+    print "\n[ERROR] Can't find 'pandas' package in you python environment. Please install it and retry (see http://pandas.pydata.org/)."
+    sys.exit("\n[QUIT]\n")
+if pandas_found is True:
+    safe_version = '0.15.0'
+    actual_version = str(pd.__version__)
+    test = [safe_version, actual_version]
+    if test[0] != humanSorted(test)[0]:
+        print "[Warning] It is safer to run this script under a more updated version of pandas package (v{p} or later, see http://pandas.pydata.org/). Your version is {n}.".format(p=str(safe_version), n=str(actual_version))
+
+# Needed for fragmentEstimate matrix
+try:
+    import rpy2.robjects as robjects
+    from rpy2.robjects.packages import importr
+    rpy2_found = True
+except:
+    print "[Warning] Can't find 'rpy2' package in you python environment (see http://rpy2.bitbucket.org/). fragmentEstimate matrix won't be computed."
+    rpy2_found = False
+if rpy2_found is True:
+    try:
+        sonicLength = importr("sonicLength")
+    except:
+        print "[Warning] Can't load 'sonicLength' package from your R environment (see http://CRAN.R-project.org/package=sonicLength). fragmentEstimate matrix won't be computed."
+
+# Needed for filtering random barcodes by edit-distance
+if filter_by_ED is True:
+    try:
+        import editdistance as ed
+    except ImportError:
+        print "\n[ERROR] Cannot filter random barcodes by edit-distance because 'editdistance' package was not found in your python environment. Please install it and retry later, or relaunch with -uf / --unfiltered option."
+        sys.exit("\n[QUIT]\n")
+
+verbosePrint(">>> OK!")
+
