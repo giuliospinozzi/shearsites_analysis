@@ -200,7 +200,7 @@ if rpy2_found is True:
         print "[Warning] Can't load 'sonicLength' package from your R environment (see http://CRAN.R-project.org/package=sonicLength). fragmentEstimate matrix won't be computed."
 
 # Needed for filtering random barcodes by edit-distance
-if filter_by_ED is True:
+if filter_data is True:
     try:
         import editdistance as ed
     except ImportError:
