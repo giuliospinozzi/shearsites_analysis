@@ -88,8 +88,9 @@ the user to make right choice and no controls are performed.
 
 For each file processed, a new file will be created, in the same location and
 with the same name, except for a suffix appended to avoid overwriting
-('_newFormat.tsv' / '_oldFormat.tsv', fixed and not parsed in the actual
-version). However, is possible to divert ALL the output files into another
+('_newFormat.tsv' / '_oldFormat.tsv' by default, according to COMMAND, or given
+as --suffix argument; remember the expicit extension!)
+However, is possible to divert ALL the output files into another
 directory of your choice ("--output_directory_path" optional argument).
 
 NOTES:
@@ -135,20 +136,20 @@ NOTES:
           sys.exit("\n[QUIT]\n")
     # Parser
     parser = MyParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-    # SubParsers
-    subparsers = parser.add_subparsers(dest='command', metavar='COMMAND', help='select conversion to perform. Alternatives are:')
     # Shared args
     parser.add_argument("inpath", metavar='INPATHs', nargs='+', help="absolute file path(s) of input matrix(es). Absolute\npaths of directories are also allowed: in this case all\nthe files inside will be processed.")
     parser.add_argument("-od", "--output_directory_path", metavar='OUTDIR', default=outdir, help="absolute path of a common output directory. Default\nbehaviour is to write each output file in the same\nlocation of related input.")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose execution")
+    # SubParsers
+    subparsers = parser.add_subparsers(dest='command', metavar='COMMAND', help='select conversion to perform. Alternatives are:')
     # create the parser for the "old_to_new" command
     parser_old_to_new = subparsers.add_parser('old_to_new', help='{name} old_to_new -h for sub-args help'.format(name=str(os.path.basename(__file__))))
     # Args for "old_to_new"
-    parser_old_to_new.add_argument("-s", "--suffix", dest='old_to_new_suffix', metavar='SUFFIX.ext', help="suffix + extension for output files. Default is: '{old_to_new_suffix}'".format(old_to_new_suffix=str(old_to_new_suffix)))
+    parser_old_to_new.add_argument("-s", "--suffix", dest='old_to_new_suffix', metavar='SUFFIX.ext', default=old_to_new_suffix, help="suffix + extension for output files. Default is: '{old_to_new_suffix}'".format(old_to_new_suffix=str(old_to_new_suffix)))
     # create the parser for the "new_to_old" command
     parser_new_to_old = subparsers.add_parser('new_to_old', help='{name} new_to_old -h for sub-args help'.format(name=str(os.path.basename(__file__))))
     # Args for "new_to_old"
-    parser_new_to_old.add_argument("-s", "--suffix", dest='new_to_old_suffix', metavar='SUFFIX.ext', help="suffix + extension for output files. Default is: '{new_to_old_suffix}'".format(new_to_old_suffix=str(new_to_old_suffix)))
+    parser_new_to_old.add_argument("-s", "--suffix", dest='new_to_old_suffix', metavar='SUFFIX.ext', default=new_to_old_suffix, help="suffix + extension for output files. Default is: '{new_to_old_suffix}'".format(new_to_old_suffix=str(new_to_old_suffix)))
     # Parse Args
     args = parser.parse_args()
     
@@ -156,7 +157,6 @@ NOTES:
 
     ### CHECK AND SET VALUES ############################################################################################################
     
-    # TO DO: if a directory (or more) is given, all the files inside will be processed!
     input_paths = args.inpath
     
     if args.verbose != verbose:
@@ -389,7 +389,7 @@ def export_matrixes_as_new (matrixes, paths):
                   encoding=output_matrixes_encoding,
                   sep=output_matrix_sep,
                   na_rep=output_na_rep)
-        verbosePrint("  done!")
+        verbosePrint("done!")
     verbosePrint("\n[EXPORT MATRIX(ES) - As New Format]")
     [write_df_as_new(df, path) for df, path in zip (matrixes, paths)]
     verbosePrint("[DONE]")

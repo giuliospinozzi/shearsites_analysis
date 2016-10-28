@@ -101,10 +101,7 @@ row is interpreted as column labels. The cell in common is taken as
 The rest of the matrix is taken as 'content' (no special 'margins' or whatever
 are allowed). Matrix content of each cell must be numeric or empty.
 
-INPUT COMPLIANCE IS UP TO THE USER AND NO CONTROL ARE PERFORMED.
-
-In case of duplicated row IDs or column labels, the program merges them by
-summation (mandatory in order to provide results consistent with expectations).
+INPUT COMPLIANCE IS UP TO THE USER AND NO CONTROLS ARE PERFORMED.
 
 You can redefine column labels of input matrix, specifying which attributes you
 wish to keep, with a sequence of indexes 0-based: you might want to keep just a
@@ -112,6 +109,9 @@ subset (columns-to-group-like behaviour), re-shuffle them or whatever, even
 calling same attributes more than once ("--input_data_attributes" optional
 argument"). Up to now, input/output attribute separators are statically set
 to '_'.
+
+In case of duplicated row IDs or column labels, the program merges them by
+summation (mandatory in order to provide results consistent with expectations).
 
 You can also add a signature to columns belonging to distinct matrix file,
 before unifying data ("--input_data_prefix" optional argument). Obviously
