@@ -166,8 +166,10 @@ def range_1_11_int(n):
 parser = MyParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
 # Set dataset_tuple_list - REQUIRED
 parser.add_argument("dataset_tuple_list", metavar='DATA_TUPLES', nargs='+', type=dataset_tuple, help="one (or more) dataset to process. Each dataset is expected to be a tuple composed by at least 3 items, comma separated with no spaces (e.g: data_base_dir,disease,patient); furter item(s) following these three will be interpreted as the only pool(s) to process (e.g.: data_base_dir,disease,patient,poolA,poolB), otherwise all the pools of the 3-items-tuple dataset will be taken. A space separates distinct tuples.")  # return a list
-# Set verbose - optional
-parser.add_argument("-q", "--quiet", action="store_false", default=True, help="silent execution. (default: verbose).")
+# Set verbosity - optional
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-q", "--quiet", action="store_false", default=True, help="silent execution. (default: verbose).")
+group.add_argument("-hv", "--hyper_verbose", action="store_true", default=False, help="hyperverbose execution. (default: verbose).")
 # Set common_output_ground_dir - optional
 parser.add_argument("-o", "--out_dir_path", metavar='ABS_OUT_PATH', default=os.getcwd(), help="set an absolute directory path where write output matrix files. (default: current working directory).")
 # Set matrix_outfolder - optional

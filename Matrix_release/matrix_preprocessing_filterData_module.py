@@ -12,7 +12,7 @@ import pandas as pd
 import matrix_configure_module
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-#verbose = matrix_configure_module.verbose
+hyperverbose = matrix_configure_module.hyperverbose
 
 
 #++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
@@ -259,18 +259,18 @@ def filterBy_randomBC_EditDistance(any_df, inside_ShS=True, ED_rule=3):
         for key, frame in grouped:
             # print "key:", key
             # print "frame:", "\n", frame
-            verbosePrint("        > {i} of {m} - processing {key} ...".format(key=str(key), i=str(i), m=str(len(grouped))))
+            verbosePrint("        > {i} of {m} - processing {key} ...".format(key=str(key), i=str(i), m=str(len(grouped))), verbose=hyperverbose)
             i += 1
             if type(ED_rule) is not int:
                 EDthreshold = ED_rule(len(frame))
             if len(frame) != 1:
-                verbosePrint("          {n} items, EDthreshold={EDthreshold}.".format(n=str(len(frame)), EDthreshold=str(EDthreshold)))
+                verbosePrint("          {n} items, EDthreshold={EDthreshold}.".format(n=str(len(frame)), EDthreshold=str(EDthreshold)), verbose=hyperverbose)
                 BCcouples_ED_DF = checkBCcouples_ED(frame, inside_ShS=True, max_ED=EDthreshold)
                 to_remove = set([(x[0], x[1]) for x in BCcouples_ED_DF[['shearsite', 'target_BC']].values])
                 filtered_frame = frame[~frame[['shearsite', 'randomBC']].apply(lambda x: (x[0], x[1]) in to_remove, axis=1)]
                 append_to_filtered_df_list(filtered_frame)
             else:
-                verbosePrint("          {n} item: skip!".format(n=str(len(frame))))
+                verbosePrint("          {n} item: skip!".format(n=str(len(frame))), verbose=hyperverbose)
                 append_to_filtered_df_list(frame)
     # loop for inside_ShS=False case
     else:
@@ -278,11 +278,11 @@ def filterBy_randomBC_EditDistance(any_df, inside_ShS=True, ED_rule=3):
         for key, frame in grouped:
             # print "key:", key
             # print "frame:", "\n", frame
-            verbosePrint("        > {i} of {m} - processing {key} ...".format(key=str(key), i=str(i), m=str(len(grouped))))
+            verbosePrint("        > {i} of {m} - processing {key} ...".format(key=str(key), i=str(i), m=str(len(grouped))), verbose=hyperverbose)
             i += 1
             if type(ED_rule) is not int:
                 EDthreshold = ED_rule(len(frame))
-            verbosePrint("          {n} items, EDthreshold={EDthreshold}.".format(n=str(len(frame)), EDthreshold=str(EDthreshold)))
+            verbosePrint("          {n} items, EDthreshold={EDthreshold}.".format(n=str(len(frame)), EDthreshold=str(EDthreshold)), verbose=hyperverbose)
             if len(frame) != 1:
                 BCcouples_ED_DF = checkBCcouples_ED(frame, inside_ShS=False, max_ED=EDthreshold)
                 to_remove = set(BCcouples_ED_DF['target_BC'].values)

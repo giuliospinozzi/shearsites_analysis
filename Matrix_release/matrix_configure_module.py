@@ -15,6 +15,9 @@ Created on Mon Jan 18 09:49:24 2016
 
 ## Screen print ##
 verbose = True
+hyperverbose = True
+if hyperverbose:
+    verbose = True  # hyperverbose must override 'verbose' as True
 print_time = True # evaluated only if verbose is True
 
 ## Data - matrix_preprocessing_dataSources_module, matrix_preprocessing_dataGathering_module, matrix_preprocessing_dataLoading_module ##
@@ -61,6 +64,10 @@ matrix_files_delimiter = '\t'
 import matrix_argumentParser_module
 args = matrix_argumentParser_module.args
 
+## Suppress pandas futurewarnings
+import warnings
+warnings.simplefilter(action = "ignore", category = FutureWarning)
+
 ## Costants
 # Note: program behaviour, arg parsing, help, description...
 #       the whole program leverage on these 'costants' settings!
@@ -74,6 +81,7 @@ matrix_files_delimiter = '\t'
 
 ## Screen print
 verbose = args.quiet
+hyperverbose = args.hyper_verbose
 ## Data
 dataset_tuple_list = args.dataset_tuple_list
 ## ISs computation

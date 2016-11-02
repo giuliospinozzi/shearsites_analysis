@@ -11,7 +11,7 @@ import pandas as pd
 import matrix_configure_module
 
 #++++++++++++++++++++++ Global Vars +++++++++++++++++++++++#
-#verbose = matrix_configure_module.verbose
+hyperverbose = matrix_configure_module.hyperverbose
 
 
 #++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
@@ -57,7 +57,7 @@ def get_ensembles (any_df, per_sample, max_dist, max_span):
     for key, frame in grouped_tmp_df:
         
         # User print and loop count
-        verbosePrint("        > {i} of {m} - group {key} - {n} entries to process ...".format(key=str(key), i=str(i), m=str(len(grouped_tmp_df)), n=str(len(frame))))
+        verbosePrint("        > {i} of {m} - group {key} - {n} entries to process ...".format(key=str(key), i=str(i), m=str(len(grouped_tmp_df)), n=str(len(frame))), verbose=hyperverbose)
         i += 1
         
         # Sort/compute-distance strand-wise: add 'dist' column to frame
@@ -103,7 +103,7 @@ def get_ensembles (any_df, per_sample, max_dist, max_span):
         # join local frame_as_ensambles list to global ensambles list
         #verbosePrint("          appending results ...")
         ensembles += frame_as_ensambles
-        verbosePrint("          {z} ensembles built.".format(z=str(len(frame_as_ensambles))))
+        verbosePrint("          {z} ensembles built.".format(z=str(len(frame_as_ensambles))), verbose=hyperverbose)
     
     verbosePrint("      Done! {tot} ensembles built.".format(tot=str(len(ensembles))))
     return ensembles
@@ -115,12 +115,12 @@ def classic_IS (ensemble, place_on_mode=True, **kwargs):
     # Fast exit for single-base ensembles
     if len(set(ensemble['genomic_coordinates'])) < 2:
         if kwargs:
-            verbosePrint("        > processing {n} of {tot}: {is_id} ... ".format(n=str(kwargs['n']), tot=str(kwargs['tot']), is_id=str(list(set(ensemble['genomic_coordinates']))[0])))
+            verbosePrint("        > processing {n} of {tot}: {is_id} ... ".format(n=str(kwargs['n']), tot=str(kwargs['tot']), is_id=str(list(set(ensemble['genomic_coordinates']))[0])), verbose=hyperverbose)
         return ensemble.copy()
         
     # Standard flux
     if kwargs:
-        verbosePrint("        > processing {n} of {tot}: {is_ids} ... ".format(n=str(kwargs['n']), tot=str(kwargs['tot']), is_ids=str(tuple(humanSorted(list(set(ensemble['genomic_coordinates'])))))))
+        verbosePrint("        > processing {n} of {tot}: {is_ids} ... ".format(n=str(kwargs['n']), tot=str(kwargs['tot']), is_ids=str(tuple(humanSorted(list(set(ensemble['genomic_coordinates'])))))), verbose=hyperverbose)
 
     # Get coordinates and seq_count in tmp_df
     tmp_df = pd.concat([ensemble['seq_count'], ensemble['genomic_coordinates'].str.split('_').apply(pd.Series).rename(columns={0:'chr', 1:'locus', 2:'strand'})], axis=1)
@@ -175,7 +175,7 @@ def compute_ISs (any_df, ensembles_per_sample=False, ensembles_max_dist=7, ensem
     verbosePrint("    > Computing ISs over covered base ensembles ...")
     ISs = None
     if ISs_method=='classic':
-        verbosePrint("      * method: {method}".format(method=str(ISs_method)))
+        verbosePrint("      method: {method}".format(method=str(ISs_method)))
         if 'header_list' in any_df.columns:
             verbosePrint("        [WARNING] 'classic' method for ISs computing is still buggy and cannot properly handle 'header_list'!")
             verbosePrint("                  It may crush while performing operations requiring read headers or even yield wrong results.")
