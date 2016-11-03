@@ -210,6 +210,19 @@ be tuned through specific optional arguments ("--output_file_encoding",
 
 ### FUNC #################################################################################################################################################################################
 
+import re
+def humanSorted(l):
+    def tryint(s):
+        try:
+            return int(s)
+        except:
+            return s
+    def alphanum_key(s):
+        return [ tryint(c) for c in re.split('([0-9]+)', s) ]
+    def sort_nicely(l):
+        return sorted(l, key=alphanum_key)
+    return sort_nicely(l)
+
 def verbosePrint(x, verbose=verbose, print_time=print_time):
     '''
     Purpose: print immediately if verbose is True, with
@@ -236,6 +249,18 @@ def verbosePrint(x, verbose=verbose, print_time=print_time):
         else:
             print x
         sys.stdout.flush()
+
+def pandas_is_updated(verbose=verbose):
+    updated_version = '0.17.0'
+    actual_version = str(pd.__version__)
+    test = [updated_version, actual_version]
+    if test[0] != humanSorted(test)[0]:
+        s = "\n[Warning] This script was written to run under a more updated version of pandas package ({p} or later, your version is {n}).".format(p=str(updated_version), n=str(actual_version))
+        verbosePrint(s, verbose=verbose)
+        return False
+    else:
+        return True
+
 
 def check_input_paths (*paths):
     '''
@@ -307,7 +332,9 @@ def import_matrixes (*paths):
     '''
     def parse_matrix (path):
         verbosePrint("> loading {path} ... ".format(path=str(path)))
-        return pd.DataFrame.from_csv(path,encoding=input_matrixes_encoding,sep=input_matrixes_sep,parse_dates=False)
+        m = pd.read_csv(path, index_col=0, encoding=input_matrixes_encoding, sep=input_matrixes_sep)
+        m = m.fillna(value=0)
+        return m
     verbosePrint("\n[LOAD MATRIX(ES)]")
     matrixes = [parse_matrix(p) for p in paths]
     verbosePrint("[DONE]")
@@ -414,6 +441,48 @@ def redefine_matrixes_col_labels (use_attributes, *matrixes):
     verbosePrint("[DONE]")
     return matrixes
 
+def merge_rows_by_index (df):
+    '''
+    Purpose: sum-up rows with same index
+    Tested in version '0.15.0', works as expected
+    (NaN taken as 0 for sum() purposes, but sum of
+    NaN yields NaN)
+    '''
+    return df.groupby(df.index).sum()
+    
+def merge_cols_by_label (df):
+    '''
+    Purpose: sum-up colss with same label
+    Tested in version '0.15.0', works as expected
+    (NaN taken as 0 for sum() purposes, but sum of
+    NaN yields NaN)
+    '''
+    return df.groupby(df.columns, axis=1).sum()
+
+def compact_df (df, **kwargs):
+    '''
+    Purpose: apply merge_rows_by_index and
+    merge_cols_by_label only if needed by df.
+    Kwargs are needed only to verbosePrint
+    operations: if provided, must be both
+    "n" and "tot" (in the spirit of
+    "processing n out of tot ...")
+    '''
+    if kwargs:
+        verbosePrint("> processing {i} of {l} ... ".format(i=str(kwargs['n']), l=str(kwargs['tot'])))
+    if ((len(set(df.index)) != len(df.index)) or (len(set(df.columns)) != len(df.columns))):
+        if len(set(df.index)) != len(df.index):
+            if kwargs:
+                verbosePrint("  > compacting rows ... ")
+            df = merge_rows_by_index(df)
+        if len(set(df.columns)) != len(df.columns):
+            if kwargs:
+                verbosePrint("  > compacting cols ... ")
+            df = merge_cols_by_label(df)
+    else:
+        verbosePrint("  nothing to do. Skip!")
+    return df
+
 def compact_matrixes (*matrixes):
     '''
     Purpose: if *matrixes have duplicate column or row
@@ -423,47 +492,6 @@ def compact_matrixes (*matrixes):
     IN: *matrixes
     OUT: matrixes - list of ...
     '''
-    def merge_rows_by_index (df):
-        '''
-        Purpose: sum-up rows with same index
-        Tested in version '0.15.0', works as expected
-        (NaN taken as 0 for sum() purposes, but sum of
-        NaN yields NaN)
-        '''
-        return df.groupby(df.index).sum()
-        
-    def merge_cols_by_label (df):
-        '''
-        Purpose: sum-up colss with same label
-        Tested in version '0.15.0', works as expected
-        (NaN taken as 0 for sum() purposes, but sum of
-        NaN yields NaN)
-        '''
-        return df.groupby(df.columns, axis=1).sum()
-    
-    def compact_df (df, **kwargs):
-        '''
-        Purpose: apply merge_rows_by_index and
-        merge_cols_by_label only if needed by df.
-        Kwargs are needed only to verbosePrint
-        operations: if provided, must be both
-        "n" and "tot" (in the spirit of
-        "processing n out of tot ...")
-        '''
-        if kwargs:
-            verbosePrint("> processing {i} of {l} ... ".format(i=str(kwargs['n']), l=str(kwargs['tot'])))
-        if ((len(set(df.index)) != len(df.index)) or (len(set(df.columns)) != len(df.columns))):
-            if len(set(df.index)) != len(df.index):
-                if kwargs:
-                    verbosePrint("  > compacting rows ... ")
-                df = merge_rows_by_index(df)
-            if len(set(df.columns)) != len(df.columns):
-                if kwargs:
-                    verbosePrint("  > compacting cols ... ")
-                df = merge_cols_by_label(df)
-        else:
-            verbosePrint("  nothing to do. Skip!")
-        return df
     verbosePrint("\n[COMPACT MATRIX(ES)]")
     matrixes = [compact_df(m, n=i, tot=len(matrixes)) for i,m in enumerate(matrixes, start=1)]
     verbosePrint("[DONE]")
@@ -513,6 +541,77 @@ def add_prefixes_to_matrixes(prefix_sequence, matrix_sequence):
     verbosePrint("[DONE]")      
     return matrixes
 
+#def unify_matrixes (*matrixes):
+#    '''
+#    Purpose: sum-up Pandas DataFrame(s), row and column wise
+#    
+#    IN: 
+#    *matrixes - Pandas DataFrame(s)
+#    
+#    OUT:
+#    final_matrix -  resulting Pandas DataFrame
+#    '''
+#    if len(matrixes) > 1:
+#        verbosePrint("\n[UNIFY MATRIXES]")
+#        final_matrix = pd.DataFrame()
+#        i=0
+#        for m in matrixes:
+#            i += 1
+#            verbosePrint("> processing {i} of {l} ... ".format(i=str(i), l=str(len(matrixes))))
+#            final_matrix = final_matrix.add(m,
+#                                            fill_value=0)
+#        verbosePrint("[DONE]")
+#        return final_matrix
+#    else:
+#        return matrixes[0]
+
+#### Try with masking instead of fill_value=0
+#def unify_matrixes (*matrixes):
+#    '''
+#    Purpose: sum-up Pandas DataFrame(s), row and column wise
+#    
+#    IN: 
+#    *matrixes - Pandas DataFrame(s)
+#    
+#    OUT:
+#    final_matrix -  resulting Pandas DataFrame
+#    '''
+#    def sum_frames(*matrixes):
+#        def sum_frame(container, to_add, **kwargs):
+#            if kwargs:
+#                verbosePrint("> processing {i} of {l} ... ".format(i=str(kwargs['n']), l=str(kwargs['tot'])))
+#            return container.add(to_add.mask(pd.isnull(to_add), other=0))
+#        verbosePrint("> processing 1 of {l} ... ".format(l=str(len(matrixes))))
+#        final_matrix = pd.DataFrame(matrixes[0])
+#        for i, m in enumerate(matrixes[1:], start=2):
+#            final_matrix = sum_frame(final_matrix, m, n=i, tot=len(matrixes))
+#        return final_matrix
+#    
+#    if len(matrixes) > 1:
+#        verbosePrint("\n[UNIFY MATRIXES]")
+#        final_matrix = sum_frames(*matrixes)
+#        verbosePrint("[DONE]")
+#        return final_matrix
+#    else:
+#        return matrixes[0]
+
+##### Try with recursion
+#def unify_matrixes (*matrixes):
+#    def unify_matrixes_core (*matrixes):
+#        verbosePrint("> instantiating recursion: {tot} matrix left ...".format(tot=str(len(matrixes))))
+#        if len(matrixes) == 1:
+#            verbosePrint("> computing ...")
+#            return matrixes[0]
+#        else:
+#            return matrixes[-1].add(unify_matrixes_core(*matrixes[:len(matrixes)-1]), fill_value=0)
+#    if len(matrixes) > 1:
+#        verbosePrint("\n[UNIFY MATRIXES]")
+#        final_matrix = unify_matrixes_core (*matrixes)
+#        verbosePrint("[DONE]")
+#        return final_matrix
+#    else:
+#        return matrixes[0]
+
 def unify_matrixes (*matrixes):
     '''
     Purpose: sum-up Pandas DataFrame(s), row and column wise
@@ -523,21 +622,21 @@ def unify_matrixes (*matrixes):
     OUT:
     final_matrix -  resulting Pandas DataFrame
     '''
-    
     if len(matrixes) > 1:
         verbosePrint("\n[UNIFY MATRIXES]")
-        final_matrix = pd.DataFrame()
-        i=0
-        for m in matrixes:
-            i += 1
-            verbosePrint("> processing {i} of {l} ... ".format(i=str(i), l=str(len(matrixes))))
-            final_matrix = final_matrix.add(m,
-                                            fill_value=0)
+        verbosePrint("> unifying ...")
+        final_matrix = None
+        if pandas_is_updated(verbose=False):
+            final_matrix = pd.concat(matrixes, copy=False)
+        else:
+            final_matrix = pd.concat(matrixes)  # unexpected keyword 'copy'
+        verbosePrint("> consolidating ...")
+        final_matrix = compact_df(final_matrix)
         verbosePrint("[DONE]")
         return final_matrix
     else:
         return matrixes[0]
-   
+
 def buildOUTDIR(ground_dir, *subfolders):
     '''
     Purpose: check (and create) an absolute folder path where WRITE FILES
@@ -670,6 +769,8 @@ def export_matrix (matrix, path):
 
 def main(out_path, *input_paths):
     verbosePrint("\n[START]")
+    # check pandas version and warn user
+    pandas_is_updated(verbose=True)
     # check and norm input paths - returned input_paths is a list
     check_input_paths (*input_paths)
     input_paths = normalize_input_paths (*input_paths)
