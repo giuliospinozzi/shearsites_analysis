@@ -333,7 +333,7 @@ def import_matrixes (*paths):
     def parse_matrix (path):
         verbosePrint("> loading {path} ... ".format(path=str(path)))
         m = pd.read_csv(path, index_col=0, encoding=input_matrixes_encoding, sep=input_matrixes_sep)
-        m = m.fillna(value=0)
+        m = m.replace(0, pd.np.NaN)
         return m
     verbosePrint("\n[LOAD MATRIX(ES)]")
     matrixes = [parse_matrix(p) for p in paths]
@@ -560,53 +560,6 @@ def add_prefixes_to_matrixes(prefix_sequence, matrix_sequence):
 #            verbosePrint("> processing {i} of {l} ... ".format(i=str(i), l=str(len(matrixes))))
 #            final_matrix = final_matrix.add(m,
 #                                            fill_value=0)
-#        verbosePrint("[DONE]")
-#        return final_matrix
-#    else:
-#        return matrixes[0]
-
-#### Try with masking instead of fill_value=0
-#def unify_matrixes (*matrixes):
-#    '''
-#    Purpose: sum-up Pandas DataFrame(s), row and column wise
-#    
-#    IN: 
-#    *matrixes - Pandas DataFrame(s)
-#    
-#    OUT:
-#    final_matrix -  resulting Pandas DataFrame
-#    '''
-#    def sum_frames(*matrixes):
-#        def sum_frame(container, to_add, **kwargs):
-#            if kwargs:
-#                verbosePrint("> processing {i} of {l} ... ".format(i=str(kwargs['n']), l=str(kwargs['tot'])))
-#            return container.add(to_add.mask(pd.isnull(to_add), other=0))
-#        verbosePrint("> processing 1 of {l} ... ".format(l=str(len(matrixes))))
-#        final_matrix = pd.DataFrame(matrixes[0])
-#        for i, m in enumerate(matrixes[1:], start=2):
-#            final_matrix = sum_frame(final_matrix, m, n=i, tot=len(matrixes))
-#        return final_matrix
-#    
-#    if len(matrixes) > 1:
-#        verbosePrint("\n[UNIFY MATRIXES]")
-#        final_matrix = sum_frames(*matrixes)
-#        verbosePrint("[DONE]")
-#        return final_matrix
-#    else:
-#        return matrixes[0]
-
-##### Try with recursion
-#def unify_matrixes (*matrixes):
-#    def unify_matrixes_core (*matrixes):
-#        verbosePrint("> instantiating recursion: {tot} matrix left ...".format(tot=str(len(matrixes))))
-#        if len(matrixes) == 1:
-#            verbosePrint("> computing ...")
-#            return matrixes[0]
-#        else:
-#            return matrixes[-1].add(unify_matrixes_core(*matrixes[:len(matrixes)-1]), fill_value=0)
-#    if len(matrixes) > 1:
-#        verbosePrint("\n[UNIFY MATRIXES]")
-#        final_matrix = unify_matrixes_core (*matrixes)
 #        verbosePrint("[DONE]")
 #        return final_matrix
 #    else:
