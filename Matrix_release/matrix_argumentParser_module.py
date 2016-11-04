@@ -90,8 +90,12 @@ exists will be created. Further, -s / --subfolder argument allow to set an
 additional subfolder (None by default).
 
 * Other Options:
--q / --quiet option prevent the program from printing pretty anything, except
-for main warnings, critical errors and python's exceptions.
+    Verbosity
+        By default the program is verbose
+        -q / --quiet option prevent the program from printing pretty anything,
+        except for main warnings, critical errors and python's exceptions.
+        -hv / --hyper_verbose let the program print almost all the available
+        details about about the program execution 
 
 * Notes:
 Many controls are spreaded inside the code, about:
