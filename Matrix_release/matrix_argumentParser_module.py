@@ -19,7 +19,7 @@ description = """
 Given one or more dataset to analyze, this program computes Integration Sites
 quantification matrixes.
 
-According to the features of the whole input data, this program yields as
+According to the features of the whole input data, this program returns as
 output up to five files:
 1) seqCount_matrix.tsv - count of sequencing reads for each IS
 2) ShsCount_matrix.tsv - count of distinct shearsites for each IS
@@ -53,23 +53,23 @@ separated eachother by a space, to be processed together.
 +---+ FURTHER DETAILS +-------------------------------------------------------+
 
 * About Integration Sites aggregation:
-Integration Site aggregation of covered bases is performed by default by means
-of a 'sliding-window' approach. The maximum gap allowed between two covered
+Integration Site aggregation of targeted bases is performed by default by means
+of a 'sliding-window' approach. The maximum gap allowed between two targeted
 bases in the same window is tunable through '--ISs_max_gap' argument (default:
 7) as well as the maximum overall window extent is tunable through
 '--ISs_max_span' argument (default: 8). Such rules holds together and thus the
 window behaviour is fully determined.
-All the covered bases in the same window are merged as they were one, now
+All the targeted bases in the same window are merged as they were one, now
 called IS: total sequence count is updated, shearsites are corrected, related
 distinct random barcodes are recomputed and genomic coordinates are inherited
-from the covered base with the highest sequence count; in case of ties, the
+from the targeted base with the highest sequence count; in case of ties, the
 first locus hosting a maximum is taken as IS locus (strand-wise).
-If you want a simple 'covered base matrix', just use '-cb' / '--covered_bases'
+If you want a simple 'targeted base matrix', use '-tb' / '--targeted_bases'
 option (note: any given 'IS argument' will be silently ignored).
 
 * About Random Barcode Edit-distance Filter:
-Each IS (or covered base, in case of '-cb' / '--covered_bases' option)
-undergoes an inspection of the mutual edit distance among its random barcodes. 
+Each IS (or targeted base, in case of '-tb' / '--targeted_bases') undergoes an
+inspection of the mutual edit distance among its random barcodes. 
 This inspection can be done inside its shearsite compartments (default) or
 overall (--filter_ignoring_shearsites): the latter may be conceptually wrong
 and for sure extremely time&memory-consuming.
@@ -82,7 +82,7 @@ sequencing-erros, discarding adulterated data.
 
 * About Output:
 Output files are plain text file, utf-8, tab-separated. Each row represents an
-IS (or covered base, in case of '-cb' / '--covered_bases' option) demultiplexed
+IS (or targeted base, in case of '-tb' / '--targeted_bases') demultiplexed
 in columns according to 'sample IDs' found in data. Such files are created in
 the current working directory as default, or in any location passed through
 -o /--out_dir_path. The argument must be an absoute path of a directory: if not
@@ -92,13 +92,13 @@ additional subfolder (None by default).
 * Other Options:
     Verbosity
         By default the program is verbose
-        -q / --quiet option prevent the program from printing pretty anything,
-        except for main warnings, critical errors and python's exceptions.
+        -q / --quiet prevent the program from printing pretty anything, except
+        for main warnings, critical errors and python's exceptions.
         -hv / --hyper_verbose let the program print almost all the available
         details about about the program execution 
 
 * Notes:
-Many controls are spreaded inside the code, about:
+Many controls are spread inside the code, about:
 - python environment
 - R environment
 - argument parsed settings
@@ -179,9 +179,9 @@ parser.add_argument("-o", "--out_dir_path", metavar='ABS_OUT_PATH', default=os.g
 # Set matrix_outfolder - optional
 parser.add_argument("-s", "--subfolder", metavar='FOLDER_NAME', default='', help="specify a subfolder in ABS_OUT_PATH where write output matrix files. (default: no subfolder).")
 ### Set do_ISs - optional
-parser.add_argument("-cb", "--covered_bases", action="store_false", default=True, help="prevent from ISs aggregation, yielding a simple 'covered bases matrix'. If this argument is given, other '--ISs_...' arguments/settings will be ignored. (default: DO ISs aggregation).")
+parser.add_argument("-tb", "--targeted_bases", action="store_false", default=True, help="prevent from ISs aggregation, yielding a simple 'targeted bases matrix'. If this argument is given, other '--ISs_...' arguments/settings will be ignored. (default: DO ISs aggregation).")
 # Set do_ISs param: ensembles_per_sample - optional
-parser.add_argument("--ISs_per_sample", action="store_true", default=False, help="aggregate covered bases in ISs sample-by-sample. (default: aggregate covered bases in ISs across all data).")
+parser.add_argument("--ISs_per_sample", action="store_true", default=False, help="aggregate targeted bases in ISs sample-by-sample. (default: aggregate targeted bases in ISs across all data).")
 # Set ensembles_max_dist - optional
 parser.add_argument("--ISs_max_gap", metavar='N', type=positive_int, default=7, help="if (locus[n+1] - locus[n] > N), the IS window is truncated at locus[n]. (default: 7).")
 # Set ensembles_max_span - optional

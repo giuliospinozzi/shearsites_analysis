@@ -117,6 +117,18 @@ if do_ISs:
     verbosePrint(">>> Done!")
 ################################################################################################################################################################################
 
+### Compute matrixes without barcode data #####################################################################################
+seqCount_matrix, ShsCount_matrix, fragmentEstimate_matrix = None, None, None
+verbosePrint("\n>>> Computing matrixes:")
+verbosePrint("> seqCount matrix ...")
+seqCount_matrix = buildSeqCountMatrix(any_df)
+verbosePrint("> ShsCount matrix ...")
+ShsCount_matrix = buildShsCountMatrix(any_df)
+verbosePrint("> fragmentEstimate matrix ...")
+fragmentEstimate_matrix = buildFragmentEstimateMatrix(any_df)
+verbosePrint(">>> Done!")
+###############################################################################################################################
+
 ### Filter Data #######################################################################################################################################
 if filter_data:
     verbosePrint("\n>>> Cleaning DataFrame ...")
@@ -128,19 +140,13 @@ if filter_data:
     verbosePrint(">>> Done!")
 #######################################################################################################################################################
 
-### Compute matrixes ##########################################################################################################
-seqCount_matrix, ShsCount_matrix, barcodeCount_matrix, cellCount_matrix, fragmentEstimate_matrix = None, None, None, None, None
+### Compute matrixes with barcode data ########################################################################################
+barcodeCount_matrix, cellCount_matrix = None, None
 verbosePrint("\n>>> Computing matrixes:")
-verbosePrint("> seqCount matrix ...")
-seqCount_matrix = buildSeqCountMatrix(any_df)
-verbosePrint("> ShsCount matrix ...")
-ShsCount_matrix = buildShsCountMatrix(any_df)
 verbosePrint("> barcodeCount matrix ...")
 barcodeCount_matrix = buildBarcodeCountMatrix(any_df)
 verbosePrint("> cellCount matrix ...")
 cellCount_matrix = buildCellCountMatrix(any_df)
-verbosePrint("> fragmentEstimate matrix ...")
-fragmentEstimate_matrix = buildFragmentEstimateMatrix(any_df)
 verbosePrint(">>> Done!")
 ###############################################################################################################################
 

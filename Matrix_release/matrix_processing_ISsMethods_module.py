@@ -25,10 +25,10 @@ def get_ensembles (any_df, per_sample, max_dist, max_span):
     # if per_sample is True, ensambles are computed sample-by-sample, not overall (False)
     # if (locus[n+1] - locus[n] > max_dist), the ensamble is truncated at locus[n]
     # if (locus[n+1] - locus[0] > max_span), the ensamble is truncated at locus[n]
-    # NOTE/TrickyUsages: > max_dist=0 OR max_span=1 yield single-covered-base ensambles
+    # NOTE/TrickyUsages: > max_dist=0 OR max_span=1 yield single-targeted-base ensambles
     #                    > max_span=0 yield single-ENTRY ensambles (usually NON-SENSE)
     
-    verbosePrint("    > Building covered base ensembles ...")
+    verbosePrint("    > Building targeted base ensembles ...")
     verbosePrint("      per_sample: {per_sample}".format(per_sample=str(per_sample)))
     verbosePrint("      max_dist: {max_dist}".format(max_dist=str(max_dist)))
     verbosePrint("      max_span: {max_span}".format(max_span=str(max_span)))
@@ -172,7 +172,7 @@ def compute_ISs (any_df, ensembles_per_sample=False, ensembles_max_dist=7, ensem
     ensembles = get_ensembles (any_df, ensembles_per_sample, ensembles_max_dist, ensembles_max_span)
     
     # Get ISs (list of any_df chunks properly processed)
-    verbosePrint("    > Computing ISs over covered base ensembles ...")
+    verbosePrint("    > Computing ISs over targeted base ensembles ...")
     ISs = None
     if ISs_method=='classic':
         verbosePrint("      method: {method}".format(method=str(ISs_method)))

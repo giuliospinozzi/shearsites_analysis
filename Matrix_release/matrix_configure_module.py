@@ -85,7 +85,7 @@ hyperverbose = args.hyper_verbose
 ## Data
 dataset_tuple_list = args.dataset_tuple_list
 ## ISs computation
-do_ISs = args.covered_bases
+do_ISs = args.targeted_bases
 ensembles_per_sample = args.ISs_per_sample
 ensembles_max_dist = args.ISs_max_gap
 ensembles_max_span = args.ISs_max_span
