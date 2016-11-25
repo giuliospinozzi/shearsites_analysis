@@ -124,23 +124,29 @@ def buildFragmentEstimateMatrix(any_df, sample_column='association_ID'):
     results_list = []
     # loop over samples
     for sample in sample_list:
-        # select sample data
-        sample_DF = DF[DF[sample_column]==sample]
-        sample_DF = sample_DF.drop(sample_column, 1)
-        sample_DF = sample_DF.drop_duplicates()  #unique!
-        locations_list, length_list = list(sample_DF.genomic_coordinates), list(sample_DF.shearsite)
-        # Alias for sonicLength - estAbund calling
-        estAbund = sonicLength.estAbund
-        # Call estAbund and store returned object in results
-        results = estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
-        theta = results.rx2("theta")
-        estimations_theta = list(theta)
-        locations_theta = list(theta.names)
-        # shape data as dataframe: col=locations_theta, sample_column, estimations_theta
-        tmp_dict = {'genomic_coordinates': locations_theta, sample_column:[sample]*len(estimations_theta), 'fragmentEstimate_count':estimations_theta}
-        tmp_DF = pd.DataFrame(data=tmp_dict)
-        # append results
-        results_list.append(tmp_DF)
+        try:
+            # select sample data
+            sample_DF = DF[DF[sample_column]==sample]
+            sample_DF = sample_DF.drop(sample_column, 1)
+            sample_DF = sample_DF.drop_duplicates()  #unique!
+            locations_list, length_list = list(sample_DF.genomic_coordinates), list(sample_DF.shearsite)
+            # Alias for sonicLength - estAbund calling
+            estAbund = sonicLength.estAbund
+            # Call estAbund and store returned object in results
+            results = estAbund(robjects.StrVector(locations_list), robjects.FloatVector(length_list))
+            theta = results.rx2("theta")
+            estimations_theta = list(theta)
+            locations_theta = list(theta.names)
+            # shape data as dataframe: col=locations_theta, sample_column, estimations_theta
+            tmp_dict = {'genomic_coordinates': locations_theta, sample_column:[sample]*len(estimations_theta), 'fragmentEstimate_count':estimations_theta}
+            tmp_DF = pd.DataFrame(data=tmp_dict)
+            # append results
+            results_list.append(tmp_DF)
+        except Exception, err_message:
+            verbosePrint("  [Warning] Troubles have occurred while running sonicLength R-package.")
+            verbosePrint("  error details: "+str(err_message))
+            verbosePrint("  ...ABORTED!")
+            return None
     # concat dataframes in results_list
     results_df = pd.concat(results_list)
     # pivot to shape results_df as matrix of ESTIMATES OF N PARENTAL FRAGMENT YIELDED BY SONICLENGTH for each ISs in df

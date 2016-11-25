@@ -74,10 +74,14 @@ def loadData (launch_path_dict, drop_headers, compression):
                 verbosePrint("    > POOL: '{POOL}'".format(POOL=str(POOL)))
                 any_df_per_pool.append(loadPool(launch_path_dict[DISEASE][PATIENT][POOL], drop_headers, force_drop_rBC, compression))
     verbosePrint(">>> Data loaded!")
-    # append dataframes
-    verbosePrint("\n>>> Joining Dataframe(s) ...")
-    any_df = pd.concat(any_df_per_pool, axis=0, join='inner', ignore_index=True)
-    verbosePrint(">>> Done!")
+    # concat dataframes in any_df_per_pool if needed an return any_df
+    any_df = None
+    if len(any_df_per_pool) == 1:
+        any_df = any_df_per_pool[0]
+    else:
+        verbosePrint("\n>>> Joining dataframes ...")
+        any_df = pd.concat(any_df_per_pool, axis=0, join='inner', ignore_index=True)
+        verbosePrint(">>> Done!")
     # return a unique any_df for all the data
     return any_df
 
