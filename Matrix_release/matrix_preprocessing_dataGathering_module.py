@@ -18,8 +18,15 @@ def loadRefactored_asDataframe (path, compression=None):
     encoding = 'utf-8'
     header = 0
     index_col = 'prod_header'
-    usecols = ['prod_header', 'prod_chr', 'prod_locus', 'prod_end', 'prod_strand', 'ref_associationid']
-    return pd.read_csv(path, sep=sep, compression=compression, encoding=encoding, header=header, index_col=index_col, usecols=usecols)
+    usecols = ['prod_header', 'prod_chr', 'prod_locus', 'prod_end', 'prod_strand', 'ref_associationid', 'mate_chr']
+    refactored_light = pd.read_csv(path, sep=sep, compression=compression, encoding=encoding, header=header, index_col=index_col, usecols=usecols)
+    #print "[DEBUG] refactored rows:", len(refactored_light)
+    #print "[DEBUG] refactored columns:", refactored_light.columns
+    refactored_light = refactored_light[~pd.isnull(refactored_light['mate_chr'])]
+    refactored_light.drop('mate_chr', axis=1, inplace=True)
+    #print "[DEBUG] refactored PAIRED ENDS rows ONLY:", len(refactored_light)
+    #print "[DEBUG] final refactored columns:", refactored_light.columns
+    return refactored_light
 
 
 def loadFasta_asDataframe (path, compression=None):
@@ -63,13 +70,8 @@ def loadFasta_asDataframe (path, compression=None):
     # Get tuple_list [(header0, seq0), (header1, seq1), ...]
     from itertools import izip
     tuple_list = [(getHeader(header_line), getSeq(seq_line)) for header_line, seq_line in izip(*[iter(file_as_list)]*2)]
-    # Convert list to np array, create Dataframe and return
-    import numpy as np
-    dt = np.dtype([('header', np.str_, 100), ('randomBC', np.str_, 12)])
-    tuple_list = np.array(tuple_list, dtype=dt)
     # returnd DF has seq headers as index and a column named 'randomBC'
-    return pd.DataFrame.from_records(tuple_list, index='header')
-
+    return pd.DataFrame.from_records(tuple_list, columns= ['header', 'randomBC'], index='header')
 
 def buildDataFrame (refactored_DF, rBC_fasta_DF=None, drop_headers=True):
     
@@ -96,7 +98,7 @@ def buildDataFrame (refactored_DF, rBC_fasta_DF=None, drop_headers=True):
         raw_DF.rename(columns={'ref_associationid': 'association_ID'}, inplace=True)
         # reset index / keep headers
         raw_DF.reset_index(inplace=True, drop=drop_headers)
-        # change columns order and return
+        # take only columns of interest, change order and return
         col = ['association_ID', 'genomic_coordinates', 'shearsite', 'randomBC', 'prod_header']
         if 'randomBC' not in raw_DF.columns:
             col.remove('randomBC')

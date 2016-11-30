@@ -40,7 +40,7 @@ def loadData (launch_path_dict, drop_headers, compression):
 
     def loadPool (pool_dict, drop_headers, force_drop_rBC, compression):
         source_data_path = pool_dict['source_data_path']  # Key error if not present
-        verbosePrint("      > Loading refactored ...")
+        verbosePrint("      > Loading refactored (paired-ends data) ...")
         refactored_DF = loadRefactored_asDataframe (source_data_path, compression=compression)
         verbosePrint("        done!")
         randomBC_data_path = pool_dict.get('randomBC_data_path') # Return None instead of Key error if not present
@@ -75,13 +75,9 @@ def loadData (launch_path_dict, drop_headers, compression):
                 any_df_per_pool.append(loadPool(launch_path_dict[DISEASE][PATIENT][POOL], drop_headers, force_drop_rBC, compression))
     verbosePrint(">>> Data loaded!")
     # concat dataframes in any_df_per_pool if needed an return any_df
-    any_df = None
-    if len(any_df_per_pool) == 1:
-        any_df = any_df_per_pool[0]
-    else:
-        verbosePrint("\n>>> Joining dataframes ...")
-        any_df = pd.concat(any_df_per_pool, axis=0, join='inner', ignore_index=True)
-        verbosePrint(">>> Done!")
+    verbosePrint("\n>>> Consolidate dataframe(s) ...")
+    any_df = pd.concat(any_df_per_pool, axis=0, join='inner', ignore_index=True)
+    verbosePrint(">>> Done!")
     # return a unique any_df for all the data
     return any_df
 
