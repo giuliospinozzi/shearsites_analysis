@@ -48,11 +48,14 @@ inside_ShS = True
 ED_treshold = 3  # int (1->11); can be even a callable (e.g. ED_rule=func such that func(arg)-> int. See matrix_preprocessing_filterData_module)
 
 ## COMMON OUTPUT GROUND DIR ##
-common_output_ground_dir = "/storage/d3/tmp/stefano/debug"  # abs path used as 'ground dir' for subfolder tree.
+common_output_ground_dir = "/storage/d3/tmp/stefano/debug/Matrixes"  # abs path used as 'ground dir' for subfolder tree.
 
 ## Matrix output Files - outputModule ##
-matrix_outfolder = "Matrixes"  # subfolder of common_output_ground_dir where write matrixes
+matrixesTotal_subfolder = "MatrixesTotal"
 matrix_files_delimiter = '\t'
+
+## Misc
+dataset_ID = "debug-dataset"  # a separator different from '_' is recommended
 
 
 #++++++++++++++++++++++++++++++++++ Override Global Vars by argumentParser_module ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -95,7 +98,10 @@ inside_ShS = args.filter_ignoring_shearsites
 ED_treshold = args.filter_edit_distance_threshold
 ## Output
 common_output_ground_dir = args.out_dir_path
-matrix_outfolder = args.subfolder
+matrixesTotal_subfolder = "MatrixesTotal"
+## Misc
+dataset_ID = args.dataset_ID
+
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -128,38 +134,6 @@ def humanSorted(l):
 
 
 #++++++++++++++++++++++++++++++++++ Code +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
-### This section prints the whole configuration in order to be sure about the launch
-### and avoid uncontrolled overriding!
-
-### MOVED IN MAIN
-#verbosePrint("\n>>> Configuring ...")
-#verbosePrint("    DATA:")
-#verbosePrint("    * dataset_tuple_list: {x}".format(x=str(dataset_tuple_list)))
-#verbosePrint("    * drop_headers: {x}".format(x=str(drop_headers)))
-#verbosePrint("    * compression: {x}".format(x=str(compression)))
-#verbosePrint("    ISs:")
-#verbosePrint("    * do_ISs: {x}".format(x=str(do_ISs)))
-#if do_ISs:
-#    verbosePrint("     * ensembles_per_sample: {x}".format(x=str(ensembles_per_sample)))
-#    verbosePrint("     * ensembles_max_dist: {x}".format(x=str(ensembles_max_dist)))
-#    verbosePrint("     * ensembles_max_span: {x}".format(x=str(ensembles_max_span)))
-#    verbosePrint("     * ISs_method: {x}".format(x=str(ISs_method)))
-#verbosePrint("    FILTER:")
-#verbosePrint("    * filter_data: {x}".format(x=str(filter_data)))
-#if filter_data:
-#    verbosePrint("     * filter_by_ED: {x}".format(x=str(filter_by_ED)))
-#    verbosePrint("     * inside_ShS: {x}".format(x=str(inside_ShS)))
-#    verbosePrint("     * ED_treshold: {x}".format(x=str(ED_treshold)))
-#verbosePrint("    OUTPUT:")
-#verbosePrint("    * common_output_ground_dir: {x}".format(x=str(common_output_ground_dir)))
-#if matrix_outfolder != '':
-#    verbosePrint("    * matrix_outfolder: {x}".format(x=str(matrix_outfolder)))
-#if matrix_files_delimiter == '\t':
-#    verbosePrint(r'''    * matrix_files_delimiter: \t''')
-#else:
-#    verbosePrint("    * matrix_files_delimiter: {x}".format(x=str(matrix_files_delimiter)))
-#verbosePrint(">>> Done!")
 
 
 ### CHECK MODULES HERE, ACCORDING TO ACTUAL CONFIGUARTION

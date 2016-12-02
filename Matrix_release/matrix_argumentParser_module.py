@@ -17,18 +17,25 @@ description = """
 +---+ GENERAL DESCRIPTION +---------------------------------------------------+
 
 Given one or more dataset to analyze, this program computes Integration Sites
-quantification matrixes.
+quantification matrixes and totals.
 
 According to the features of the whole input data, this program returns as
-output up to five files:
-1) seqCount_matrix.tsv - count of sequencing reads for each IS
-2) ShsCount_matrix.tsv - count of distinct shearsites for each IS
-3) barcodeCount_matrix.tsv - count of distinct random barcodes for each IS
-4) cellCount_matrix.tsv - count of parental fragments of each IS
+output up to five quantification matrix files:
+1) datasetID_seqCount_matrix.tsv: count of sequencing reads for each IS
+2) datasetID_ShsCount_matrix.tsv: count of distinct shearsites for each IS
+3) datasetID_fragmentEstimate_matrix.tsv: estimate of parental fragments of
+   each IS (computed by sonicLength R-package exploiting shearsite data only)
+4) datasetID_barcodeCount_matrix.tsv: count of distinct random barcodes for
+   each IS
+5) datasetID_cellCount_matrix.tsv: count of parental fragments of each IS
    (obtained as the count of distinct shearsite&random-barcode couples)
-5) fragmentEstimate_matrix.tsv - estimate of parental fragments of each IS
-   (computed by sonicLength R-package exploiting shearsite data only)
+
 By default such files are created in the current working directory.
+Besides, for each quantification matrix file, a total-counterpart file is
+created in 'MatrixesTotal' subfolder. Such files have the same names of their
+sources except for 'total_' prefix.
+Here 'datasetID' is the string chosen by the user to identify data, passed
+through --dataset_ID required argument.
 
 Integration Sites aggregation is performed through a sliding window approach,
 centered on the sequence count local maximum. In case of ties, the first locus
@@ -38,11 +45,17 @@ If available, random barcode's data are filtered by edit-distance trying to
 mitigate overestimation biases due to PCR-artifacts / sequencing-erros.
 
 Example of standard usage:
-a) {program} /opt/NGS/results,MLD,MLDHE01
+a) {program} /opt/NGS/results,MLD,MLDHE01 --dataset_ID MLDHE01-allPools
    (process all pools found in /opt/NGS/results related to MLD disease and 
    MDLHE01 patient)
 b) {program} /opt/NGS/results,Pirazzoli,PE_LungCancerResistance,VP1,VP2
+   --dataset_ID Valentina-project-somepools
    (process only pools VP1 and VP2 of Pirazzoli PE_LungCancerResistance)
+c) {program} /opt/NGS/results,Pirazzoli,PE_LungCancerResistance,VP1,VP2 /opt/
+   NGS/results,MLD,MLDHE01 --dataset_ID mixedLaunch
+   (process both pools VP1-VP2 of Pirazzoli PE_LungCancerResistance found in 
+   /opt/NGS/results and all pools found in /opt/NGS/results related to MLD
+   disease and MDLHE01 patient, as a whole, labelling results as 'mixedLaunch') 
    
 Here strings like
 a) data_base_dir,disease,patient
@@ -81,13 +94,20 @@ This is done to try to mitigate overestimation biases due to PCR-artifacts /
 sequencing-erros, discarding adulterated data.
 
 * About Output:
-Output files are plain text file, utf-8, tab-separated. Each row represents an
-IS (or targeted base, in case of '-tb' / '--targeted_bases') demultiplexed
-in columns according to 'sample IDs' found in data. Such files are created in
-the current working directory as default, or in any location passed through
--o /--out_dir_path. The argument must be an absoute path of a directory: if not
-exists will be created. Further, -s / --subfolder argument allow to set an
-additional subfolder (None by default).
+Output files are plain text file, utf-8, tab-separated: name pattern is
+DATA-ID-STRING_QUANTIFICATION-METHOD_matrix.tsv, where DATA-ID-STRING is the
+required argument of --dataset_ID.
+In quantification matrix files, each row represents an IS (or targeted base,
+in case of '-tb' / '--targeted_bases') demultiplexed in columns according to
+'sample IDs' found in data. Such files are created in the current working
+directory as default, or in any location passed through -o /--out_dir_path. The
+argument must be an absoute path of a directory: if not exists will be created.
+In the same location where the user choose to write quantification matrix
+files, a subfolder named 'MatrixesTotal' is expected: if not existing, it will
+be created. This subfolder hosts the total-counterpart of quantification matrix
+files, i.e. a condensed-in-one-column version of related quantification matrix
+files. Such files have the same names of their counterpart except for 'total_'
+prefix. The only column inside is labelled as --dataset_ID required argument.
 
 * Other Options:
     Verbosity
@@ -164,20 +184,36 @@ def greater_than_1_int(n):
     
 def range_1_11_int(n):
     return range_limited_int(n, 1, 11)
+    
+forbidden_chars = ['_', '!', '@', ' ', '$', '/', '\\', '*', ',', ';', '.', '?', "'", '"']
+forbidden_strings = ['total']
+recommended_sep = '-'
+def dataset_ID_string(s, forbidden_chars=forbidden_chars, forbidden_strings=forbidden_strings, recommended_sep=recommended_sep):
+    try:
+        s = str(s)
+    except:
+        raise argparse.ArgumentTypeError("ID_STRING={s} cannot being taken as string.".format(s=str(s)))
+    for c in s:
+        if c in forbidden_chars:
+            raise argparse.ArgumentTypeError("char='{c}' is forbidden in ID_STRING='{s}'. As separator, please use '{recommended_sep}'.".format(s=str(s), recommended_sep=str(recommended_sep)))
+    for fs in forbidden_strings:
+        if fs in s:
+            raise argparse.ArgumentTypeError("sub-string='{fs}' is forbidden in ID_STRING='{s}'.".format(s=str(s), fs=str(fs)))
+    return s
 
 
 #parser = MyParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
 parser = MyParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
 # Set dataset_tuple_list - REQUIRED
 parser.add_argument("dataset_tuple_list", metavar='DATA_TUPLES', nargs='+', type=dataset_tuple, help="one (or more) dataset to process. Each dataset is expected to be a tuple composed by at least 3 items, comma separated with no spaces (e.g: data_base_dir,disease,patient); furter item(s) following these three will be interpreted as the only pool(s) to process (e.g.: data_base_dir,disease,patient,poolA,poolB), otherwise all the pools of the 3-items-tuple dataset will be taken. A space separates distinct tuples.")  # return a list
+# set dataset_ID
+parser.add_argument("--dataset_ID", "-ID", metavar='DATA_ID_STRING', required=True, type=dataset_ID_string, help="REQUIRED. Choose a string to identify and label the output of this launch.")
 # Set verbosity - optional
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-q", "--quiet", action="store_false", default=True, help="silent execution. (default: verbose).")
 group.add_argument("-hv", "--hyper_verbose", action="store_true", default=False, help="hyperverbose execution. (default: verbose).")
 # Set common_output_ground_dir - optional
 parser.add_argument("-o", "--out_dir_path", metavar='ABS_OUT_PATH', default=os.getcwd(), help="set an absolute directory path where write output matrix files. (default: current working directory).")
-# Set matrix_outfolder - optional
-parser.add_argument("-s", "--subfolder", metavar='FOLDER_NAME', default='', help="specify a subfolder in ABS_OUT_PATH where write output matrix files. (default: no subfolder).")
 ### Set do_ISs - optional
 parser.add_argument("-tb", "--targeted_bases", action="store_false", default=True, help="prevent from ISs aggregation, yielding a simple 'targeted bases matrix'. If this argument is given, other '--ISs_...' arguments/settings will be ignored. (default: DO ISs aggregation).")
 # Set do_ISs param: ensembles_per_sample - optional

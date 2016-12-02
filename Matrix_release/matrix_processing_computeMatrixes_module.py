@@ -153,3 +153,14 @@ def buildFragmentEstimateMatrix(any_df, sample_column='association_ID'):
     fragmentEstimate_matrix = pd.pivot_table(results_df, index='genomic_coordinates', columns=sample_column, values='fragmentEstimate_count')
     return fragmentEstimate_matrix
 
+
+def totalMatrix(df_matrix, column_label=None):
+    if df_matrix is None:
+        return None
+    # collapse 'matrix-like' df in one column named as 'column_label' var (if not None, else '0')
+    df_matrix_sum = df_matrix.sum(axis=1).to_frame()
+    if column_label is not None:
+        df_matrix_sum.rename(columns={0: str(column_label)}, inplace=True)
+    return df_matrix_sum
+
+
