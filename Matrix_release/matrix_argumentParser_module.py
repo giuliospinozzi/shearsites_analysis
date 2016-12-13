@@ -51,8 +51,8 @@ a) {program} /opt/NGS/results,MLD,MLDHE01 --dataset_ID MLDHE01-allPools
 b) {program} /opt/NGS/results,Pirazzoli,PE_LungCancerResistance,VP1,VP2
    --dataset_ID Valentina-project-somepools
    (process only pools VP1 and VP2 of Pirazzoli PE_LungCancerResistance)
-c) {program} /opt/NGS/results,Pirazzoli,PE_LungCancerResistance,VP1,VP2 /opt/
-   NGS/results,MLD,MLDHE01 --dataset_ID mixedLaunch
+c) {program} /opt/NGS/results,Pirazzoli,PE_LungCancerResistance,VP1,VP2
+   /opt/NGS/results,MLD,MLDHE01 --dataset_ID mixedLaunch
    (process both pools VP1-VP2 of Pirazzoli PE_LungCancerResistance found in 
    /opt/NGS/results and all pools found in /opt/NGS/results related to MLD
    disease and MDLHE01 patient, as a whole, labelling results as 'mixedLaunch') 
@@ -102,7 +102,7 @@ in case of '-tb' / '--targeted_bases') demultiplexed in columns according to
 'sample IDs' found in data. Such files are created in the current working
 directory as default, or in any location passed through -o /--out_dir_path. The
 argument must be an absoute path of a directory: if not exists will be created.
-In the same location where the user choose to write quantification matrix
+In the same location where the user chooses to write quantification matrix
 files, a subfolder named 'MatrixesTotal' is expected: if not existing, it will
 be created. This subfolder hosts the total-counterpart of quantification matrix
 files, i.e. a condensed-in-one-column version of related quantification matrix

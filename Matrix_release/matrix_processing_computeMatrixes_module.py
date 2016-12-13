@@ -163,4 +163,18 @@ def totalMatrix(df_matrix, column_label=None):
         df_matrix_sum.rename(columns={0: str(column_label)}, inplace=True)
     return df_matrix_sum
 
+def collisionMatrix(df_matrix, dataset_ID):
+    if df_matrix is None:
+        return None
+    # get total; df.sum().sum() is preferred to df.values.sum(): the latter yields nan if nan(s) are present
+    tot = df_matrix.sum().sum()
+    # create column_label
+    column_label = "Collision against " + str(dataset_ID) + " @ " + str(int(tot))
+    # create df_matrix_sum through totalMatrix
+    df_matrix_sum = totalMatrix(df_matrix, column_label=column_label)
+    return df_matrix_sum
+
+
+
+
 

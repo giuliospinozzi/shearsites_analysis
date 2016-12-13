@@ -52,6 +52,7 @@ common_output_ground_dir = "/storage/d3/tmp/stefano/debug/Matrixes"  # abs path 
 
 ## Matrix output Files - outputModule ##
 matrixesTotal_subfolder = "MatrixesTotal"
+matrixesCollision_subsubfolder= "relabeled"
 matrix_files_delimiter = '\t'
 
 ## Misc
@@ -99,6 +100,7 @@ ED_treshold = args.filter_edit_distance_threshold
 ## Output
 common_output_ground_dir = args.out_dir_path
 matrixesTotal_subfolder = "MatrixesTotal"
+matrixesCollision_subsubfolder= "relabeled"
 ## Misc
 dataset_ID = args.dataset_ID
 

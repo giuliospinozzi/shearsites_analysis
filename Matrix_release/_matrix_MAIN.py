@@ -17,7 +17,7 @@ __email__ = "brasca.stefano@hsr.it"
 __status__ = "Testing"
 
 
-#++++++++++++++ Requested Package(s) Import ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++ Requested Package(s) Import +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 ### Check requirements, import configuration and PARSE ARGS
 import matrix_configure_module
@@ -27,11 +27,11 @@ humanSorted = matrix_configure_module.humanSorted
 verbosePrint = matrix_configure_module.verbosePrint
 from matrix_preprocessing_dataSources_module import getLaunchPathDict
 from matrix_preprocessing_dataLoading_module import loadData
-from matrix_processing_computeMatrixes_module import buildSeqCountMatrix, buildShsCountMatrix, buildBarcodeCountMatrix, buildCellCountMatrix, buildFragmentEstimateMatrix, totalMatrix
+from matrix_processing_computeMatrixes_module import buildSeqCountMatrix, buildShsCountMatrix, buildBarcodeCountMatrix, buildCellCountMatrix, buildFragmentEstimateMatrix, totalMatrix, collisionMatrix
 from matrix_output_module import buildOutputPath, writeMatrix
 
 
-#++++++++++++++++++++++ Global Vars from configure_module ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++ Global Vars from configure_module +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 ### Screen print configs 
 verbose = matrix_configure_module.verbose
@@ -61,17 +61,18 @@ common_output_ground_dir = matrix_configure_module.common_output_ground_dir
 
 ### Matrix output configs - outputModule
 matrixesTotal_subfolder = matrix_configure_module.matrixesTotal_subfolder
+matrixesCollision_subsubfolder = matrix_configure_module.matrixesCollision_subsubfolder
 matrix_files_delimiter = matrix_configure_module.matrix_files_delimiter
 
 ### Misc configs
 dataset_ID = matrix_configure_module.dataset_ID
 
 
-#++++++++++++++++++++++++ CODE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++ CODE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 verbosePrint("\n[START]")
 
-### Print Config ##########################################################################
+### Print Config ##########################################################################################
 verbosePrint("\n>>> Configuring ...")
 verbosePrint("    DATA:")
 verbosePrint("    * dataset_tuple_list: {x}".format(x=str(dataset_tuple_list)))
@@ -94,21 +95,24 @@ verbosePrint("    OUTPUT:")
 verbosePrint("    * dataset_ID: {x}".format(x=str(dataset_ID)))
 verbosePrint("    * common_output_ground_dir: {x}".format(x=str(common_output_ground_dir)))
 verbosePrint("    * matrixesTotal_subfolder: {x}".format(x=str(matrixesTotal_subfolder)))
+verbosePrint("    * matrixesCollision_subsubfolder: {x}".format(x=str(matrixesCollision_subsubfolder)))
 if matrix_files_delimiter == '\t':
     verbosePrint(r'''    * matrix_files_delimiter: \t''')
 else:
     verbosePrint("    * matrix_files_delimiter: {x}".format(x=str(matrix_files_delimiter)))
 verbosePrint(">>> Done!")
-###########################################################################################
+###########################################################################################################
 
-### Check (or create) matrix_files_outdir #################################################
+### Check (or create) matrix_files_outdir ############################################################################
 verbosePrint("\n>>> Setting up matrixes outdir ...")
 matrix_files_outdir = buildOutputPath(common_output_ground_dir)
 verbosePrint(">>> Done!")
 verbosePrint("\n>>> Setting up matrixesTotal subfolder ...")
 matrixesTotal_outdir = buildOutputPath(matrix_files_outdir, matrixesTotal_subfolder)
+verbosePrint("\n>>> Setting up matrixesCollision sub-subfolder ...")
+matrixesCollision_outdir = buildOutputPath(matrix_files_outdir, matrixesTotal_subfolder, matrixesCollision_subsubfolder)
 verbosePrint(">>> Done!")
-###########################################################################################
+######################################################################################################################
 
 ### Load Data ################################################
 launch_path_dict = getLaunchPathDict(dataset_tuple_list)
@@ -129,12 +133,15 @@ verbosePrint("\n>>> Computing matrixes:")
 verbosePrint("> seqCount matrix ...")
 seqCount_matrix = buildSeqCountMatrix(any_df)
 total_seqCount_matrix = totalMatrix(seqCount_matrix, column_label=dataset_ID)
+collision_seqCount_matrix = collisionMatrix(seqCount_matrix, dataset_ID)
 verbosePrint("> ShsCount matrix ...")
 ShsCount_matrix = buildShsCountMatrix(any_df)
 total_ShsCount_matrix = totalMatrix(ShsCount_matrix, column_label=dataset_ID)
+collision_ShsCount_matrix = collisionMatrix(ShsCount_matrix, dataset_ID)
 verbosePrint("> fragmentEstimate matrix ...")
 fragmentEstimate_matrix = buildFragmentEstimateMatrix(any_df)
 total_fragmentEstimate_matrix = totalMatrix(fragmentEstimate_matrix, column_label=dataset_ID)
+collision_fragmentEstimate_matrix = collisionMatrix(fragmentEstimate_matrix, dataset_ID)
 verbosePrint(">>> Done!")
 ############################################################################################################################################################################
 
@@ -155,36 +162,44 @@ verbosePrint("\n>>> Computing matrixes:")
 verbosePrint("> barcodeCount matrix ...")
 barcodeCount_matrix = buildBarcodeCountMatrix(any_df)
 total_barcodeCount_matrix = totalMatrix(barcodeCount_matrix, column_label=dataset_ID)
+collision_barcodeCount_matrix = collisionMatrix(barcodeCount_matrix, dataset_ID)
 verbosePrint("> cellCount matrix ...")
 cellCount_matrix = buildCellCountMatrix(any_df)
 total_cellCount_matrix = totalMatrix(cellCount_matrix, column_label=dataset_ID)
+collision_cellCount_matrix = collisionMatrix(cellCount_matrix, dataset_ID)
 verbosePrint(">>> Done!")
 ###############################################################################################################################
 
-### Output #########################################################################################################################################################################################################################
+### Output ####################################################################################################################################################################################################################################
 verbosePrint("\n>>> Export matrixes ...")
 import os
 seqCount_matrix_outPath, ShsCount_matrix_outPath, barcodeCount_matrix_outPath, cellCount_matrix_outPath, fragmentEstimate_matrix_outPath  = None, None, None, None, None
 total_seqCount_matrix_outPath, total_ShsCount_matrix_outPath, total_fragmentEstimate_matrix_outPath, total_barcodeCount_matrix_outPath, total_cellCount_matrix_outPath = None, None, None, None, None
+collision_seqCount_matrix_outPath, collision_ShsCount_matrix_outPath, collision_fragmentEstimate_matrix_outPath, collision_barcodeCount_matrix_outPath, collision_cellCount_matrix_outPath = None, None, None, None, None
 # seqCount matrix
 seqCount_matrix_outPath = writeMatrix(seqCount_matrix, os.path.join(matrix_files_outdir, "{dataset_ID}_seqCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 total_seqCount_matrix_outPath = writeMatrix(total_seqCount_matrix, os.path.join(matrixesTotal_outdir, "total_{dataset_ID}_seqCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
+collision_seqCount_matrix_outPath = writeMatrix(collision_seqCount_matrix, os.path.join(matrixesCollision_outdir, "total_{dataset_ID}_seqCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 # ShsCount matrix
 ShsCount_matrix_outPath = writeMatrix(ShsCount_matrix, os.path.join(matrix_files_outdir, "{dataset_ID}_ShsCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 total_ShsCount_matrix_outPath = writeMatrix(total_ShsCount_matrix, os.path.join(matrixesTotal_outdir, "total_{dataset_ID}_ShsCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
+collision_ShsCount_matrix_outPath = writeMatrix(collision_ShsCount_matrix, os.path.join(matrixesCollision_outdir, "total_{dataset_ID}_ShsCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 # fragmentEstimate matrix
 fragmentEstimate_matrix_outPath = writeMatrix(fragmentEstimate_matrix, os.path.join(matrix_files_outdir, "{dataset_ID}_fragmentEstimate_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 total_fragmentEstimate_matrix_outPath = writeMatrix(total_fragmentEstimate_matrix, os.path.join(matrixesTotal_outdir, "total_{dataset_ID}_fragmentEstimate_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
+collision_fragmentEstimate_matrix_outPath = writeMatrix(collision_fragmentEstimate_matrix, os.path.join(matrixesCollision_outdir, "total_{dataset_ID}_fragmentEstimate_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 # barcodeCount matrix
 barcodeCount_matrix_outPath = writeMatrix(barcodeCount_matrix, os.path.join(matrix_files_outdir, "{dataset_ID}_barcodeCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 total_barcodeCount_matrix_outPath = writeMatrix(total_barcodeCount_matrix, os.path.join(matrixesTotal_outdir, "total_{dataset_ID}_barcodeCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
+collision_barcodeCount_matrix_outPath = writeMatrix(collision_barcodeCount_matrix, os.path.join(matrixesCollision_outdir, "total_{dataset_ID}_barcodeCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 # cellCount matrix
 cellCount_matrix_outPath = writeMatrix(cellCount_matrix, os.path.join(matrix_files_outdir, "{dataset_ID}_cellCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 total_cellCount_matrix_outPath = writeMatrix(total_cellCount_matrix, os.path.join(matrixesTotal_outdir, "total_{dataset_ID}_cellCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
+collision_cellCount_matrix_outPath = writeMatrix(collision_cellCount_matrix, os.path.join(matrixesCollision_outdir, "total_{dataset_ID}_cellCount_matrix.tsv".format(dataset_ID=str(dataset_ID))), matrix_files_delimiter)
 verbosePrint(">>> Matrix Files Created!")
-####################################################################################################################################################################################################################################
+###############################################################################################################################################################################################################################################
 
 verbosePrint("\n[END]\n")
 
-#+++++++++++++++++++++++++ END CODE ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#+++++++++++++++++++++++++ END CODE ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
