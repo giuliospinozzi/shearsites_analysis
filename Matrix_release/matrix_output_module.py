@@ -107,3 +107,11 @@ def writeMatrix(df, complete_path, out_files_delimiter):
     verbosePrint("> File created: '{complete_path}'".format(complete_path=str(complete_path)))
     return complete_path
 
+def writeMatrixContamination(df, complete_path, out_files_delimiter):
+    # df may be None
+    if df is None:
+        verbosePrint("[Warning] No data available to create '{complete_path}'".format(complete_path=str(complete_path)))
+        return None
+    df.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index=True)
+    verbosePrint("> File created: '{complete_path}'".format(complete_path=str(complete_path)))
+    return complete_path

@@ -52,12 +52,24 @@ common_output_ground_dir = "/storage/d3/tmp/stefano/debug/Matrixes"  # abs path 
 
 ## Matrix output Files - outputModule ##
 matrixesTotal_subfolder = "MatrixesTotal"
+contamination_subfolder = "Contaminations"
 matrixesCollision_subsubfolder= "relabeled"
 matrix_files_delimiter = '\t'
 
 ## Misc
 dataset_ID = "debug-dataset"  # a separator different from '_' is recommended
 
+### --searchContamination option
+searchContamination = False
+
+### --projectID option
+projectID = 'NONE'
+
+### --metadataFile option
+metadata = 'NONE'
+
+### --onlyContamination option
+onlyContamination = False
 
 #++++++++++++++++++++++++++++++++++ Override Global Vars by argumentParser_module ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -100,10 +112,18 @@ ED_treshold = args.filter_edit_distance_threshold
 ## Output
 common_output_ground_dir = args.out_dir_path
 matrixesTotal_subfolder = "MatrixesTotal"
+contamination_subfolder = "Contaminations"
 matrixesCollision_subsubfolder= "relabeled"
 ## Misc
 dataset_ID = args.dataset_ID
-
+### --searchContamination option
+searchContamination = args.searchContamination
+### --projectID option
+projectID = args.projectID
+### --metadataFile option
+metadata = args.metadata
+### --onlyContamination option
+onlyContamination = args.onlyContamination
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -192,4 +212,3 @@ if filter_data is True:
         sys.exit("\n[QUIT]\n")
 
 verbosePrint(">>> OK!")
-

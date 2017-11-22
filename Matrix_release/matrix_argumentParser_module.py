@@ -153,6 +153,14 @@ def dataset_tuple(s, arg_sep=','):
     except:
         raise argparse.ArgumentTypeError("invalid syntax: {s}. See help.".format(s=str(s)))
 
+def project_ID(s, arg_sep=','):
+    try:
+        arg_split = s.strip().replace(' ','').split(arg_sep)
+        projectID_list = arg_split
+        return projectID_list
+    except:
+        raise argparse.ArgumentTypeError("invalid syntax. No ProjectID given: {s}. See help.".format(s=str(s)))
+
 def min_limited_int(n, m):
     try:
         n = int(n)
@@ -188,6 +196,7 @@ def range_1_11_int(n):
 forbidden_chars = ['_', '!', '@', ' ', '$', '/', '\\', '*', ',', ';', '.', '?', "'", '"']
 forbidden_strings = ['total']
 recommended_sep = '-'
+
 def dataset_ID_string(s, forbidden_chars=forbidden_chars, forbidden_strings=forbidden_strings, recommended_sep=recommended_sep):
     try:
         s = str(s)
@@ -228,8 +237,15 @@ parser.add_argument("-uf", "--unfiltered", action="store_false", default=True, h
 parser.add_argument("--filter_edit_distance_threshold", metavar='N', type=range_1_11_int, default=3, help="filter out data whose random barcodes are distant N or less (Levenshtein distance): for each comparison, only the counterpart with the lower sequence count is discarded, while the other one (higher sequence count) is kept.  (default: 3).")
 # Set inside_ShS - optional
 parser.add_argument("--filter_ignoring_shearsites", action="store_false", default=True, help="apply the filter by edit-distance across all the random barcodes of each IS, even if belonging to different shearsites. (default: apply the filter within shearsite compartments of each IS).")
+# Set contamination - optional
+parser.add_argument("--searchContamination", dest='searchContamination', action="store_true", default=False,  help="This option create a contaminations matrix")
+# Set ProjectID
+parser.add_argument("--projectID_list", dest='projectID', type=project_ID, required='--searchContamination' in sys.argv, help="This option take in argument the projectID name of the samples to analyze")
+#metadata file
+parser.add_argument("--metadata", dest='metadata', required='--projectID_list' in sys.argv, help="This option take in argument the path for the metadata file")
+#only contamination analysis
+parser.add_argument("--onlyContamination", dest='onlyContamination', action="store_true", default=False,  help="This option execute only contamination analysis perform matrix_SECONDARY.py module")
 
 #Parse
 args = parser.parse_args()
 # print vars(args)
-
