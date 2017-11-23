@@ -115,3 +115,15 @@ def writeMatrixContamination(df, complete_path, out_files_delimiter):
     df.to_csv(path_or_buf=complete_path, sep=out_files_delimiter, index=True)
     verbosePrint("> File created: '{complete_path}'".format(complete_path=str(complete_path)))
     return complete_path
+
+def memory_usage():
+    import resource
+    import platform
+    memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    system = platform.system()
+    Megabyte = 1048576
+    Kilobyte = 1024
+    if system == "Linux" or system == "linux2":
+        return memory/Kilobyte
+    elif system == "Darwin" or system == "darwin":
+        return memory/Megabyte
