@@ -29,7 +29,7 @@ from matrix_preprocessing_dataSources_module import getLaunchPathDict
 from matrix_contamination_module import pivot, contamina, comparison, describe, isSymmetric, skip_diag_strided, associationFILE
 from matrix_preprocessing_dataLoading_module import loadData
 from matrix_processing_computeMatrixes_module import buildSeqCountMatrix, buildShsCountMatrix, buildBarcodeCountMatrix, buildCellCountMatrix, buildFragmentEstimateMatrix, totalMatrix, collisionMatrix
-from matrix_output_module import buildOutputPath, writeMatrix, writeMatrixContamination
+from matrix_output_module import buildOutputPath, writeMatrix, writeMatrixContamination, memory_usage
 
 
 #++++++++++++++++++++++ Global Vars from configure_module +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -239,7 +239,10 @@ else:
 
     verbosePrint(">>> Matrix Files Created!")
     ###############################################################################################################################################################################################################################################
+    
+    memory = memory_usage()
 
+    verbosePrint(">>> Memory usage = {x}Mb".format(x=str(memory)))
     verbosePrint("\n[END]\n")
 
     #+++++++++++++++++++++++++ END CODE ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
