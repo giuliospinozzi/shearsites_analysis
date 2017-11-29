@@ -131,6 +131,7 @@ verbosePrint(">>> Done!")
 ### Load Data ################################################
 launch_path_dict = getLaunchPathDict(dataset_tuple_list)
 any_df = loadData(launch_path_dict, drop_headers, compression)
+verbosePrint("> Memory usage = {x} Mb".format(x=str(memory_usage())))
 ##############################################################
 
 ### Compute ISs ################################################################################################################################################################
@@ -139,6 +140,7 @@ if do_ISs:
     from matrix_processing_ISsMethods_module import compute_ISs
     any_df = compute_ISs(any_df, ensembles_per_sample=ensembles_per_sample, ensembles_max_dist=ensembles_max_dist, ensembles_max_span=ensembles_max_span, ISs_method=ISs_method)
     verbosePrint(">>> Done!")
+verbosePrint("> Memory usage = {x} Mb".format(x=str(memory_usage())))
 ################################################################################################################################################################################
 
 ### Filter Data #######################################################################################################################################
@@ -150,6 +152,7 @@ if filter_data:
     if False:
         any_df = "HERE NEW FILTERING METHODS"
     verbosePrint(">>> Done!")
+verbosePrint("> Memory usage = {x} Mb".format(x=str(memory_usage())))
 #######################################################################################################################################################
 
 
@@ -174,9 +177,7 @@ if searchContamination:
 verbosePrint(">>> Matrix Files Created!")
 ###############################################################################################################################################################################################################################################
 
-memory = memory_usage()
-
-verbosePrint(">>> Memory usage = {x}Mb".format(x=str(memory)))
+verbosePrint("> Memory usage = {x} Mb".format(x=str(memory_usage())))
 verbosePrint("\n[END]\n")
 
 exit()
