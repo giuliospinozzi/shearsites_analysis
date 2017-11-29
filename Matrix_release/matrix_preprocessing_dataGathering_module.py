@@ -49,9 +49,9 @@ def loadRefactored_asDataframe (path, compression=None):
     index_col = 'prod_header'
     usecols = ['prod_header', 'prod_chr', 'prod_locus', 'prod_end', 'prod_strand', 'ref_associationid', 'mate_chr']
     refactored_light = pd.read_csv(path, sep=sep, compression=compression, encoding=encoding, header=header, index_col=index_col, usecols=usecols)
-    column_types = convert_type(refactored_light)
+    #column_types = convert_type(refactored_light)
     verbosePrint(">>> Memory space refactored Before = {x} ".format(x=mem_usage(refactored_light)))
-    refactored_light = pd.read_csv(path, sep=sep, compression=compression, encoding=encoding, header=header, index_col=index_col, usecols=usecols, dtype=column_types)
+    refactored_light = convert_obj(refactored_light)
     verbosePrint(">>> Memory space refactored After = {x} ".format(x=mem_usage(refactored_light)))
     #print "[DEBUG] refactored rows:", len(refactored_light)
     #print "[DEBUG] refactored columns:", refactored_light.columns
