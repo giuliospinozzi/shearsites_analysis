@@ -121,9 +121,10 @@ def memory_usage():
     import platform
     memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     system = platform.system()
-    Megabyte = 1048576
-    Kilobyte = 1024
+
     if system == "Linux" or system == "linux2":
-        return memory/Kilobyte
+        usage_mb = memory/1024
+        return "{:03.2f} MB".format(usage_mb)
     elif system == "Darwin" or system == "darwin":
-        return memory/Megabyte
+        usage_mb = memory/1024 ** 2
+        return "{:03.2f} MB".format(usage_mb)
