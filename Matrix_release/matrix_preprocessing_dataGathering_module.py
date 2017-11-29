@@ -8,6 +8,7 @@ Created on Fri Jul 29 14:47:18 2016
 #++++++++++++++++++++++++++++ Requested Package(s) Import +++++++++++++++++++++++++++++#
 import pandas as pd
 import sys
+import matrix_configure_module
 
 #++++++++++++++++++++++ Global Funcs ++++++++++++++++++++++#
 verbosePrint = matrix_configure_module.verbosePrint
