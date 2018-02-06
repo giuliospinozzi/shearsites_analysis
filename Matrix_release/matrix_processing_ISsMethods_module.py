@@ -36,6 +36,7 @@ def get_ensembles (any_df, per_sample, max_dist, max_span):
     # Add and cast 'chr', 'locus' and 'strand' columns
     verbosePrint("      * Preparing data ...")
     tmp_df = pd.concat([any_df, any_df['genomic_coordinates'].str.split('_').apply(pd.Series)], axis=1)
+    # tmp_df[['chr','locus','strand']] = (tmp_df.genomic_coordinates.str.split('_', expand= True ))
     tmp_df.rename(columns={0:'chr', 1:'locus', 2:'strand'}, inplace=True)
     tmp_df['locus'] = tmp_df['locus'].astype(int)
     verbosePrint("        Done. {n} total entries.".format(n=str(len(tmp_df))))

@@ -15,32 +15,13 @@ verbosePrint = matrix_configure_module.verbosePrint
 
 #+++++++++++++++++++++++++++++++++++++++ FUNCTIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-def mem_usage(pandas_obj):
-    if isinstance(pandas_obj,pd.DataFrame):
-        usage_b = pandas_obj.memory_usage(deep=True).sum()
-    else: # we assume if not a df it's a series
-        usage_b = pandas_obj.memory_usage(deep=True)
-    usage_mb = usage_b / 1024 ** 2 # convert bytes to megabytes
-    return "{:03.2f} MB".format(usage_mb)
-
-def convert_type(pandas_obj):
-    dtypes = pandas_obj.dtypes
-    dtypes_col = dtypes.index
-    dtypes_type = [i.name for i in dtypes.values]
-    column_types = dict(zip(dtypes_col, dtypes_type))
-    return column_types
-
-def convert_obj(pandas_obj):
-    converted_obj = pd.DataFrame()
-    for col in pandas_obj.columns:
-        num_unique_values = len(pandas_obj[col].unique())
-        num_total_values = len(pandas_obj[col])
-        if num_unique_values / num_total_values < 0.5:
-            converted_obj.loc[:,col] = pandas_obj[col].astype('category')
-        else:
-            converted_obj.loc[:,col] = pandas_obj[col]
-    return converted_obj
-
+# def mem_usage(pandas_obj):
+#     if isinstance(pandas_obj,pd.DataFrame):
+#         usage_b = pandas_obj.memory_usage(deep=True).sum()
+#     else: # we assume if not a df it's a series
+#         usage_b = pandas_obj.memory_usage(deep=True)
+#     usage_mb = usage_b / 1024 ** 2 # convert bytes to megabytes
+#     return "{:03.2f} MB".format(usage_mb)
 
 def loadRefactored_asDataframe (path, compression=None):
     sep = '\t'
@@ -50,9 +31,6 @@ def loadRefactored_asDataframe (path, compression=None):
     usecols = ['prod_header', 'prod_chr', 'prod_locus', 'prod_end', 'prod_strand', 'ref_associationid', 'mate_chr']
     refactored_light = pd.read_csv(path, sep=sep, compression=compression, encoding=encoding, header=header, index_col=index_col, usecols=usecols)
     #column_types = convert_type(refactored_light)
-    verbosePrint("        * Memory space refactored Before = {x} ".format(x=mem_usage(refactored_light)))
-    refactored_light = convert_obj(refactored_light)
-    verbosePrint("        * Memory space refactored After = {x} ".format(x=mem_usage(refactored_light)))
     #print "[DEBUG] refactored rows:", len(refactored_light)
     #print "[DEBUG] refactored columns:", refactored_light.columns
     refactored_light = refactored_light[~pd.isnull(refactored_light['mate_chr'])]
@@ -105,9 +83,6 @@ def loadFasta_asDataframe (path, compression=None):
     tuple_list = [(getHeader(header_line), getSeq(seq_line)) for header_line, seq_line in izip(*[iter(file_as_list)]*2)]
     # returnd DF has seq headers as index and a column named 'randomBC'
     df = pd.DataFrame.from_records(tuple_list, columns= ['header', 'randomBC'], index='header')
-    verbosePrint("        * Memory space Fasta Before = {x} ".format(x=mem_usage(df)))
-    df = convert_obj(df)
-    verbosePrint("        * Memory space Fasta After = {x} ".format(x=mem_usage(df)))
     return df
 
 def buildDataFrame (refactored_DF, rBC_fasta_DF=None, drop_headers=True):
@@ -183,6 +158,5 @@ def buildDataFrame (refactored_DF, rBC_fasta_DF=None, drop_headers=True):
     raw_DF = join(refactored_DF, rBC_fasta_DF)  # return a copy, inputs (refactored_DF and rBC_fasta_DF) are not modified
     long_DF = transform(raw_DF, drop_headers)   # raw_DF is modified inplace: long_DF is just a pointer to it
     any_df = compact(long_DF)  # long_DF is not modified, df is a new dataframe
-    verbosePrint("        * Memory space dataframe = {x} ".format(x=mem_usage(any_df)))
     return any_df   # any_df can be of kind 'df' or 'exhaustive_df', with or without randomBC (kwargs drop_headers and rBC_fasta_DF)
 
