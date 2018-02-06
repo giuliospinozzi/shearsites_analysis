@@ -59,17 +59,17 @@ matrix_files_delimiter = '\t'
 ## Misc
 dataset_ID = "debug-dataset"  # a separator different from '_' is recommended
 
-### --searchContamination option
-searchContamination = False
+# ### --searchContamination option
+# searchContamination = False
 
-### --projectID option
-projectID = 'NONE'
+# ### --projectID option
+# projectID = 'NONE'
 
-### --metadataFile option
-metadata = 'NONE'
+# ### --metadataFile option
+# metadata = 'NONE'
 
-### --onlyContamination option
-onlyContamination = False
+# ### --onlyContamination option
+# onlyContamination = False
 
 #++++++++++++++++++++++++++++++++++ Override Global Vars by argumentParser_module ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -112,18 +112,18 @@ ED_treshold = args.filter_edit_distance_threshold
 ## Output
 common_output_ground_dir = args.out_dir_path
 matrixesTotal_subfolder = "MatrixesTotal"
-contamination_subfolder = "Contaminations"
+# contamination_subfolder = "Contaminations"
 matrixesCollision_subsubfolder= "relabeled"
 ## Misc
 dataset_ID = args.dataset_ID
 ### --searchContamination option
-searchContamination = args.searchContamination
-### --projectID option
-projectID = args.projectID
-### --metadataFile option
-metadata = args.metadata
-### --onlyContamination option
-onlyContamination = args.onlyContamination
+# searchContamination = args.searchContamination
+# ### --projectID option
+# projectID = args.projectID
+# ### --metadataFile option
+# metadata = args.metadata
+# ### --onlyContamination option
+# onlyContamination = args.onlyContamination
 
 #++++++++++++++++++++++++++++++++++ Global Funcs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
