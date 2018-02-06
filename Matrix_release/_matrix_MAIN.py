@@ -157,7 +157,7 @@ if filter_data:
 
 #### EDIT BY Adriano
 import pandas as pd
-any_df.to_csv('any_df.csv', sep='\t', index=False) #write any_df.csv, this file will be analyze with new function in new program called SKIP.
+any_df.to_csv('contamination.csv', sep='\t', index=False) #write contamination.csv, this file will be analyze with new function in new program called SKIP.
 #######################################################################################################################################################
 
 ### Compute matrixes with barcode data ########################################################################################
