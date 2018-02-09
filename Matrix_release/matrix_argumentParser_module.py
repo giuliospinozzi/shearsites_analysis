@@ -238,7 +238,7 @@ parser.add_argument("--filter_edit_distance_threshold", metavar='N', type=range_
 # Set inside_ShS - optional
 parser.add_argument("--filter_ignoring_shearsites", action="store_false", default=True, help="apply the filter by edit-distance across all the random barcodes of each IS, even if belonging to different shearsites. (default: apply the filter within shearsite compartments of each IS).")
 # Set contamination - optional
-# parser.add_argument("--searchContamination", dest='searchContamination', action="store_true", default=False,  help="This option create a contaminations matrix")
+parser.add_argument("-sc","--searchContamination", dest='searchContamination', action="store_true", default=False,  help="This option create a contaminations matrix")
 # # Set ProjectID
 # parser.add_argument("--projectID_list", dest='projectID', type=project_ID, required='--searchContamination' in sys.argv, help="This option take in argument the projectID name of the samples to analyze")
 # #metadata file
