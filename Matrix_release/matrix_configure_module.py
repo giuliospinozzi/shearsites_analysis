@@ -60,7 +60,7 @@ matrix_files_delimiter = '\t'
 dataset_ID = "debug-dataset"  # a separator different from '_' is recommended
 
 # ### --searchContamination option
-# searchContamination = False
+searchContamination = False
 
 # ### --projectID option
 # projectID = 'NONE'
@@ -117,7 +117,7 @@ matrixesCollision_subsubfolder= "relabeled"
 ## Misc
 dataset_ID = args.dataset_ID
 ### --searchContamination option
-# searchContamination = args.searchContamination
+searchContamination = args.searchContamination
 # ### --projectID option
 # projectID = args.projectID
 # ### --metadataFile option

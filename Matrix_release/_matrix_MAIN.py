@@ -67,6 +67,8 @@ matrix_files_delimiter = matrix_configure_module.matrix_files_delimiter
 ### Misc configs
 dataset_ID = matrix_configure_module.dataset_ID
 
+sc = matrix_configure_module.searchContamination
+
 
 #++++++++++++++++++++++++ CODE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
@@ -156,8 +158,9 @@ if filter_data:
     verbosePrint(">>> Done!")
 
 #### EDIT BY Adriano
-import pandas as pd
-any_df.to_csv('contamination.csv', sep='\t', index=False) #write contamination.csv, this file will be analyze with new function in new program called SKIP.
+if sc:
+	import pandas as pd
+	any_df.to_csv("{dataset_ID}_contamination.csv", sep='\t', index=False) #write contamination.csv, this file will be analyze with new function in new program called SKIP.
 #######################################################################################################################################################
 
 ### Compute matrixes with barcode data ########################################################################################
