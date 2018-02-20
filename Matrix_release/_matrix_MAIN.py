@@ -80,6 +80,7 @@ verbosePrint("    DATA:")
 verbosePrint("    * dataset_tuple_list: {x}".format(x=str(dataset_tuple_list)))
 verbosePrint("    * drop_headers: {x}".format(x=str(drop_headers)))
 verbosePrint("    * compression: {x}".format(x=str(compression)))
+verbosePrint("    * searchContamination: {x}".format(x=str(sc)))
 verbosePrint("    ISs:")
 verbosePrint("    * do_ISs: {x}".format(x=str(do_ISs)))
 if do_ISs:
@@ -159,8 +160,10 @@ if filter_data:
 
 #### EDIT BY Adriano
 if sc:
-	import pandas as pd
-	any_df.to_csv("{dataset_ID}_contamination.csv.gz".format(dataset_ID=str(dataset_ID)), sep='\t', index=False, compression='gzip') #write contamination.csv, this file will be analyze with new function in new program called SKIP.
+    import pandas as pd
+    verbosePrint(">>> writing contamination file...")
+    any_df.to_csv("{dataset_ID}_contamination.csv.gz".format(dataset_ID=str(dataset_ID)), sep='\t', index=False, compression='gzip') #write contamination.csv, this file will be analyze with new function in new program called SKIP.
+    verbosePrint(">>> Done!")
 #######################################################################################################################################################
 
 ### Compute matrixes with barcode data ########################################################################################
