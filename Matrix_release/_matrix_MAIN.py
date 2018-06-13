@@ -162,7 +162,7 @@ if filter_data:
 if sc:
     import pandas as pd
     verbosePrint(">>> writing contamination file...")
-    any_df.to_csv("{dataset_ID}_contamination.csv.gz".format(dataset_ID=str(dataset_ID)), sep='\t', index=False, compression='gzip') #write contamination.csv, this file will be analyze with new function in new program called SKIP.
+    any_df.to_csv("{dataset_ID}_contamination.csv.gz".format(dataset_ID=str(dataset_ID)), sep='\t', index=False, compression='gzip', encoding='utf-8') #write contamination.csv, this file will be analyze with new function in new program called SKIP.
     verbosePrint(">>> Done!")
 #######################################################################################################################################################
 
