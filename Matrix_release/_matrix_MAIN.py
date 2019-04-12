@@ -21,6 +21,7 @@ __status__ = "Testing"
 
 ### Check requirements, import configuration and PARSE ARGS
 import matrix_configure_module
+import os
 
 ### Import Basic Functions
 humanSorted = matrix_configure_module.humanSorted
