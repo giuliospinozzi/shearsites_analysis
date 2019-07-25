@@ -715,7 +715,11 @@ def export_matrix (matrix, path):
     verbosePrint("[DONE]")
 
     verbosePrint("\n[RE-LOADED MATRIX]")
-    import_matrixes(path)[0].sort_index(inplace=True).to_csv(path_or_buf=path,sep='\t',index_label='IS_genomicID',na_rep=output_na_rep,encoding=output_matrixes_encoding)
+    finale = (import_matrixes(path))[0].sort_index()
+    ## sostituire 0 con Nan a pacchetti altrimenti --> memory error
+    finale_a_pezzi = chunks(finale,100000)
+    for entry_small in finale_a_pezzi:
+        entry_small.replace(0, np.nan).to_csv(path_or_buf=path,sep='\t',na_rep=output_na_rep,encoding=output_matrixes_encoding)
     verbosePrint("[DONE]")
     return 0
 
