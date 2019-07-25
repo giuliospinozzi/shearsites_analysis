@@ -713,9 +713,9 @@ def export_matrix (matrix, path):
     verbosePrint("\n[EXPORT MATRIX]")
     mapper_expo(grp,48,header) #slow, 48processor instead of 1 increas the speed of writing, but mix the order of the chr.
     verbosePrint("[DONE]")
-    
+
     verbosePrint("\n[RE-LOADED MATRIX]")
-    import_matrixes(path).sort_index(inplace=True).to_csv(path_or_buf=path,sep='\t',index_label='IS_genomicID',na_rep=output_na_rep,encoding=output_matrixes_encoding)
+    import_matrixes(path)[0].sort_index(inplace=True).to_csv(path_or_buf=path,sep='\t',index_label='IS_genomicID',na_rep=output_na_rep,encoding=output_matrixes_encoding)
     verbosePrint("[DONE]")
     return 0
 
