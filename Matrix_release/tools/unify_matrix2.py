@@ -463,7 +463,7 @@ def import_matrixes (*paths):
     matrixes - list of DataFrame objects
     '''
     def parse_matrix(path):
-        jobs=55
+        jobs=48
         verbosePrint("> loading {path} ... ".format(path=str(path)))
         chunksize = 100000
         df = pd.DataFrame()
@@ -682,22 +682,17 @@ def export_matrix (matrix, path):
 
     verbosePrint(">>> file created: {path}".format(path=str(path)))
     
-    # pd.DataFrame(columns=header).to_csv(path_or_buf=path,
-    #               index_label='IS_genomicID',
-    #               encoding=output_matrixes_encoding,
-    #               sep=output_matrix_sep,
-    #               na_rep=output_na_rep)
+    pd.DataFrame(columns=header).to_csv(path_or_buf=path,
+                  index_label='IS_genomicID',
+                  encoding=output_matrixes_encoding,
+                  sep=output_matrix_sep,
+                  na_rep=output_na_rep)
 
-    # def exportazion(s,super,header):
-    #     for gb in s:
-    #         tmp = pd.concat([pd.DataFrame(columns=header),pd.pivot_table(gb,columns='nome',index='IS',values='value')],sort=False,copy=False)
-    #         tmp.to_csv(path_or_buf=path, mode='a', header=False,sep='\t',na_rep=output_na_rep,encoding=output_matrixes_encoding)
-    
     def exportazion(s,super,header):
         for gb in s:
-            tmp = pd.pivot_table(gb,columns='nome',index='IS',values='value')
-            super.append(tmp)    
-
+            tmp = pd.concat([pd.DataFrame(columns=header),pd.pivot_table(gb,columns='nome',index='IS',values='value')],sort=False,copy=False)
+            tmp.to_csv(path_or_buf=path, mode='a', header=False,sep='\t',na_rep=output_na_rep,encoding=output_matrixes_encoding)
+    
     def mapper_expo(csv_list, job_number,header):
         copia = csv_list
         total = len(copia)
@@ -716,12 +711,12 @@ def export_matrix (matrix, path):
         return super
 
     verbosePrint("\n[EXPORT MATRIX]")
-    lista = mapper_expo(grp,56,header) #slow, 48processor instead of 1 increas the speed of writing, but mix the order of the chr.
-    verbosePrint("[DONE]")
-    verbosePrint("[Concat MATRIX]")
-    pd.concat(lista,copy=False,sort=True).sort_index().to_csv(path_or_buf=path,sep='\t',index_label='IS_genomicID',na_rep=output_na_rep,encoding=output_matrixes_encoding)
+    mapper_expo(grp,48,header) #slow, 48processor instead of 1 increas the speed of writing, but mix the order of the chr.
     verbosePrint("[DONE]")
     
+    verbosePrint("\n[RE-LOADED MATRIX]")
+    import_matrixes(path).sort_index(inplace=True).to_csv(path_or_buf=path,sep='\t',index_label='IS_genomicID',na_rep=output_na_rep,encoding=output_matrixes_encoding)
+    verbosePrint("[DONE]")
     return 0
 
 
