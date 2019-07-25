@@ -478,8 +478,8 @@ def import_matrixes (*paths):
                 new = pd.concat(mapper(CHUNK,1),axis=1,sort=False)
             memory_final.append(new.memory_usage().sum() / 1024**2)
             df = df.append(new)
-        verbosePrint("> Memory usage of properties dataframe is: {r}{mb:03.3f}{e} MB ".format(mb=np.sum(memory_total),r=r,e=e))
-        verbosePrint("> ___MEMORY USAGE AFTER COMPLETION:______: {g}{ma:03.3f}{e} MB".format(ma=np.sum(memory_final),g=g,e=e))
+        verbosePrint("> Memory usage of properties dataframe is: {mb:03.3f} MB ".format(mb=np.sum(memory_total)))
+        verbosePrint("> ___MEMORY USAGE AFTER COMPLETION:______: {ma:03.3f} MB".format(ma=np.sum(memory_final)))
         return df
         # m = pd.read_csv(path, index_col=0, encoding=input_matrixes_encoding, sep=input_matrixes_sep) old code
         # m = m.replace(0, pd.np.NaN) old code
@@ -674,12 +674,12 @@ def export_matrix (matrix, path):
     0
     '''
     # split a list into evenly sized chunks
-    header = matrix.nome.unique().tolist()
-    grp = [t for x,t in matrix.groupby('IS')]
+    header = humanSorted(matrix.nome.unique().tolist())
+    grp = [t for x,t in matrix.groupby('IS',sort=True)]
 
     def chunks(l, n):
         return [l[i:i+int(n)] for i in range(0, len(l), int(n))]
-    
+
     verbosePrint(">>> file created: {path}".format(path=str(path)))
     
     pd.DataFrame(columns=header).to_csv(path_or_buf=path,
@@ -711,7 +711,7 @@ def export_matrix (matrix, path):
         return super
 
     verbosePrint("\n[EXPORT MATRIX]")
-    mapper_expo(grp,56,header)
+    mapper_expo(grp,1,header) #slow, 48processor instead of 1 increas the speed of writing, but mix the order of the chr.
     verbosePrint("[DONE]")
     return 0
 
